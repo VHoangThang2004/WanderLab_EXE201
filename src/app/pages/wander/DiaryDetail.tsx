@@ -23,6 +23,7 @@ import {
   Camera,
   Quote,
   Expand,
+  ThumbsUp,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { DIARY_DATA } from "../../data/diaries";
