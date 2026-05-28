@@ -52,27 +52,7 @@ export function WanderLanding() {
     queryKey: ['feedDiaries'],
     queryFn: diaryService.fetchFeedDiaries,
     enabled: isAuthenticated,
-  });5951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Đà Nẵng",
-    diariesCount: 18,
-    followersCount: 4200,
-    isFollowing: true,
-  },
-];
-
-// Trending destinations
-const trendingDestinations = [
-  { name: "Vịnh Hạ Long", count: "1,234 nhật ký" },
-  { name: "Phú Quốc", count: "987 nhật ký" },
-  { name: "Sa Pa", count: "856 nhật ký" },
-  { name: "Hội An", count: "723 nhật ký" },
-  { name: "Đà Lạt", count: "654 nhật ký" },
-];
-
-export function WanderLanding() {
-  const { isAuthenticated } = useAuthStore();
-
-  // Guest landing — hero + CTA
+  });  // Guest landing — hero + CTA
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">

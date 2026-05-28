@@ -47,6 +47,15 @@ export function WanderDiaryDetail() {
   const [lightboxImages, setLightboxImages] = useState<{ url: string; caption?: string; reviewer?: string }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const lightboxPrev = useCallback(() =>
+    setLightboxIndex((i) => (i === 0 ? lightboxImages.length - 1 : i - 1)),
+    [lightboxImages.length]
+  );
+  const lightboxNext = useCallback(() =>
+    setLightboxIndex((i) => (i === lightboxImages.length - 1 ? 0 : i + 1)),
+    [lightboxImages.length]
+  );
+
   if (isLoading || !diary) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -83,14 +92,6 @@ export function WanderDiaryDetail() {
     setLightboxOpen(true);
   };
 
-  const lightboxPrev = useCallback(() =>
-    setLightboxIndex((i) => (i === 0 ? lightboxImages.length - 1 : i - 1)),
-    [lightboxImages.length]
-  );
-  const lightboxNext = useCallback(() =>
-    setLightboxIndex((i) => (i === lightboxImages.length - 1 ? 0 : i + 1)),
-    [lightboxImages.length]
-  );
 
   return (
     <div className="min-h-screen bg-white">

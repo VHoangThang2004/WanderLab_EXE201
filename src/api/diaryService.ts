@@ -208,7 +208,7 @@ export const diaryService = {
         return data.map((d: any) => {
           // Parse budget to number (millions VNĐ) for filtering
           const budgetStr = d.total_budget || "0";
-          const budgetVal = parseInt(budgetStr.replace(/\\D/g, '')) || 0;
+          const budgetVal = parseInt(budgetStr.replace(/\D/g, '')) || 0;
           const budgetNum = budgetVal / 1000000;
           
           // Parse duration to days
@@ -222,7 +222,7 @@ export const diaryService = {
             image: d.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
             style: 'Khám phá', // Default
             interests: ['Văn hóa', 'Ẩm thực'], // Default mock
-            budget: \`\${budgetNum.toFixed(1)} triệu ₫\`,
+            budget: `${budgetNum.toFixed(1)} triệu ₫`,
             budgetNum,
             duration: d.duration,
             durationDays,
