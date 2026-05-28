@@ -5,18 +5,7 @@ import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useState } from "react";
 import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailModal";
-
-// Current user's profile data
-const userProfile = {
-  name: "Phan Văn Minh",
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-  coverImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
-  location: "Hà Nội, Việt Nam",
-  bio: "Du lịch ba lô, yêu thiên nhiên và khám phá văn hóa địa phương 🎒🌏",
-  diariesCount: 12,
-  followersCount: 1240,
-  followingCount: 356,
-};
+import { useAuthStore } from "@/stores";
 
 // User's travel journal posts
 const myJournalPosts = [
@@ -78,9 +67,23 @@ const travelStats = [
 ];
 
 export function WanderDashboard() {
+  const { user } = useAuthStore();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "trips">("posts");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Build profile from real auth data
+  const userProfile = {
+    name: user?.full_name || "Du Khách",
+    avatar: user?.avatar_url || "",
+    coverImage: user?.cover_image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
+    location: user?.location || "Chưa cập nhật",
+    bio: user?.bio || "Hãy thêm mô tả về bạn... 🎒🌏",
+    diariesCount: user?.diaries_count || 0,
+    followersCount: user?.followers_count || 0,
+    followingCount: user?.following_count || 0,
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF5F3]">
@@ -88,11 +91,13 @@ export function WanderDashboard() {
       <div className="bg-white border-b border-gray-100">
         {/* Cover Image */}
         <div className="relative h-64 md:h-80 bg-gradient-to-r from-[#ff3131] to-[#ff914d]">
+          {userProfile.coverImage && (
           <ImageWithFallback
             src={userProfile.coverImage}
             alt="Cover"
             className="w-full h-full object-cover opacity-90"
           />
+          )}
           {/* Edit Cover Button */}
           <button className="absolute top-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl font-semibold hover:bg-white transition-all flex items-center gap-2">
             <Image size={16} />
@@ -105,27 +110,36 @@ export function WanderDashboard() {
           <div className="relative pb-6">
             {/* Avatar */}
             <div className="absolute -top-16 md:-top-20">
+              {userProfile.avatar ? (
               <ImageWithFallback
                 src={userProfile.avatar}
                 alt={userProfile.name}
                 className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
               />
+              ) : (
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
+                  {userProfile.name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             {/* Profile Actions */}
             <div className="flex justify-end pt-4 gap-3">
-              <Link
-                to="/settings"
+              <button
+                onClick={() => setIsEditingProfile(!isEditingProfile)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center gap-2"
               >
                 <Settings size={16} />
                 Chỉnh sửa
-              </Link>
+              </button>
             </div>
 
             {/* Name & Bio */}
             <div className="mt-4">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{userProfile.name}</h1>
+              {user?.email && (
+                <p className="text-sm text-gray-500 mb-1">{user.email}</p>
+              )}
               <div className="flex items-center gap-2 text-gray-600 mb-3">
                 <MapPin size={16} />
                 <span>{userProfile.location}</span>

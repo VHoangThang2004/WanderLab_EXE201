@@ -1,8 +1,9 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { UserCard } from "../../components/wander/UserCard";
 import { Link } from "react-router";
-import { Sparkles, TrendingUp, Compass } from "lucide-react";
+import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { useAuthStore } from "@/stores";
 
 // Travel memory posts from friends - social feed style
 const travelFeed = [
@@ -142,6 +143,133 @@ const trendingDestinations = [
 ];
 
 export function WanderLanding() {
+  const { isAuthenticated } = useAuthStore();
+
+  // Guest landing — hero + CTA
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen">
+        {/* Hero Section */}
+        <section className="relative bg-gradient-to-br from-[#ff3131] via-[#ff5e3a] to-[#ff914d] text-white overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
+            <div className="absolute bottom-10 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+                  Ghi lại hành trình,<br />
+                  <span className="text-yellow-200">Chia sẻ trải nghiệm</span>
+                </h1>
+                <p className="text-xl text-white/90 max-w-lg">
+                  WanderLab là nền tảng nhật ký du lịch xác thực, nơi bạn khám phá trải nghiệm thật từ cộng đồng du lịch Việt Nam.
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <Link
+                    to="/register"
+                    className="px-8 py-4 bg-white text-[#ff3131] rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
+                  >
+                    Bắt Đầu Miễn Phí
+                  </Link>
+                  <Link
+                    to="/explore"
+                    className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all"
+                  >
+                    Khám Phá
+                  </Link>
+                </div>
+              </div>
+              <div className="hidden lg:grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="rounded-2xl overflow-hidden shadow-2xl h-48">
+                    <ImageWithFallback
+                      src="https://images.unsplash.com/photo-1547024842-7c86b2226ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
+                      alt="Hạ Long"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="rounded-2xl overflow-hidden shadow-2xl h-64">
+                    <ImageWithFallback
+                      src="https://images.unsplash.com/photo-1643030080539-b411caf44c37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
+                      alt="Hội An"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4 pt-8">
+                  <div className="rounded-2xl overflow-hidden shadow-2xl h-64">
+                    <ImageWithFallback
+                      src="https://images.unsplash.com/photo-1694152362587-99d77d21793b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
+                      alt="Sa Pa"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="rounded-2xl overflow-hidden shadow-2xl h-48">
+                    <ImageWithFallback
+                      src="https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
+                      alt="Phú Quốc"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Tại sao chọn WanderLab?</h2>
+              <p className="text-xl text-gray-600">Nền tảng nhật ký du lịch đầu tiên tại Việt Nam với xác thực độ tin cậy</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <BookOpen className="text-white" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Nhật Ký Xác Thực</h3>
+                <p className="text-gray-600">Mọi nhật ký được xác minh bởi cộng đồng, đảm bảo trải nghiệm thực tế và đáng tin cậy.</p>
+              </div>
+              <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <MapPin className="text-white" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Khám Phá Việt Nam</h3>
+                <p className="text-gray-600">Hàng ngàn điểm đến từ 63 tỉnh thành với ngân sách và lịch trình chi tiết.</p>
+              </div>
+              <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Shield className="text-white" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">AI Lập Kế Hoạch</h3>
+                <p className="text-gray-600">Trợ lý AI thông minh giúp bạn lập kế hoạch chuyến đi hoàn hảo trong vài phút.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0]">
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">Sẵn sàng khám phá?</h2>
+            <p className="text-xl text-gray-600 mb-8">Tham gia cộng đồng hàng nghìn du khách Việt Nam đang chia sẻ trải nghiệm mỗi ngày.</p>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
+            >
+              <Sparkles size={24} />
+              Tạo Tài Khoản Miễn Phí
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Authenticated user — social feed
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Stories/Reels Section - Facebook Style */}

@@ -73,9 +73,9 @@ export function JournalPostCard({
             className="w-10 h-10 rounded-full object-cover"
           />
           <div className="flex-1 min-w-0">
-            <Link to={`/profile/${author.name}`} className="font-semibold text-gray-900 hover:text-[#ff3131] transition-colors">
+            <span className="font-semibold text-gray-900">
               {author.name}
-            </Link>
+            </span>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <MapPin size={12} />
               <span className="truncate">{location}</span>

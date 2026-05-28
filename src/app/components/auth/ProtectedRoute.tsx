@@ -15,8 +15,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const { isAuthenticated, user, isLoading } = useAuthStore();
   const location = useLocation();
 
-  // Show nothing while checking auth state
-  if (isLoading) {
+  // While initial auth check is running, show spinner
+  // But if we already have a persisted user, skip the spinner
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FFF5F3]">
         <div className="flex flex-col items-center gap-4">
@@ -28,12 +29,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Not authenticated → redirect to login
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated && !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Role check (e.g., admin-only pages)
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 
@@ -45,10 +46,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
  * Redirects authenticated users to dashboard.
  */
 export function GuestRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
 
-  if (isLoading) {
-    return null;
+  // Don't block while loading — let the page show
+  if (isLoading && !user) {
+    return <>{children}</>;
   }
 
   if (isAuthenticated) {

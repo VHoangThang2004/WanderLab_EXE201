@@ -5,46 +5,57 @@ import { AIChatbot } from './components/wander/AIChatbot';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useAuthStore } from '@/stores';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-// Create a single QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
       retry: 1,
     },
   },
 });
 
 export default function App() {
-  const { refreshSession, setLoading } = useAuthStore();
+  const initDone = useRef(false);
 
   const [isChatPage, setIsChatPage] = useState(
     typeof window !== "undefined" && window.location.pathname === "/chat"
   );
 
-  // Listen for Supabase auth state changes
+  // Initialize auth ONCE on mount
   useEffect(() => {
-    // Check existing session on mount
-    refreshSession();
+    if (initDone.current) return;
+    initDone.current = true;
 
-    // Subscribe to auth changes (login, logout, token refresh)
+    // 1. Check existing session
+    useAuthStore.getState().refreshSession();
+
+    // 2. Listen for future auth changes (logout, token refresh, OAuth callback)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await refreshSession();
-        } else if (event === 'SIGNED_OUT') {
+      (event) => {
+        // Don't interfere with login/register — they handle state themselves.
+        // Only react to sign-out and OAuth/token events.
+        if (event === 'SIGNED_OUT') {
           useAuthStore.getState().setUser(null);
+        } else if (event === 'TOKEN_REFRESHED') {
+          useAuthStore.getState().refreshSession();
         }
-        setLoading(false);
+        // For SIGNED_IN from OAuth redirect (Google/Facebook), refresh session
+        if (event === 'SIGNED_IN') {
+          // Only refresh if we don't already have a user (OAuth callback case)
+          const { isAuthenticated } = useAuthStore.getState();
+          if (!isAuthenticated) {
+            useAuthStore.getState().refreshSession();
+          }
+        }
       }
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [refreshSession, setLoading]);
+  }, []);
 
   // Track current page for chatbot visibility
   useEffect(() => {
