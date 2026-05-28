@@ -14,7 +14,7 @@ import {
   Share2,
   Copy,
   Star,
-  ThumbsUp,
+  Heart,
   MessageCircle,
   TrendingUp,
   ChevronLeft,
@@ -26,12 +26,15 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { DIARY_DATA } from "../../data/diaries";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
+import { interactionService } from "@/api/interactionService";
+import { useAuthStore } from "@/stores";
 
 export function WanderDiaryDetail() {
   const { id } = useParams();
-  const [isSaved, setIsSaved] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"timeline" | "budget" | "tips">("timeline");
   const [heroIndex, setHeroIndex] = useState(0);
 
@@ -40,6 +43,45 @@ export function WanderDiaryDetail() {
     queryKey: ['diary', id],
     queryFn: () => diaryService.fetchDiaryById(id!),
     enabled: !!id
+  });
+
+  const { data: interactionState } = useQuery({
+    queryKey: ['diaryInteraction', id, user?.id],
+    queryFn: async () => {
+      if (!isAuthenticated || !user) return { isLiked: false, isSaved: false };
+      const [isLiked, isSaved] = await Promise.all([
+        interactionService.checkUserLiked(id!, user.id),
+        interactionService.checkUserBookmarked(id!, user.id)
+      ]);
+      return { isLiked, isSaved };
+    },
+    enabled: !!id && isAuthenticated
+  });
+
+  const isLiked = interactionState?.isLiked || false;
+  const isSaved = interactionState?.isSaved || false;
+
+  const likeMutation = useMutation({
+    mutationFn: () => {
+      if (!isAuthenticated || !user) throw new Error("Vui lòng đăng nhập để thích");
+      return interactionService.toggleLikeDiary(id!, user.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaryInteraction', id, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['diary', id] }); // Refresh like count
+    },
+    onError: (err: any) => alert(err.message)
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: () => {
+      if (!isAuthenticated || !user) throw new Error("Vui lòng đăng nhập để lưu");
+      return interactionService.toggleBookmarkDiary(id!, user.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaryInteraction', id, user?.id] });
+    },
+    onError: (err: any) => alert(err.message)
   });
 
   // Lightbox state
@@ -334,7 +376,21 @@ export function WanderDiaryDetail() {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
               <button
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={() => likeMutation.mutate()}
+                disabled={likeMutation.isPending}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                  isLiked
+                    ? "bg-[#FFE8E0] text-[#ff3131]"
+                    : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
+                }`}
+              >
+                <Heart size={20} className={isLiked ? "fill-current" : ""} />
+                {diary.likesCount || 0}
+              </button>
+              
+              <button
+                onClick={() => bookmarkMutation.mutate()}
+                disabled={bookmarkMutation.isPending}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
                   isSaved
                     ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-lg"
@@ -511,59 +567,9 @@ export function WanderDiaryDetail() {
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6 px-1">
                 Bình Luận
-                <span className="ml-3 text-base font-normal text-gray-500">(24 bình luận)</span>
+                <span className="ml-3 text-base font-normal text-gray-500">({diary.commentsCount || 0} bình luận)</span>
               </h3>
-              <CommentsSection
-                comments={[
-                  {
-                    id: "1",
-                    author: {
-                      name: "Trần Văn Minh",
-                      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-                    },
-                    content: "Lịch trình này thật chi tiết! Mình sẽ follow theo cho chuyến đi tháng sau. Cảm ơn bạn đã chia sẻ! 🙏",
-                    timestamp: "2 giờ trước",
-                    likes: 12,
-                    isLiked: false,
-                    replies: [
-                      {
-                        id: "1-1",
-                        author: {
-                          name: diary.author.name,
-                          avatar: diary.author.avatar,
-                        },
-                        content: "Cảm ơn bạn! Chúc bạn có chuyến đi vui vẻ. Nếu có thắc mắc gì cứ hỏi mình nhé!",
-                        timestamp: "1 giờ trước",
-                        likes: 3,
-                      },
-                    ],
-                  },
-                  {
-                    id: "2",
-                    author: {
-                      name: "Lê Thị Hoa",
-                      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-                    },
-                    content: "Ngân sách có hợp lý cho 4 người không bạn? Mình đang lên kế hoạch đi với nhóm bạn.",
-                    timestamp: "5 giờ trước",
-                    likes: 8,
-                    isLiked: true,
-                    replies: [],
-                  },
-                  {
-                    id: "3",
-                    author: {
-                      name: "Phạm Đức Anh",
-                      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-                    },
-                    content: "Mình vừa đi về tuần trước theo lịch trình này, cảnh đẹp quá! Ảnh thật 100% không photoshop. Highly recommend! 📸✨",
-                    timestamp: "1 ngày trước",
-                    likes: 45,
-                    isLiked: false,
-                    replies: [],
-                  },
-                ]}
-              />
+              <CommentsSection diaryId={id!} />
             </div>
           </div>
 

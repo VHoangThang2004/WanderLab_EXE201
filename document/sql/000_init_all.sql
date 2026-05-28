@@ -231,10 +231,46 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('diaries', 'diaries', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
+DROP POLICY IF EXISTS "Cho phép user đăng ảnh" ON storage.objects;
 CREATE POLICY "Cho phép user đăng ảnh"
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'diaries');
 
+DROP POLICY IF EXISTS "Cho phép xem ảnh public" ON storage.objects;
 CREATE POLICY "Cho phép xem ảnh public"
 ON storage.objects FOR SELECT TO public
 USING (bucket_id = 'diaries');
+
+-- 18. Interaction RPCs (Likes/Comments atomic counters)
+CREATE OR REPLACE FUNCTION increment_like(row_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.diaries
+  SET likes_count = likes_count + 1
+  WHERE id = row_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION decrement_like(row_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.diaries
+  SET likes_count = GREATEST(likes_count - 1, 0)
+  WHERE id = row_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION increment_comment(row_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.diaries
+  SET comments_count = comments_count + 1
+  WHERE id = row_id;
+END;
+$$;

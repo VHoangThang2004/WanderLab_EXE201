@@ -17,6 +17,8 @@ interface AuthState {
   loginWithFacebook: () => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 /**
@@ -154,6 +156,28 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch {
           set({ user: null, isAuthenticated: false, isLoading: false });
+        }
+      },
+
+      resetPassword: async (email: string) => {
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+          if (error) throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updatePassword: async (password: string) => {
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase.auth.updateUser({ password });
+          if (error) throw error;
+        } finally {
+          set({ isLoading: false });
         }
       },
     }),

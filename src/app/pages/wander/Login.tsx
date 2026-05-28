@@ -103,7 +103,7 @@ export function WanderLogin() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Nhập mật khẩu của bạn"
+                  placeholder="••••••••"
                   className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
                   disabled={isLoading}
                 />
@@ -127,9 +127,9 @@ export function WanderLogin() {
                 />
                 <span className="text-sm text-gray-700">Ghi nhớ đăng nhập</span>
               </label>
-              <a href="#" className="text-sm font-semibold text-[#ff3131] hover:text-[#ff914d]">
+              <Link to="/forgot-password" className="text-sm font-semibold text-[#ff3131] hover:text-[#ff914d]">
                 Quên mật khẩu?
-              </a>
+              </Link>
             </div>
 
             <button

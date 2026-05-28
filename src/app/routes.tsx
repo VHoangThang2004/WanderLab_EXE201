@@ -2,6 +2,8 @@ import { createBrowserRouter } from "react-router";
 import { WanderLanding } from "./pages/wander/Landing";
 import { WanderLogin } from "./pages/wander/Login";
 import { WanderRegister } from "./pages/wander/Register";
+import { ForgotPassword } from "./pages/auth/ForgotPassword";
+import { ResetPassword } from "./pages/auth/ResetPassword";
 import { WanderGuide } from "./pages/wander/Guide";
 import { WanderDashboard } from "./pages/wander/Dashboard";
 import { WanderFriends } from "./pages/wander/Friends";
@@ -33,6 +35,18 @@ export const router = createBrowserRouter([
         <WanderRegister />
       </GuestRoute>
     ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <GuestRoute>
+        <ForgotPassword />
+      </GuestRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
   },
   // Public standalone routes
   {

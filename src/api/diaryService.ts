@@ -158,6 +158,8 @@ export const diaryService = {
           totalBudget: data.total_budget,
           groupSize: data.group_size,
           description: data.description,
+          likesCount: data.likes_count || 0,
+          commentsCount: data.comments_count || 0,
           timeline: data.timeline?.map((day: any) => ({
             day: day.day_number,
             title: day.title,

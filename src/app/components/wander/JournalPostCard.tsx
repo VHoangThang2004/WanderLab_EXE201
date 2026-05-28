@@ -3,6 +3,8 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { Link } from "react-router";
 import { useState } from "react";
 import { PostModal } from "./PostModal";
+import { useAuthStore } from "@/stores";
+import { interactionService } from "@/api/interactionService";
 
 interface JournalPostCardProps {
   id: string;
@@ -38,14 +40,40 @@ export function JournalPostCard({
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [isSaved, setIsSaved] = useState(initialIsSaved);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!isAuthenticated || !user) {
+      alert("Vui lòng đăng nhập để thích bài viết!");
+      return;
+    }
+    // Optimistic update
     setIsLiked(!isLiked);
     setLikes(isLiked ? likes - 1 : likes + 1);
+    
+    try {
+      await interactionService.toggleLikeDiary(id, user.id);
+    } catch (err) {
+      // Revert if failed
+      setIsLiked(isLiked);
+      setLikes(likes);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!isAuthenticated || !user) {
+      alert("Vui lòng đăng nhập để lưu bài viết!");
+      return;
+    }
+    // Optimistic update
     setIsSaved(!isSaved);
+    
+    try {
+      await interactionService.toggleBookmarkDiary(id, user.id);
+    } catch (err) {
+      // Revert if failed
+      setIsSaved(isSaved);
+    }
   };
 
   const postData = {
