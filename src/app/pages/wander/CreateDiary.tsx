@@ -16,12 +16,20 @@ import {
   BookOpen,
 } from "lucide-react";
 
+import { useNavigate } from "react-router";
+import { diaryService } from "@/api/diaryService";
+import type { CreateDiaryPayload } from "@/types/diary";
+
 type PrivacySetting = "private" | "friends" | "public";
 
 export function WanderCreateDiary() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
   const [isFlipping, setIsFlipping] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string>("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -98,6 +106,57 @@ export function WanderCreateDiary() {
   };
 
   const progressPercentage = (currentStep / totalSteps) * 100;
+
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.location || !coverFile) {
+      alert("Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      // 1. Upload ảnh
+      const coverUrl = await diaryService.uploadDiaryImage(coverFile);
+
+      // 2. Chuẩn bị payload
+      const payload: CreateDiaryPayload = {
+        title: formData.title,
+        location: formData.location,
+        country: "Việt Nam",
+        duration: "Nhiều ngày",
+        dates: `${formData.startDate} - ${formData.endDate}`,
+        total_budget: formData.budget ? `${(parseInt(formData.budget) / 1000000).toFixed(1)} triệu ₫` : "0đ",
+        group_size: `${formData.groupSize} người`,
+        description: formData.description,
+        status: privacySetting === "private" ? "draft" : "published",
+        tips: ["Hãy chuẩn bị kem chống nắng", "Đặt phòng trước 1 tháng"], // Mock tips
+        budget_notes: ["Nên mang theo một ít tiền mặt"],
+        timeline: timeline.map(day => ({
+          day: day.day,
+          title: day.title || `Ngày ${day.day}`,
+          activities: day.activities.filter(a => a.trim() !== ""),
+          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ"
+        })),
+        budget_breakdown: [
+          { category: "Di chuyển", amount: "Vừa phải", percentage: 30 },
+          { category: "Ăn uống", amount: "Phải chăng", percentage: 40 },
+          { category: "Lưu trú", amount: "Giá rẻ", percentage: 30 },
+        ]
+      };
+
+      // 3. Create diary
+      const newDiaryId = await diaryService.createDiary(payload, coverUrl);
+      
+      alert("Đăng nhật ký thành công!");
+      navigate(`/diary/${newDiaryId}`);
+    } catch(err: any) {
+      console.error(err);
+      alert(`Đăng nhật ký thất bại: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const accentColor = "text-[#ff3131]";
   const focusRing = "focus:ring-[#ff3131]";
@@ -517,20 +576,45 @@ export function WanderCreateDiary() {
               {/* Step 4: Media Upload */}
               {currentStep === 4 && (
                 <div className="space-y-0">
-                  <div className={`border-2 border-dashed border-gray-400 rounded-2xl p-12 text-center hover:border-[#ff3131] hover:bg-amber-50/30 transition-all cursor-pointer`} style={{ marginBottom: `${GRID_HEIGHT}px` }}>
-                    <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-                    <p 
-                      className="font-bold text-gray-900"
-                      style={{ lineHeight: LINE_HEIGHT }}
-                    >
-                      📸 Kéo thả ảnh vào đây hoặc nhấn để tải lên
-                    </p>
-                    <p 
-                      className="text-sm text-gray-600"
-                      style={{ lineHeight: LINE_HEIGHT }}
-                    >
-                      Tải lên hình ảnh chất lượng cao từ chuyến đi của bạn (JPG, PNG, tối đa 10MB mỗi ảnh)
-                    </p>
+                  <div 
+                    className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-2xl p-12 text-center transition-all cursor-pointer relative`} 
+                    style={{ marginBottom: `${GRID_HEIGHT}px` }}
+                  >
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setCoverFile(file);
+                          setCoverPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    {coverPreview ? (
+                      <div className="flex flex-col items-center">
+                        <img src={coverPreview} alt="Preview" className="h-32 object-cover rounded-xl mb-3 shadow-md" />
+                        <p className="font-bold text-green-600">Đã chọn ảnh bìa: {coverFile?.name}</p>
+                        <p className="text-sm text-gray-500 mt-1">Nhấn để thay đổi</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="mx-auto mb-4 text-gray-400" size={48} />
+                        <p 
+                          className="font-bold text-gray-900"
+                          style={{ lineHeight: LINE_HEIGHT }}
+                        >
+                          📸 Nhấn vào đây để tải ảnh bìa lên (Bắt buộc)
+                        </p>
+                        <p 
+                          className="text-sm text-gray-600"
+                          style={{ lineHeight: LINE_HEIGHT }}
+                        >
+                          Tải lên hình ảnh chất lượng cao từ chuyến đi của bạn (JPG, PNG, tối đa 10MB)
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500" style={{ marginBottom: `${GRID_HEIGHT}px` }}>
@@ -546,24 +630,6 @@ export function WanderCreateDiary() {
                       <li style={{ lineHeight: LINE_HEIGHT }}>• Chọn một ảnh bìa nổi bật cho nhật ký</li>
                       <li style={{ lineHeight: LINE_HEIGHT }}>• Thêm chú thích để kể câu chuyện đằng sau mỗi bức ảnh</li>
                     </ul>
-                  </div>
-
-                  <div>
-                    <label 
-                      className="block font-bold text-gray-900 mb-0"
-                      style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
-                    >
-                      🖼️ URL Ảnh Bìa (để xem trước)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://example.com/anh-bia.jpg"
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
-                      style={{ 
-                        lineHeight: LINE_HEIGHT, 
-                        height: LINE_HEIGHT,
-                      }}
-                    />
                   </div>
                 </div>
               )}
@@ -648,9 +714,13 @@ export function WanderCreateDiary() {
                     <ChevronRight size={20} />
                   </button>
                 ) : (
-                  <button className={`flex items-center gap-2 px-8 py-3 ${primaryBg} text-white rounded-xl font-semibold hover:shadow-lg transition-all`}>
-                    Đăng Nhật Ký
-                    <Sparkles size={20} />
+                  <button 
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className={`flex items-center gap-2 px-8 py-3 ${primaryBg} text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50`}
+                  >
+                    {isSubmitting ? "Đang Đăng..." : "Đăng Nhật Ký"}
+                    {!isSubmitting && <Sparkles size={20} />}
                   </button>
                 )}
               </div>

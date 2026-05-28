@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { DIARY_DATA } from "../../data/diaries";
+import { useQuery } from "@tanstack/react-query";
+import { diaryService } from "@/api/diaryService";
 
 export function WanderDiaryDetail() {
   const { id } = useParams();
@@ -33,13 +35,31 @@ export function WanderDiaryDetail() {
   const [activeTab, setActiveTab] = useState<"timeline" | "budget" | "tips">("timeline");
   const [heroIndex, setHeroIndex] = useState(0);
 
+  // Fetch from API
+  const { data: diary, isLoading } = useQuery({
+    queryKey: ['diary', id],
+    queryFn: () => diaryService.fetchDiaryById(id!),
+    enabled: !!id
+  });
+
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<{ url: string; caption?: string; reviewer?: string }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const diary = DIARY_DATA[id as string] ?? DIARY_DATA["1"];
-  const heroImages = [diary.image, ...diary.gallery];
+  if (isLoading || !diary) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <WanderNav />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">Đang tải nhật ký...</p>
+        </div>
+        <WanderFooter />
+      </div>
+    );
+  }
+
+  const heroImages = [diary.image, ...(diary.gallery || [])];
 
   const activeTabClass = "text-[#ff3131] border-b-2 border-[#ff3131]";
   const inactiveTabClass = "text-gray-500 hover:text-gray-700";

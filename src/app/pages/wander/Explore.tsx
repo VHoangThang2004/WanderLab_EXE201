@@ -6,7 +6,9 @@ import {
   Map, X, ChevronDown, ChevronUp, Check, RotateCcw,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-import { VIETNAMESE_DESTINATIONS, TRAVEL_STYLES, ALL_INTERESTS, DURATION_OPTIONS } from "../../data/destinations";
+import { useQuery } from "@tanstack/react-query";
+import { diaryService } from "@/api/diaryService";
+import { TRAVEL_STYLES, ALL_INTERESTS, DURATION_OPTIONS } from "../../data/destinations";
 
 const PRICE_MIN = 5;   // triệu VNĐ
 const PRICE_MAX = 50;
@@ -15,6 +17,12 @@ export function WanderExplore() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+
+  // Fetch diaries from API
+  const { data: allDiaries = [], isLoading } = useQuery({
+    queryKey: ['exploreDiaries'],
+    queryFn: diaryService.fetchExploreDiaries,
+  });
 
   // Filter states
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
@@ -101,43 +109,20 @@ export function WanderExplore() {
 
   const durOpt = DURATION_OPTIONS.find((d) => d.label === selectedDuration)!;
 
-  const filteredDiaries = VIETNAMESE_DESTINATIONS.filter((d) => {
+  const filteredDiaries = allDiaries.filter((d) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const match = d.title.toLowerCase().includes(q) ||
-        d.location.toLowerCase().includes(q) ||
-        d.country.toLowerCase().includes(q);
+      const match = d.title?.toLowerCase().includes(q) ||
+        d.location?.toLowerCase().includes(q) ||
+        d.country?.toLowerCase().includes(q);
       if (!match) return false;
     }
-    if (selectedStyles.length && !selectedStyles.includes(d.style)) return false;
-    if (selectedInterests.length && !selectedInterests.some((i) => d.interests.includes(i))) return false;
+    if (selectedStyles.length && d.style && !selectedStyles.includes(d.style)) return false;
+    if (selectedInterests.length && d.interests && !selectedInterests.some((i) => d.interests.includes(i))) return false;
     if (d.budgetNum < priceRange[0] || d.budgetNum > priceRange[1]) return false;
     if (selectedDuration !== "Tất cả" && (d.durationDays < durOpt.min || d.durationDays > durOpt.max)) return false;
     return true;
   });
-
-  // After imports, update the explore data to use journal style
-  const exploreJournals = VIETNAMESE_DESTINATIONS.map((dest) => ({
-    id: dest.id || dest.name,
-    author: {
-      name: dest.bestMonth ? "Nguyễn Thị Mai" : "Trần Văn Minh",
-      avatar: dest.bestMonth 
-        ? "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
-        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: dest.image,
-    location: dest.name,
-    date: dest.bestMonth || "Tháng 6, 2026",
-    caption: dest.highlight || `Khám phá vẻ đẹp tuyệt vời của ${dest.name}. Một trải nghiệm du lịch khó quên với cảnh đẹp thiên nhiên và văn hóa địa phương độc đáo.`,
-    likes: Math.floor(Math.random() * 500) + 100,
-    comments: Math.floor(Math.random() * 80) + 10,
-    isLiked: false,
-    isSaved: false,
-    groupSize: `${Math.floor(Math.random() * 4) + 1} người`,
-    budget: dest.budget,
-    duration: dest.duration,
-    trustScore: Math.floor(Math.random() * 10) + 90,
-  }));
 
   return (
     <div className="min-h-screen bg-white">

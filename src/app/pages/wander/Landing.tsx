@@ -5,110 +5,13 @@ import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen } from "lucide-
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useAuthStore } from "@/stores";
 
-// Travel memory posts from friends - social feed style
-const travelFeed = [
-  {
-    id: "1",
-    author: {
-      name: "Nguyễn Thị Mai",
-      avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1547024842-7c86b2226ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Vịnh Hạ Long, Quảng Ninh",
-    date: "20 tháng 6, 2026",
-    caption: "5 ngày trên vịnh Hạ Long thật không thể quên! Sáng sớm nhìn mặt trời mọc từ boong tàu, không khí trong lành và cảnh đẹp như tranh vẽ. Chèo kayak qua những hang động nhỏ, tắm biển ở đảo Ti Tốp, và ngắm hoàng hôn lãng mạn. Đây thực sự là thiên đường trên mặt đất! 🌅⛵",
-    likes: 324,
-    comments: 47,
-    isLiked: false,
-    isSaved: false,
-    groupSize: "2 người",
-  },
-  {
-    id: "2",
-    author: {
-      name: "Trần Thị H��ơng",
-      avatar: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Đảo Phú Quốc, Kiên Giang",
-    date: "5 tháng 7, 2026",
-    caption: "Phú Quốc quả không hổ danh là đảo ngọc! Nước biển trong xanh như pha lê, cát trắng mịn màng. Đi cáp treo Hòn Thơm dài nhất thế giới, lặn ngắm san hô tuyệt đẹp, và ăn ghẹ Hàm Ninh nướng đến tận khuya. Mỗi khoảnh khắc đều đáng nhớ! 🏝️🐚",
-    likes: 256,
-    comments: 38,
-    isLiked: true,
-    isSaved: true,
-    groupSize: "2 người",
-  },
-  {
-    id: "3",
-    author: {
-      name: "Lê Văn Tuấn",
-      avatar: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1694152362587-99d77d21793b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Sa Pa, Lào Cai",
-    date: "18 tháng 9, 2026",
-    caption: "Tháng 9 đến Sa Pa chính là thời điểm vàng! Ruộng bậc thang chuyển màu vàng óng tuyệt đẹp như tranh. Trek qua các bản làng H'Mông, gặp những nụ cưi thật thà và chân thành. Chinh phục Fansipan 3143m - cảm giác đứng trên nóc nhà Đông Dương thật tuyệt vời! 🌾⛰️",
-    likes: 412,
-    comments: 62,
-    isLiked: false,
-    isSaved: false,
-    groupSize: "3 người",
-  },
-  {
-    id: "4",
-    author: {
-      name: "Trần Phương Linh",
-      avatar: "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1643030080539-b411caf44c37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Hội An, Quảng Nam",
-    date: "14 tháng 4, 2026",
-    caption: "Đêm rằm Hội An lung linh huyền ảo với hàng ngàn chiếc đèn lồng! Dạo phố cổ, học làm cao lầu và mì Quảng, thả hoa đăng trên sông Hoài. Cảm giác như lạc vào thế giới cổ tích. Hội An về đêm đẹp đến nao lòng! 🏮✨",
-    likes: 389,
-    comments: 51,
-    isLiked: true,
-    isSaved: false,
-    groupSize: "2 người",
-  },
-  {
-    id: "5",
-    author: {
-      name: "Phạm Minh Anh",
-      avatar: "https://images.unsplash.com/photo-1552058544-f2b08422138a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/flagged/photo-1583863374731-4224cbbc8c36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Đà Nẵng",
-    date: "10 tháng 3, 2026",
-    caption: "Đà Nẵng - thành phố đáng sống nhất Việt Nam! Cầu Rồng phun lửa cuối tuần, chill trên bãi Mỹ Khê tuyệt đẹp, leo Bà Nà Hills ngắm Cầu Vàng nổi tiếng. Ăn hải sản tươi rói và uống cà phê ngắm biển. Perfect weekend getaway! 🌊🍤",
-    likes: 298,
-    comments: 43,
-    isLiked: false,
-    isSaved: true,
-    groupSize: "4 người",
-  },
-  {
-    id: "6",
-    author: {
-      name: "Võ Thị Lan",
-      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1727860628226-2d545134f8a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Hà Nội",
-    date: "25 tháng 2, 2026",
-    caption: "7 ngày khám phá thủ đô ngàn năm văn hiến. Phố cổ Hà Nội với bún chả, phở, cà phê trứng đỉnh của chóp. Hồ Hoàn Kiếm yên bình buổi sáng, Văn Miếu Quốc Tử Giám cổ kính. Mỗi góc phố đều có câu chuyện riêng! 🏛️☕",
-    likes: 267,
-    comments: 35,
-    isLiked: false,
-    isSaved: false,
-    groupSize: "1 người",
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { diaryService } from "@/api/diaryService";
 
 // Suggested travelers to follow
 const suggestedTravelers = [
   {
-    name: "Nguyn Thị Mai",
+    name: "Nguyễn Thị Mai",
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
     location: "Hà Nội",
     diariesCount: 15,
@@ -126,6 +29,30 @@ const suggestedTravelers = [
   {
     name: "Trần Phương Linh",
     avatar: "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Đà Nẵng",
+    diariesCount: 18,
+    followersCount: 4200,
+    isFollowing: true,
+  },
+];
+
+// Trending destinations
+const trendingDestinations = [
+  { name: "Vịnh Hạ Long", count: "1,234 nhật ký" },
+  { name: "Phú Quốc", count: "987 nhật ký" },
+  { name: "Sa Pa", count: "856 nhật ký" },
+  { name: "Hội An", count: "723 nhật ký" },
+  { name: "Đà Lạt", count: "654 nhật ký" },
+];
+
+export function WanderLanding() {
+  const { isAuthenticated } = useAuthStore();
+
+  const { data: feedDiaries, isLoading } = useQuery({
+    queryKey: ['feedDiaries'],
+    queryFn: diaryService.fetchFeedDiaries,
+    enabled: isAuthenticated,
+  });5951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
     location: "Đà Nẵng",
     diariesCount: 18,
     followersCount: 4200,
@@ -466,9 +393,15 @@ export function WanderLanding() {
 
           {/* Journal Posts Feed */}
           <div className="space-y-6">
-            {travelFeed.map((post) => (
-              <JournalPostCard key={post.id} {...post} />
-            ))}
+            {isLoading ? (
+              <div className="text-center py-10 text-gray-500">Đang tải nhật ký...</div>
+            ) : feedDiaries?.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">Chưa có nhật ký nào được chia sẻ.</div>
+            ) : (
+              feedDiaries?.map((post) => (
+                <JournalPostCard key={post.id} {...post} />
+              ))
+            )}
           </div>
 
           {/* Load More */}
