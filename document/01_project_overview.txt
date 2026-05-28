@@ -1,0 +1,162 @@
+================================================================================
+                        WANDERLAB - TỔNG QUAN DỰ ÁN
+================================================================================
+
+Tên dự án      : WanderLab
+Môn học         : EXE201 - Entrepreneurship
+Trường          : FPT Education
+Phiên bản       : Ver5 (Full-Stack)
+Figma gốc       : https://www.figma.com/design/eDaESMChPbgzQvIVEyznxz/WanderLab-Ver5
+
+================================================================================
+1. MÔ TẢ DỰ ÁN
+================================================================================
+
+WanderLab là nền tảng mạng xã hội du lịch thông minh dành cho người Việt,
+kết hợp giữa:
+  - Nhật ký du lịch (Travel Journal) để chia sẻ trải nghiệm thực tế
+  - AI Trip Planner để tự động lập kế hoạch chuyến đi
+  - Cộng đồng du khách (Social Network) để kết nối và trao đổi
+
+Mục tiêu: Giải quyết vấn đề thông tin du lịch rời rạc, thiếu tin cậy
+bằng cách tạo một nền tảng tập trung với nội dung được xác minh từ
+cộng đồng và hỗ trợ bởi AI.
+
+================================================================================
+2. ĐỐI TƯỢNG NGƯỜI DÙNG
+================================================================================
+
++-------------------+-------------------------------------------+
+| Vai trò           | Mô tả                                     |
++-------------------+-------------------------------------------+
+| Explorer          | Du khách, xem nhật ký, tìm kiếm, lưu     |
+| Planner           | Người lập kế hoạch, dùng AI tạo lịch trình|
+| Local Provider    | Đối tác dịch vụ (homestay, tour, quán ăn) |
+| Admin             | Quản trị viên hệ thống                    |
++-------------------+-------------------------------------------+
+
+================================================================================
+3. TÍNH NĂNG CHÍNH
+================================================================================
+
+3.1. Nhật Ký Du Lịch (Travel Diary)
+    - Tạo nhật ký với timeline ngày, ảnh, ngân sách
+    - Đánh giá độ tin cậy (Trust Score) dựa trên AI
+    - Like, comment, bookmark, chia sẻ
+    - Explore & tìm kiếm theo địa điểm, phong cách, ngân sách
+
+3.2. AI Trip Planner
+    - Chatbot tư vấn du lịch (WanderBot)
+    - Tự động tạo lịch trình theo sở thích, ngân sách, thời gian
+    - Gợi ý điểm đến dựa trên hành vi người dùng
+
+3.3. Mạng Xã Hội
+    - Hồ sơ cá nhân, theo dõi người dùng
+    - Feed nhật ký (Landing page)
+    - Chat trực tiếp giữa người dùng
+    - Bạn bè & gợi ý kết nối
+
+3.4. Đối Tác & Kinh Doanh
+    - Trang giới thiệu đối tác (Partner page)
+    - Gói subscription (Free / Starter / Professional)
+    - Thanh toán VNPay/MoMo
+    - Trang Checkout
+
+3.5. Quản Trị (Admin)
+    - Dashboard thống kê tổng quan
+    - Quản lý người dùng & đối tác
+    - Kiểm duyệt nội dung (AI-assisted)
+    - Giám sát hệ thống AI
+
+================================================================================
+4. TECH STACK
+================================================================================
+
+Frontend:
+  - React 18 + TypeScript
+  - Vite 6.3 (Build tool)
+  - TailwindCSS v4 + shadcn/ui (Styling)
+  - React Router v7 (Routing)
+  - Zustand (State Management)
+  - TanStack React Query (API caching)
+  - Axios (HTTP client)
+  - Motion (Framer Motion - Animations)
+  - Lucide React (Icons)
+
+Backend:
+  - Supabase (BaaS - Backend as a Service)
+    + PostgreSQL (Database)
+    + Auth (Authentication - Email/Google/Facebook)
+    + Storage (File upload - ảnh/video)
+    + Realtime (WebSocket cho chat)
+    + Edge Functions (Business logic)
+
+AI:
+  - Google Gemini API (Chatbot + Itinerary generation)
+
+Payment:
+  - VNPay Sandbox (Thanh toán)
+
+Deployment:
+  - Vercel (Frontend hosting)
+  - Supabase Cloud (Backend hosting)
+
+================================================================================
+5. CẤU TRÚC FOLDER
+================================================================================
+
+WanderLab/
+├── document/                   # Tài liệu dự án
+│   ├── 01_project_overview.txt # Tổng quan (file này)
+│   ├── 02_database_schema.txt  # Thiết kế database
+│   ├── 03_api_endpoints.txt    # Danh sách API
+│   ├── 04_implementation_roadmap.txt # Lộ trình thực hiện
+│   └── 05_deployment_guide.txt # Hướng dẫn deploy
+├── src/
+│   ├── api/                    # API client (Axios)
+│   ├── app/
+│   │   ├── components/         # React components
+│   │   │   ├── auth/           # ProtectedRoute, GuestRoute
+│   │   │   ├── common/         # ErrorBoundary, LoadingSpinner, EmptyState
+│   │   │   ├── figma/          # Components từ Figma export
+│   │   │   ├── ui/             # shadcn/ui components (48 components)
+│   │   │   └── wander/         # Custom WanderLab components
+│   │   ├── data/               # Mock data (sẽ thay bằng API)
+│   │   ├── hooks/              # Custom React hooks
+│   │   ├── pages/wander/       # 14 trang chính
+│   │   ├── routes.tsx          # Route configuration
+│   │   └── App.tsx             # Root component
+│   ├── lib/                    # Supabase client config
+│   ├── stores/                 # Zustand state management
+│   ├── styles/                 # Global CSS
+│   ├── types/                  # TypeScript interfaces
+│   └── utils/                  # Utility functions
+├── .env.example                # Template biến môi trường
+├── package.json                # Dependencies
+├── vite.config.ts              # Vite config
+└── README.md                   # Hướng dẫn chạy project
+
+================================================================================
+6. DANH SÁCH TRANG (14 Pages)
+================================================================================
+
++-----+--------------------+-----------------------+----------------------------+
+| STT | Route              | Page Component        | Mô tả                     |
++-----+--------------------+-----------------------+----------------------------+
+|  1  | /                  | Landing               | Trang chủ, feed nhật ký    |
+|  2  | /login             | Login                 | Đăng nhập                  |
+|  3  | /register          | Register              | Đăng ký                    |
+|  4  | /guide             | Guide                 | Hướng dẫn sử dụng         |
+|  5  | /dashboard         | Dashboard             | Hồ sơ cá nhân             |
+|  6  | /explore           | Explore               | Khám phá nhật ký           |
+|  7  | /create            | CreateDiary            | Tạo nhật ký mới            |
+|  8  | /diary/:id         | DiaryDetail            | Chi tiết nhật ký           |
+|  9  | /create-itinerary  | CreateItinerary        | AI lập lịch trình          |
+| 10  | /friends           | Friends                | Danh sách bạn bè           |
+| 11  | /chat              | ChatPage               | Nhắn tin                   |
+| 12  | /partner           | Partner                | Đối tác & bảng giá         |
+| 13  | /checkout          | Checkout               | Thanh toán subscription    |
+| 14  | /admin-dashboard   | AdminDashboard         | Quản trị hệ thống         |
++-----+--------------------+-----------------------+----------------------------+
+
+================================================================================

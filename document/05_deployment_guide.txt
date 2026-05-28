@@ -1,0 +1,213 @@
+================================================================================
+                   WANDERLAB - HƯỚNG DẪN DEPLOYMENT
+================================================================================
+
+================================================================================
+1. YÊU CẦU HỆ THỐNG
+================================================================================
+
+  Development:
+    - Node.js >= 18.x
+    - npm >= 9.x
+    - Git
+
+  Accounts cần tạo:
+    - Supabase    : https://supabase.com     (Database + Auth + Storage)
+    - Vercel      : https://vercel.com        (Frontend hosting)
+    - Google Cloud: https://console.cloud.google.com (OAuth + Gemini API)
+    - VNPay       : https://sandbox.vnpayment.vn    (Payment sandbox)
+
+================================================================================
+2. SETUP SUPABASE
+================================================================================
+
+  Bước 1: Tạo project
+    - Vào https://supabase.com → New Project
+    - Tên: wanderlab
+    - Region: Southeast Asia (Singapore)
+    - Password: <đặt mật khẩu DB>
+
+  Bước 2: Lấy credentials
+    - Vào Settings → API
+    - Copy:
+      + Project URL     → VITE_SUPABASE_URL
+      + anon public key → VITE_SUPABASE_ANON_KEY
+
+  Bước 3: Tạo Database Tables
+    - Vào SQL Editor
+    - Copy toàn bộ SQL từ file document/02_database_schema.txt
+    - Chạy từng block CREATE TABLE
+
+  Bước 4: Cấu hình Auth
+    - Vào Authentication → Providers
+    - Bật Email auth
+    - Bật Google:
+      + Tạo OAuth Client ID trên Google Cloud Console
+      + Paste Client ID + Client Secret vào Supabase
+    - Bật Facebook:
+      + Tạo App trên Facebook Developers
+      + Paste App ID + App Secret vào Supabase
+
+  Bước 5: Tạo Storage Buckets
+    - Vào Storage → New Bucket
+    - Tạo 4 buckets:
+      + avatars  (public)
+      + covers   (public)
+      + diaries  (public)
+      + messages (private - authenticated only)
+
+  Bước 6: Deploy Edge Functions
+    - Cài Supabase CLI:
+        npm install -g supabase
+    - Login:
+        supabase login
+    - Link project:
+        supabase link --project-ref <your-project-ref>
+    - Deploy:
+        supabase functions deploy ai-chat
+        supabase functions deploy ai-itinerary
+        supabase functions deploy payment-create
+        supabase functions deploy payment-callback
+
+================================================================================
+3. SETUP GOOGLE OAUTH & GEMINI API
+================================================================================
+
+  Google OAuth:
+    1. Vào https://console.cloud.google.com
+    2. APIs & Services → Credentials → Create OAuth Client ID
+    3. Application type: Web application
+    4. Authorized redirect URIs:
+       - https://<project-ref>.supabase.co/auth/v1/callback
+       - http://localhost:5173 (development)
+    5. Copy Client ID + Client Secret → Supabase Auth settings
+
+  Gemini API:
+    1. Vào https://aistudio.google.com/apikey
+    2. Create API Key
+    3. Copy → VITE_GEMINI_API_KEY trong .env
+
+================================================================================
+4. SETUP VNPAY SANDBOX
+================================================================================
+
+  1. Đăng ký tài khoản merchant:
+     https://sandbox.vnpayment.vn/merchantv2/
+  2. Lấy thông tin test:
+     - vnp_TmnCode: (merchant code)
+     - vnp_HashSecret: (secret key)
+  3. Thêm vào Supabase Edge Function secrets:
+     supabase secrets set VNPAY_TMN_CODE=<code>
+     supabase secrets set VNPAY_HASH_SECRET=<secret>
+
+  Thẻ test:
+    Ngân hàng : NCB
+    Số thẻ    : 9704198526191432198
+    Tên       : NGUYEN VAN A
+    Ngày      : 07/15
+    OTP       : 123456
+
+================================================================================
+5. CẤU HÌNH BIẾN MÔI TRƯỜNG
+================================================================================
+
+  File .env (trong thư mục gốc project):
+
+    # Supabase
+    VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+    VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    # AI (Gemini)
+    VITE_GEMINI_API_KEY=AIzaSy...
+
+    # API Base (nếu dùng separate backend)
+    VITE_API_BASE_URL=/api
+
+  LƯU Ý: KHÔNG commit file .env lên Git!
+  Thêm .env vào .gitignore
+
+================================================================================
+6. DEPLOY FRONTEND LÊN VERCEL
+================================================================================
+
+  Bước 1: Push code lên GitHub
+    git init
+    git add .
+    git commit -m "Initial commit"
+    git remote add origin https://github.com/<user>/wanderlab.git
+    git push -u origin main
+
+  Bước 2: Import project trên Vercel
+    - Vào https://vercel.com → Import Git Repository
+    - Chọn repo wanderlab
+    - Framework Preset: Vite
+    - Build Command: npm run build
+    - Output Directory: dist
+
+  Bước 3: Thêm Environment Variables trên Vercel
+    - VITE_SUPABASE_URL
+    - VITE_SUPABASE_ANON_KEY
+    - VITE_GEMINI_API_KEY
+
+  Bước 4: Deploy
+    - Vercel tự động deploy khi push code lên main
+    - Preview deployments cho mỗi pull request
+
+  Bước 5: Custom Domain (tuỳ chọn)
+    - Vào Settings → Domains → Add Domain
+    - Ví dụ: wanderlab.vn
+    - Cấu hình DNS records theo hướng dẫn
+
+================================================================================
+7. CHẠY PROJECT LOCAL (DEVELOPMENT)
+================================================================================
+
+  # 1. Clone repo
+  git clone https://github.com/<user>/wanderlab.git
+  cd wanderlab
+
+  # 2. Cài dependencies
+  npm install
+
+  # 3. Tạo file .env từ template
+  cp .env.example .env
+  # Điền credentials vào .env
+
+  # 4. Chạy development server
+  npm run dev
+
+  # 5. Mở trình duyệt
+  # http://localhost:5173
+
+================================================================================
+8. CÁC LỆNH HỮU ÍCH
+================================================================================
+
+  npm run dev          Chạy dev server (hot reload)
+  npm run build        Build production bundle
+  npm run preview      Preview production build locally
+
+  supabase start       Chạy Supabase local (Docker)
+  supabase db reset    Reset local database
+  supabase functions serve   Chạy Edge Functions local
+
+================================================================================
+9. TROUBLESHOOTING
+================================================================================
+
+  Lỗi: "Supabase credentials not found"
+  → Kiểm tra file .env có VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY
+
+  Lỗi: "Auth: Invalid login credentials"
+  → Kiểm tra email/password, hoặc user chưa confirm email
+
+  Lỗi: "RLS policy violation"
+  → Kiểm tra Row Level Security policies trên Supabase Dashboard
+
+  Lỗi: "Storage: Object not found"
+  → Kiểm tra bucket đã tạo và cấu hình policy đúng
+
+  Lỗi: CORS
+  → Thêm domain vào Supabase → Settings → API → Additional redirect URLs
+
+================================================================================

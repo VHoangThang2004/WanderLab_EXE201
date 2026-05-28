@@ -1,0 +1,276 @@
+================================================================================
+                      WANDERLAB - DANH SÁCH API ENDPOINTS
+================================================================================
+
+Base URL: https://<project-ref>.supabase.co (Supabase REST API)
+          hoặc /api (nếu dùng Edge Functions)
+Auth    : Bearer Token (Supabase JWT)
+
+================================================================================
+1. AUTHENTICATION (Supabase Auth)
+================================================================================
+
+  POST   /auth/v1/signup
+         Body: { email, password, data: { full_name } }
+         Res:  { user, session }
+         Mô tả: Đăng ký tài khoản mới
+
+  POST   /auth/v1/token?grant_type=password
+         Body: { email, password }
+         Res:  { access_token, refresh_token, user }
+         Mô tả: Đăng nhập bằng email/password
+
+  POST   /auth/v1/token?grant_type=refresh_token
+         Body: { refresh_token }
+         Res:  { access_token, refresh_token }
+         Mô tả: Refresh JWT token
+
+  GET    /auth/v1/user
+         Headers: Authorization: Bearer <token>
+         Res:  { user }
+         Mô tả: Lấy thông tin user hiện tại
+
+  POST   /auth/v1/logout
+         Mô tả: Đăng xuất
+
+  GET    /auth/v1/authorize?provider=google
+         Mô tả: Đăng nhập bằng Google OAuth
+
+  GET    /auth/v1/authorize?provider=facebook
+         Mô tả: Đăng nhập bằng Facebook OAuth
+
+  POST   /auth/v1/recover
+         Body: { email }
+         Mô tả: Gửi email đặt lại mật khẩu
+
+================================================================================
+2. PROFILES (Supabase REST - /rest/v1/profiles)
+================================================================================
+
+  GET    /rest/v1/profiles?id=eq.<id>&select=*
+         Mô tả: Lấy profile theo ID
+
+  GET    /rest/v1/profiles?select=*&order=reputation_score.desc&limit=10
+         Mô tả: Top users
+
+  PATCH  /rest/v1/profiles?id=eq.<id>
+         Body: { full_name, bio, location, avatar_url, cover_image_url }
+         Mô tả: Cập nhật profile (chỉ chủ sở hữu)
+
+================================================================================
+3. DIARIES (Supabase REST - /rest/v1/diaries)
+================================================================================
+
+  GET    /rest/v1/diaries?status=eq.published&select=*,author:profiles(*)
+         &order=created_at.desc&limit=10&offset=0
+         Mô tả: Feed nhật ký (paginated)
+
+  GET    /rest/v1/diaries?id=eq.<id>&select=*,
+         author:profiles(*),
+         diary_images(*),
+         diary_days(*),
+         budget_items(*),
+         comments(*, author:profiles(*))
+         Mô tả: Chi tiết nhật ký (kèm ảnh, timeline, budget, comments)
+
+  POST   /rest/v1/diaries
+         Body: { author_id, title, location, description, ... }
+         Mô tả: Tạo nhật ký mới
+
+  PATCH  /rest/v1/diaries?id=eq.<id>
+         Body: { title, description, status, ... }
+         Mô tả: Cập nhật nhật ký
+
+  DELETE /rest/v1/diaries?id=eq.<id>
+         Mô tả: Xóa nhật ký
+
+  --- Filters (query params) ---
+  ?location=ilike.*Phú Quốc*          Tìm theo địa điểm
+  ?status=eq.published                 Lọc theo trạng thái
+  ?order=likes_count.desc              Sắp xếp theo lượt thích
+  ?order=trust_score.desc              Sắp xếp theo độ tin cậy
+
+================================================================================
+4. SOCIAL INTERACTIONS
+================================================================================
+
+  --- Likes ---
+  POST   /rest/v1/likes
+         Body: { user_id, diary_id }
+         Mô tả: Like nhật ký
+
+  DELETE /rest/v1/likes?user_id=eq.<uid>&diary_id=eq.<did>
+         Mô tả: Unlike
+
+  GET    /rest/v1/likes?diary_id=eq.<did>&select=count
+         Mô tả: Đếm likes
+
+  --- Bookmarks ---
+  POST   /rest/v1/bookmarks
+         Body: { user_id, diary_id }
+
+  DELETE /rest/v1/bookmarks?user_id=eq.<uid>&diary_id=eq.<did>
+
+  GET    /rest/v1/bookmarks?user_id=eq.<uid>&select=diary_id,diaries(*)
+         Mô tả: Danh sách đã lưu
+
+  --- Comments ---
+  POST   /rest/v1/comments
+         Body: { diary_id, author_id, content, parent_id? }
+
+  DELETE /rest/v1/comments?id=eq.<id>
+
+  --- Follows ---
+  POST   /rest/v1/follows
+         Body: { follower_id, following_id }
+
+  DELETE /rest/v1/follows?follower_id=eq.<uid>&following_id=eq.<uid2>
+
+  GET    /rest/v1/follows?follower_id=eq.<uid>&select=following:profiles(*)
+         Mô tả: Danh sách đang theo dõi
+
+  GET    /rest/v1/follows?following_id=eq.<uid>&select=follower:profiles(*)
+         Mô tả: Danh sách người theo dõi
+
+================================================================================
+5. ITINERARIES
+================================================================================
+
+  GET    /rest/v1/itineraries?user_id=eq.<uid>&order=created_at.desc
+         Mô tả: Lịch trình đã lưu của user
+
+  POST   /rest/v1/itineraries
+         Body: { user_id, destination, duration, days, budget_breakdown, ... }
+         Mô tả: Lưu lịch trình
+
+  DELETE /rest/v1/itineraries?id=eq.<id>
+         Mô tả: Xóa lịch trình
+
+================================================================================
+6. CHAT & MESSAGING (Supabase Realtime)
+================================================================================
+
+  GET    /rest/v1/conversations?select=*,
+         conversation_members(user:profiles(*)),
+         messages(order(created_at.desc).limit(1))
+         Mô tả: Danh sách conversations
+
+  POST   /rest/v1/conversations
+         Body: { type: "direct" }
+         + POST /rest/v1/conversation_members (2 records)
+         Mô tả: Tạo conversation mới
+
+  GET    /rest/v1/messages?conversation_id=eq.<cid>
+         &order=created_at.asc&limit=50
+         Mô tả: Lấy messages
+
+  POST   /rest/v1/messages
+         Body: { conversation_id, sender_id, content, image_url? }
+         Mô tả: Gửi tin nhắn
+
+  --- Realtime subscription ---
+  supabase.channel('messages')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+      filter: `conversation_id=eq.${conversationId}`
+    }, callback)
+    .subscribe()
+
+================================================================================
+7. AI CHATBOT (Edge Function)
+================================================================================
+
+  POST   /functions/v1/ai-chat
+         Body: {
+           message: "Tôi muốn đi Phú Quốc 5 ngày...",
+           history: [
+             { role: "user", content: "..." },
+             { role: "assistant", content: "..." }
+           ]
+         }
+         Res: {
+           reply: "Phú Quốc 5 ngày rất tuyệt...",
+           suggestions: ["Xem lịch trình", "Tìm nhật ký"],
+           itinerary: { ... }  // optional
+         }
+         Mô tả: Chat với WanderBot (Gemini API)
+
+  POST   /functions/v1/ai-itinerary
+         Body: {
+           destination: "Phú Quốc",
+           duration_days: 5,
+           budget_level: "medium",
+           group_size: 2,
+           interests: ["Biển", "Ẩm thực"]
+         }
+         Res: {
+           itinerary: { destination, days, budget_breakdown, ... },
+           ai_notes: "Lịch trình phù hợp cho..."
+         }
+         Mô tả: AI tự động tạo lịch trình
+
+================================================================================
+8. PAYMENTS (Edge Function)
+================================================================================
+
+  POST   /functions/v1/payment-create
+         Body: { plan_key: "starter", payment_method: "vnpay" }
+         Res:  { payment_url: "https://sandbox.vnpayment.vn/..." }
+         Mô tả: Tạo link thanh toán VNPay
+
+  POST   /functions/v1/payment-callback (VNPay IPN)
+         Mô tả: VNPay gọi callback khi thanh toán xong
+
+  GET    /functions/v1/payment-return?vnp_ResponseCode=00&...
+         Mô tả: User redirect về sau khi thanh toán
+
+================================================================================
+9. FILE UPLOAD (Supabase Storage)
+================================================================================
+
+  POST   /storage/v1/object/avatars/<userId>/<fileName>
+         Headers: Content-Type: image/jpeg
+         Body: <binary file>
+         Mô tả: Upload avatar
+
+  POST   /storage/v1/object/covers/<userId>/<fileName>
+         Mô tả: Upload cover image
+
+  POST   /storage/v1/object/diaries/<diaryId>/<fileName>
+         Mô tả: Upload ảnh nhật ký
+
+  DELETE /storage/v1/object/diaries/<diaryId>/<fileName>
+         Mô tả: Xóa ảnh
+
+  --- Storage Buckets cần tạo ---
+  avatars     : public
+  covers      : public
+  diaries     : public
+  messages    : authenticated
+
+================================================================================
+10. ADMIN (Edge Function hoặc RLS admin check)
+================================================================================
+
+  GET    /functions/v1/admin-stats
+         Res: { total_users, total_diaries, active_users_30d, ... }
+         Mô tả: Dashboard statistics
+
+  GET    /rest/v1/profiles?select=*&order=created_at.desc
+         (Admin RLS policy)
+         Mô tả: Quản lý tất cả users
+
+  PATCH  /rest/v1/profiles?id=eq.<id>
+         Body: { status: "suspended" }
+         Mô tả: Đình chỉ user
+
+  GET    /rest/v1/diaries?status=eq.pending&select=*,author:profiles(*)
+         Mô tả: Nhật ký chờ duyệt
+
+  PATCH  /rest/v1/diaries?id=eq.<id>
+         Body: { status: "published" } hoặc { status: "removed" }
+         Mô tả: Duyệt hoặc xóa nhật ký
+
+================================================================================

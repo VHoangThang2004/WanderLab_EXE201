@@ -1,0 +1,195 @@
+================================================================================
+                  WANDERLAB - LỘ TRÌNH THỰC HIỆN (ROADMAP)
+================================================================================
+
+Tổng thời gian dự kiến: 10 Sprints x 1 tuần = 10 tuần
+Phương pháp: Agile Scrum (Sprint-based)
+
+================================================================================
+PHASE 1: FOUNDATION (Sprint 1-2) — NỀN TẢNG
+================================================================================
+
+--- Sprint 1: Setup & Dọn dẹp (HOÀN THÀNH ✅) ---
+
+  [x] Cài đặt dependencies mới:
+      - zustand (state management)
+      - @tanstack/react-query (API caching)
+      - axios (HTTP client)
+      - @supabase/supabase-js (backend SDK)
+
+  [x] Dọn dẹp legacy code:
+      - Xóa 12 file component/page không sử dụng
+      - Dọn imports thừa
+
+  [x] Tạo cấu trúc folder mới:
+      - src/types/        (5 file TypeScript interfaces)
+      - src/api/          (Axios client + JWT interceptors)
+      - src/lib/          (Supabase client config)
+      - src/stores/       (Zustand: authStore, uiStore)
+      - src/utils/        (format.ts, constants.ts)
+
+  [x] Tạo common components:
+      - ProtectedRoute + GuestRoute (route guards)
+      - ErrorBoundary
+      - LoadingSpinner
+      - EmptyState
+
+  [x] Tạo .env.example template
+  [x] Build verification passed (2039 modules, 0 errors)
+
+--- Sprint 2: Authentication ---
+
+  [ ] Tạo Supabase project trên supabase.com
+  [ ] Cấu hình Supabase Auth:
+      - Bật Email/Password auth
+      - Cấu hình Google OAuth provider
+      - Cấu hình Facebook OAuth provider
+  [ ] Chạy SQL migration tạo bảng profiles
+  [ ] Kết nối trang Login.tsx → Supabase Auth:
+      - Email/password login
+      - Google login
+      - Facebook login
+  [ ] Kết nối trang Register.tsx → Supabase Auth
+  [ ] Cập nhật App.tsx:
+      - Thêm QueryClientProvider (TanStack Query)
+      - Thêm auth session listener (auto-refresh)
+  [ ] Cập nhật routes.tsx:
+      - Wrap protected routes với ProtectedRoute
+      - Wrap Login/Register với GuestRoute
+  [ ] Cập nhật WanderSidebar: hiển thị user info thật
+
+================================================================================
+PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
+================================================================================
+
+--- Sprint 3: Diary System ---
+
+  [ ] Tạo bảng DB: diaries, diary_images, diary_days, budget_items
+  [ ] Cấu hình Supabase Storage: bucket "diaries" (public)
+  [ ] Kết nối CreateDiary.tsx → Supabase:
+      - Upload ảnh → Storage
+      - Lưu diary record → Database
+      - Lưu diary_days, budget_items → Database
+  [ ] Kết nối DiaryDetail.tsx → Supabase:
+      - Fetch diary + relations
+      - Hiển thị dữ liệu thật thay vì mock
+  [ ] Replace mock data trong diaries.ts bằng API calls
+
+--- Sprint 4: Social Features ---
+
+  [ ] Tạo bảng DB: likes, comments, bookmarks, follows
+  [ ] Implement Like/Unlike functionality
+  [ ] Implement Comment system (kèm replies)
+  [ ] Implement Bookmark/Save diary
+  [ ] Implement Follow/Unfollow user
+  [ ] Kết nối Landing.tsx (feed) → real data
+  [ ] Kết nối Explore.tsx → real data + filters
+
+--- Sprint 5: User Profile ---
+
+  [ ] Tạo Storage buckets: "avatars", "covers"
+  [ ] Kết nối Dashboard.tsx → real user data:
+      - Avatar upload
+      - Cover image upload
+      - Edit profile (bio, location)
+      - Hiển thị nhật ký thật của user
+      - Thống kê thật
+  [ ] Kết nối Friends.tsx → follows data
+  [ ] Refactor pages lớn:
+      - AdminDashboard.tsx → tách sub-components
+      - CreateDiary.tsx → tách sub-components
+
+================================================================================
+PHASE 3: ADVANCED FEATURES (Sprint 6-8) — TÍNH NĂNG NÂNG CAO
+================================================================================
+
+--- Sprint 6: Chat & Messaging ---
+
+  [ ] Tạo bảng DB: conversations, conversation_members, messages
+  [ ] Cấu hình Supabase Realtime channel
+  [ ] Kết nối ChatPage.tsx → real data:
+      - Danh sách conversations
+      - Gửi/nhận tin nhắn realtime
+      - Upload ảnh trong chat
+  [ ] Implement online status indicator
+
+--- Sprint 7: AI Integration ---
+
+  [ ] Tạo Supabase Edge Function: ai-chat
+      - Kết nối Google Gemini API
+      - System prompt cho WanderBot
+      - Conversation memory (history)
+  [ ] Tạo Edge Function: ai-itinerary
+      - Input: destination, duration, budget, interests
+      - Output: structured itinerary
+  [ ] Kết nối CreateItinerary.tsx → real AI
+  [ ] Kết nối WanderBot chatbot (App.tsx) → real AI
+
+--- Sprint 8: Payments ---
+
+  [ ] Đăng ký VNPay Sandbox merchant account
+  [ ] Tạo Edge Function: payment-create
+      - Generate VNPay payment URL
+      - Lưu pending transaction
+  [ ] Tạo Edge Function: payment-callback (IPN)
+      - Verify VNPay signature
+      - Update subscription status
+  [ ] Kết nối Checkout.tsx → real payment flow
+  [ ] Kết nối Partner.tsx pricing → checkout flow
+  [ ] Tạo bảng DB: plans, subscriptions
+  [ ] Seed plan data
+
+================================================================================
+PHASE 4: ADMIN & POLISH (Sprint 9-10) — HOÀN THIỆN
+================================================================================
+
+--- Sprint 9: Admin Panel ---
+
+  [ ] Tạo Edge Function: admin-stats
+  [ ] Kết nối AdminDashboard → real data:
+      - Tab Tổng Quan: thống kê từ DB
+      - Tab Người Dùng: CRUD users, approve/suspend
+      - Tab Nội Dung: duyệt/gắn cờ/xóa nhật ký
+      - Tab AI & Dữ Liệu: monitoring
+  [ ] Implement admin RLS policies
+  [ ] Implement content moderation workflow
+
+--- Sprint 10: Testing & Deployment ---
+
+  [ ] Testing:
+      - Unit tests cho stores (Vitest)
+      - Component tests cho core components
+      - E2E: Register → Login → Create Diary → Explore
+      - Payment testing trên VNPay sandbox
+  [ ] Performance optimization:
+      - Code splitting (dynamic imports)
+      - Image optimization (lazy loading)
+      - Bundle size reduction
+  [ ] Deployment:
+      - Deploy frontend → Vercel
+      - Configure custom domain
+      - Environment variables production
+      - SSL certificate
+  [ ] Documentation:
+      - Cập nhật README.md
+      - API documentation
+      - User guide
+
+================================================================================
+CHECKLIST TRƯỚC KHI GO-LIVE
+================================================================================
+
+  [ ] Auth flow: register → verify email → login → refresh token
+  [ ] CRUD diary hoạt động với real database
+  [ ] Image upload + display chính xác
+  [ ] Social: like, comment, follow hoạt động realtime
+  [ ] AI chatbot phản hồi trong < 3 giây
+  [ ] Payment flow end-to-end
+  [ ] Admin duyệt/từ chối nội dung
+  [ ] Responsive: mobile / tablet / desktop
+  [ ] Page load time < 3 giây
+  [ ] SEO: meta tags, Open Graph
+  [ ] Security: RLS policies, input validation
+  [ ] Error handling: ErrorBoundary, toast notifications
+
+================================================================================
