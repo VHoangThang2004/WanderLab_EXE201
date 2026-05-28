@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { 
   Users, 
   PlusSquare, 
@@ -8,34 +8,46 @@ import {
   User,
   Menu,
   X,
-  ShieldCheck
+  ShieldCheck,
+  LogIn,
+  LogOut,
+  Compass
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
+import { useAuthStore } from "@/stores";
 
 export function WanderSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   const navItems = [
-    { icon: Home, label: "Trang Chủ", path: "/" },
-    { icon: Users, label: "Bạn Bè", path: "/friends" },
-    { icon: PlusSquare, label: "Tạo Nhật Ký", path: "/create" },
-    { icon: Route, label: "Tạo Lịch Trình", path: "/create-itinerary" },
-    { icon: CreditCard, label: "Chọn Gói", path: "/partner" },
-    { icon: User, label: "Dashboard", path: "/dashboard" },
-    { icon: ShieldCheck, label: "Admin", path: "/admin-dashboard" },
+    { icon: Home, label: "Trang Chủ", path: "/", public: true },
+    { icon: Compass, label: "Khám Phá", path: "/explore", public: true },
+    { icon: Users, label: "Bạn Bè", path: "/friends", public: false },
+    { icon: PlusSquare, label: "Tạo Nhật Ký", path: "/create", public: false },
+    { icon: Route, label: "Tạo Lịch Trình", path: "/create-itinerary", public: false },
+    { icon: CreditCard, label: "Chọn Gói", path: "/partner", public: true },
+    { icon: User, label: "Dashboard", path: "/dashboard", public: false },
+    ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: "Admin", path: "/admin-dashboard", public: false }] : []),
   ];
 
   const isActive = (path: string) => {
     if (path === "/") {
       return location.pathname === "/";
     }
-    // For exact match paths to avoid conflicts (e.g., /create vs /create-itinerary)
     if (path === "/create" || path === "/create-itinerary") {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -76,6 +88,8 @@ export function WanderSidebar() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
+              // Show public items always, private items only when authenticated
+              if (!item.public && !isAuthenticated) return null;
               return (
                 <Link
                   key={item.path}
@@ -94,16 +108,60 @@ export function WanderSidebar() {
             })}
           </nav>
 
-          {/* Footer Section */}
+          {/* User Section */}
           <div className="p-4 border-t border-gray-100">
-            <div className="bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-xl p-4 text-center">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
-                🎒 WanderLab
-              </p>
-              <p className="text-xs text-gray-600">
-                Khám phá thế giới cùng nhau
-              </p>
-            </div>
+            {isAuthenticated && user ? (
+              <div className="space-y-3">
+                {/* User info */}
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#FFF5F3] transition-all"
+                >
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-[#ff3131]"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-lg">
+                      {user.full_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{user.full_name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                </Link>
+                {/* Logout button */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <LogOut size={18} />
+                  <span>Đăng Xuất</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                >
+                  <LogIn size={18} />
+                  Đăng Nhập
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#ff3131] text-[#ff3131] rounded-xl font-semibold hover:bg-[#FFF5F3] transition-all"
+                >
+                  Đăng Ký
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </aside>

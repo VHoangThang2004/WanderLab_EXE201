@@ -12,65 +12,111 @@ import { ChatPage } from "./pages/wander/ChatPage";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
+import { WanderExplore } from "./pages/wander/Explore";
 import { WanderMainLayout } from "./components/wander/WanderMainLayout";
+import { ProtectedRoute, GuestRoute } from "./components/auth/ProtectedRoute";
 
 export const router = createBrowserRouter([
+  // Guest-only routes (redirect to dashboard if already logged in)
   {
     path: "/login",
-    Component: WanderLogin,
+    element: (
+      <GuestRoute>
+        <WanderLogin />
+      </GuestRoute>
+    ),
   },
   {
     path: "/register",
-    Component: WanderRegister,
+    element: (
+      <GuestRoute>
+        <WanderRegister />
+      </GuestRoute>
+    ),
   },
+  // Public standalone routes
   {
     path: "/guide",
     Component: WanderGuide,
   },
   {
     path: "/chat",
-    Component: ChatPage,
+    element: (
+      <ProtectedRoute>
+        <ChatPage />
+      </ProtectedRoute>
+    ),
   },
   // Routes with sidebar layout
   {
     path: "/",
     Component: WanderMainLayout,
     children: [
+      // Public pages
       {
         index: true,
         Component: WanderLanding,
       },
       {
-        path: "/dashboard",
-        Component: WanderDashboard,
-      },
-      {
-        path: "/friends",
-        Component: WanderFriends,
+        path: "/explore",
+        Component: WanderExplore,
       },
       {
         path: "/diary/:id",
         Component: WanderDiaryDetail,
       },
       {
-        path: "/create",
-        Component: WanderCreateDiary,
-      },
-      {
         path: "/partner",
         Component: WanderPartner,
       },
+      // Protected pages (require login)
+      {
+        path: "/dashboard",
+        element: (
+          <ProtectedRoute>
+            <WanderDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/friends",
+        element: (
+          <ProtectedRoute>
+            <WanderFriends />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/create",
+        element: (
+          <ProtectedRoute>
+            <WanderCreateDiary />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "/create-itinerary",
-        Component: CreateItinerary,
+        element: (
+          <ProtectedRoute>
+            <CreateItinerary />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/checkout",
-        Component: CheckoutPage,
+        element: (
+          <ProtectedRoute>
+            <CheckoutPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/admin-dashboard",
-        Component: AdminDashboard,
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
