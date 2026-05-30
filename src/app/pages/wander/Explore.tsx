@@ -8,12 +8,14 @@ import {
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useQuery } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
+import { useLanguageStore } from "@/stores";
 import { TRAVEL_STYLES, ALL_INTERESTS, DURATION_OPTIONS } from "../../data/destinations";
 
 const PRICE_MIN = 5;   // triệu VNĐ
 const PRICE_MAX = 50;
 
 export function WanderExplore() {
+  const { t, language } = useLanguageStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
@@ -131,10 +133,10 @@ export function WanderExplore() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
-              Khám Phá Nhật Ký Du Lịch
+              {t("title", "explore")}
             </h1>
             <p className="text-xl text-gray-600">
-              Khám phá trải nghiệm thực tế từ du khách Việt Nam đã được xác minh
+              {t("subtitle", "explore")}
             </p>
           </div>
 
@@ -144,7 +146,7 @@ export function WanderExplore() {
                 <Search className="text-gray-400 flex-shrink-0" size={20} />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm điểm đến, tỉnh thành hoặc trải nghiệm..."
+                  placeholder={t("searchPlaceholder", "explore")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 outline-none text-gray-900"
@@ -164,7 +166,7 @@ export function WanderExplore() {
                 }`}
               >
                 <SlidersHorizontal size={20} />
-                <span className="hidden sm:inline">Bộ Lọc</span>
+                <span className="hidden sm:inline">{t("filters", "explore")}</span>
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-[#ff3131] rounded-full text-xs font-bold flex items-center justify-center shadow">
                     {activeFilterCount}
@@ -185,10 +187,10 @@ export function WanderExplore() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-[#FFF5F3] to-white">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="text-[#ff3131]" size={20} />
-                <span className="font-bold text-gray-900">Bộ Lọc Nâng Cao</span>
+                <span className="font-bold text-gray-900">{t("advancedFilters", "explore")}</span>
                 {activeFilterCount > 0 && (
                   <span className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
-                    {activeFilterCount} đang dùng
+                    {activeFilterCount} {t("activeFilters", "explore")}
                   </span>
                 )}
               </div>
@@ -199,7 +201,7 @@ export function WanderExplore() {
                     className="flex items-center gap-1.5 text-sm text-[#ff3131] font-semibold hover:underline"
                   >
                     <RotateCcw size={14} />
-                    Xóa tất cả
+                    {t("clearAll", "explore")}
                   </button>
                 )}
                 <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
@@ -218,7 +220,7 @@ export function WanderExplore() {
                 >
                   <span className="font-semibold text-gray-900 flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">✦</span>
-                    Sở Thích
+                    {t("interests", "explore")}
                     {selectedInterests.length > 0 && (
                       <span className="text-xs bg-[#FFE8E0] text-[#ff3131] font-bold px-2 py-0.5 rounded-full">
                         {selectedInterests.length}
@@ -259,7 +261,7 @@ export function WanderExplore() {
                 >
                   <span className="font-semibold text-gray-900 flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">🗺</span>
-                    Kiểu Du Lịch
+                    {t("styles", "explore")}
                     {selectedStyles.length > 0 && (
                       <span className="text-xs bg-[#FFE8E0] text-[#ff3131] font-bold px-2 py-0.5 rounded-full">
                         {selectedStyles.length}
@@ -300,7 +302,7 @@ export function WanderExplore() {
                 >
                   <span className="font-semibold text-gray-900 flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">₫</span>
-                    Ngân Sách
+                    {t("budget", "explore")}
                     {(priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX) && (
                       <span className="text-xs bg-[#FFE8E0] text-[#ff3131] font-bold px-2 py-0.5 rounded-full">1</span>
                     )}
@@ -313,12 +315,12 @@ export function WanderExplore() {
                     {/* Display values */}
                     <div className="flex items-center justify-between">
                       <div className="text-center">
-                        <p className="text-xs text-gray-500 mb-0.5">Từ</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{t("from", "explore")}</p>
                         <p className="font-bold text-[#ff3131] text-sm">{priceRange[0]}tr ₫</p>
                       </div>
                       <div className="flex-1 h-px bg-gradient-to-r from-[#ff3131] to-[#ff914d] mx-3 opacity-30" />
                       <div className="text-center">
-                        <p className="text-xs text-gray-500 mb-0.5">Đến</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{t("to", "explore")}</p>
                         <p className="font-bold text-[#ff914d] text-sm">
                           {priceRange[1] === PRICE_MAX ? `${priceRange[1]}tr+ ₫` : `${priceRange[1]}tr ₫`}
                         </p>
@@ -365,9 +367,9 @@ export function WanderExplore() {
                     {/* Quick preset buttons */}
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { label: "Dưới 15tr", range: [PRICE_MIN, 15] as [number, number] },
-                        { label: "15–25tr",   range: [15, 25]       as [number, number] },
-                        { label: "Trên 25tr", range: [25, PRICE_MAX] as [number, number] },
+                        { label: language === 'vi' ? "Dưới 15tr" : "Under 15m", range: [PRICE_MIN, 15] as [number, number] },
+                        { label: language === 'vi' ? "15–25tr" : "15–25m",   range: [15, 25]       as [number, number] },
+                        { label: language === 'vi' ? "Trên 25tr" : "Over 25m", range: [25, PRICE_MAX] as [number, number] },
                       ].map(({ label, range }) => {
                         const active = priceRange[0] === range[0] && priceRange[1] === range[1];
                         return (
@@ -397,7 +399,7 @@ export function WanderExplore() {
                 >
                   <span className="font-semibold text-gray-900 flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">⏱</span>
-                    Thời Gian
+                    {t("duration", "explore")}
                     {selectedDuration !== "Tất cả" && (
                       <span className="text-xs bg-[#FFE8E0] text-[#ff3131] font-bold px-2 py-0.5 rounded-full">1</span>
                     )}
@@ -432,7 +434,7 @@ export function WanderExplore() {
             {/* Active filter tags */}
             {activeFilterCount > 0 && (
               <div className="px-6 py-3 border-t border-gray-100 bg-[#FFF5F3] flex flex-wrap gap-2 items-center">
-                <span className="text-xs text-gray-500 font-medium">Đang lọc:</span>
+                <span className="text-xs text-gray-500 font-medium">{language === 'vi' ? 'Đang lọc:' : 'Filtering:'}</span>
                 {selectedStyles.map((s) => (
                   <span key={s} className="inline-flex items-center gap-1 bg-white border border-[#ff3131] text-[#ff3131] text-xs font-semibold px-3 py-1 rounded-full">
                     {s}
@@ -473,7 +475,7 @@ export function WanderExplore() {
                   : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
               }`}
             >
-              Tất cả
+              {t("all", "explore")}
             </button>
             {TRAVEL_STYLES.filter((s) => s !== "Tất cả").map((style) => (
               <button
@@ -496,7 +498,7 @@ export function WanderExplore() {
               className={`p-2 rounded-lg transition-all ${
                 viewMode === "grid" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] text-gray-700"
               }`}
-              title="Dạng lưới"
+              title={t("gridView", "explore")}
             >
               <SlidersHorizontal size={20} />
             </button>
@@ -505,7 +507,7 @@ export function WanderExplore() {
               className={`p-2 rounded-lg transition-all ${
                 viewMode === "map" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] text-gray-700"
               }`}
-              title="Dạng bản đồ"
+              title={t("mapView", "explore")}
             >
               <Map size={20} />
             </button>
@@ -515,14 +517,14 @@ export function WanderExplore() {
         {/* Results count */}
         <div className="mb-6 flex items-center gap-3">
           <p className="text-gray-600">
-            Hiển thị <span className="font-semibold text-[#ff3131]">{filteredDiaries.length}</span> nhật ký
+            {t("showingDiaries", "explore")} <span className="font-semibold text-[#ff3131]">{filteredDiaries.length}</span> {t("journalsUnit", "explore")}
           </p>
           {activeFilterCount > 0 && (
             <button
               onClick={resetFilters}
               className="text-sm text-gray-500 hover:text-[#ff3131] flex items-center gap-1 transition-colors"
             >
-              <RotateCcw size={13} /> Xóa bộ lọc
+              <RotateCcw size={13} /> {t("clearAllFilters", "explore")}
             </button>
           )}
         </div>
@@ -531,8 +533,8 @@ export function WanderExplore() {
         {viewMode === "map" && (
           <div className="bg-[#FFF5F3] rounded-2xl p-12 mb-8 text-center">
             <Map className="mx-auto mb-4 text-[#ff3131]" size={48} />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Chế Độ Bản Đồ</h3>
-            <p className="text-gray-600">Bản đồ tương tác sẽ ra mắt sớm! Chuyển sang chế độ lưới để xem nhật ký.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t("mapPlaceholderTitle", "explore")}</h3>
+            <p className="text-gray-600">{t("mapPlaceholderDesc", "explore")}</p>
           </div>
         )}
 
@@ -591,7 +593,7 @@ export function WanderExplore() {
                       <span className="font-semibold text-gray-900">{diary.duration}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500">bởi {diary.author}</p>
+                  <p className="text-sm text-gray-500">{t("by", "explore")} {diary.author}</p>
                 </div>
               </Link>
             ))}
@@ -604,13 +606,13 @@ export function WanderExplore() {
             <div className="w-20 h-20 bg-[#FFF5F3] rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="text-[#ff914d]" size={36} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy nhật ký</h3>
-            <p className="text-gray-600 mb-6">Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t("noResults", "explore")}</h3>
+            <p className="text-gray-600 mb-6">{t("noResultsDesc", "explore")}</p>
             <button
               onClick={resetFilters}
               className="px-8 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-lg transition-all"
             >
-              Xóa Tất Cả Bộ Lọc
+              {t("clearAllFilters", "explore")}
             </button>
           </div>
         )}

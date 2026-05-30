@@ -2,9 +2,10 @@ import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { WanderLogo } from "../../components/wander/WanderLogo";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useLanguageStore } from "@/stores";
 
 export function WanderLogin() {
+  const { t, language } = useLanguageStore();
   const navigate = useNavigate();
   const { login, loginWithGoogle, loginWithFacebook, isLoading } = useAuthStore();
 
@@ -26,9 +27,9 @@ export function WanderLogin() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
       if (message.includes("Invalid login")) {
-        setError("Email hoặc mật khẩu không đúng");
+        setError(language === 'vi' ? "Email hoặc mật khẩu không đúng" : "Invalid email or password");
       } else if (message.includes("Email not confirmed")) {
-        setError("Vui lòng xác nhận email trước khi đăng nhập");
+        setError(language === 'vi' ? "Vui lòng xác nhận email trước khi đăng nhập" : "Please confirm your email before logging in");
       } else {
         setError(message);
       }
@@ -39,7 +40,7 @@ export function WanderLogin() {
     try {
       await loginWithGoogle();
     } catch {
-      setError("Đăng nhập Google thất bại");
+      setError(language === 'vi' ? "Đăng nhập Google thất bại" : "Google login failed");
     }
   };
 
@@ -47,7 +48,7 @@ export function WanderLogin() {
     try {
       await loginWithFacebook();
     } catch {
-      setError("Đăng nhập Facebook thất bại");
+      setError(language === 'vi' ? "Đăng nhập Facebook thất bại" : "Facebook login failed");
     }
   };
 
@@ -62,8 +63,12 @@ export function WanderLogin() {
         {/* Login Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Chào Mừng Trở Lại</h1>
-            <p className="text-gray-600">Đăng nhập để tiếp tục hành trình của bạn</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {language === 'vi' ? 'Chào Mừng Trở Lại' : 'Welcome Back'}
+            </h1>
+            <p className="text-gray-600">
+              {language === 'vi' ? 'Đăng nhập để tiếp tục hành trình của bạn' : 'Log in to continue your journey'}
+            </p>
           </div>
 
           {/* Error message */}
@@ -76,7 +81,7 @@ export function WanderLogin() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Địa Chỉ Email
+                {t("email", "auth")}
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -94,7 +99,7 @@ export function WanderLogin() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Mật Khẩu
+                {t("password", "auth")}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -125,10 +130,12 @@ export function WanderLogin() {
                   onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
                   className="w-4 h-4 text-[#ff3131] border-gray-300 rounded focus:ring-[#ff3131]"
                 />
-                <span className="text-sm text-gray-700">Ghi nhớ đăng nhập</span>
+                <span className="text-sm text-gray-700">
+                  {language === 'vi' ? 'Ghi nhớ đăng nhập' : 'Remember me'}
+                </span>
               </label>
               <Link to="/forgot-password" className="text-sm font-semibold text-[#ff3131] hover:text-[#ff914d]">
-                Quên mật khẩu?
+                {t("forgotPassword", "auth")}
               </Link>
             </div>
 
@@ -140,19 +147,19 @@ export function WanderLogin() {
               {isLoading ? (
                 <>
                   <Loader2 size={20} className="animate-spin" />
-                  Đang đăng nhập...
+                  {language === 'vi' ? 'Đang đăng nhập...' : 'Logging in...'}
                 </>
               ) : (
-                "Đăng Nhập"
+                t("signIn", "auth")
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Chưa có tài khoản?{" "}
+              {t("dontHaveAccount", "auth")}{" "}
               <Link to="/register" className="font-semibold text-[#ff3131] hover:text-[#ff914d]">
-                Đăng ký
+                {t("signUp", "auth")}
               </Link>
             </p>
           </div>
@@ -163,7 +170,9 @@ export function WanderLogin() {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Hoặc tiếp tục với</span>
+                <span className="px-4 bg-white text-gray-500">
+                  {language === 'vi' ? 'Hoặc tiếp tục với' : 'Or continue with'}
+                </span>
               </div>
             </div>
 
@@ -196,9 +205,15 @@ export function WanderLogin() {
         </div>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          Bằng cách đăng nhập, bạn đồng ý với{" "}
-          <a href="#" className="text-[#ff3131] hover:underline">Điều Khoản</a> và{" "}
-          <a href="#" className="text-[#ff3131] hover:underline">Chính Sách Bảo Mật</a> của chúng tôi
+          {language === 'vi' ? 'Bằng cách đăng nhập, bạn đồng ý với' : 'By signing in, you agree to our'}{" "}
+          <a href="#" className="text-[#ff3131] hover:underline">
+            {language === 'vi' ? 'Điều Khoản' : 'Terms'}
+          </a>{" "}
+          {language === 'vi' ? 'và' : 'and'}{" "}
+          <a href="#" className="text-[#ff3131] hover:underline">
+            {language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}
+          </a>{" "}
+          {language === 'vi' ? 'của chúng tôi' : ''}
         </p>
       </div>
     </div>

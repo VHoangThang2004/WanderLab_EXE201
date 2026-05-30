@@ -9,6 +9,8 @@ export const diaryService = {
    */
   async fetchFeedDiaries(): Promise<DiaryFeedItem[]> {
     try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
       const { data, error } = await supabase
         .from('diaries')
         .select(`
@@ -20,7 +22,9 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles(id, full_name, avatar_url)
+          author:profiles(id, full_name, avatar_url),
+          likes(user_id),
+          bookmarks(user_id)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
@@ -43,8 +47,8 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: false, // Tương lai: join với likes table
-          is_saved: false, // Tương lai: join với bookmarks table
+          is_liked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
+          is_saved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
           group_size: item.group_size || '',
         }));
       }

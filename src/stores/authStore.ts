@@ -19,6 +19,15 @@ interface AuthState {
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  updateProfile: (updates: {
+    full_name?: string;
+    bio?: string | null;
+    location?: string | null;
+    avatar_url?: string | null;
+    cover_image_url?: string | null;
+  }) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string>;
+  uploadCover: (file: File) => Promise<string>;
 }
 
 /**
@@ -67,7 +76,7 @@ async function fetchProfile(userId: string) {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: true,
       isAuthenticated: false,
@@ -179,6 +188,62 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           set({ isLoading: false });
         }
+      },
+
+      updateProfile: async (updates) => {
+        const { user } = get();
+        if (!user) throw new Error('User not authenticated');
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', user.id);
+
+          if (error) throw error;
+
+          set({
+            user: { ...user, ...updates },
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      uploadAvatar: async (file: File) => {
+        const { user } = get();
+        if (!user) throw new Error('User not authenticated');
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        return data.publicUrl;
+      },
+
+      uploadCover: async (file: File) => {
+        const { user } = get();
+        if (!user) throw new Error('User not authenticated');
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('covers')
+          .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('covers').getPublicUrl(filePath);
+        return data.publicUrl;
       },
     }),
     {

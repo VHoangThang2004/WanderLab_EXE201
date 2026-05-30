@@ -3,8 +3,7 @@ import { UserCard } from "../../components/wander/UserCard";
 import { Link } from "react-router";
 import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-import { useAuthStore } from "@/stores";
-
+import { useAuthStore, useLanguageStore } from "@/stores";
 import { useQuery } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
 
@@ -47,6 +46,7 @@ const trendingDestinations = [
 
 export function WanderLanding() {
   const { isAuthenticated } = useAuthStore();
+  const { t } = useLanguageStore();
 
   const { data: feedDiaries, isLoading } = useQuery({
     queryKey: ['feedDiaries'],
@@ -66,24 +66,24 @@ export function WanderLanding() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
                 <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-                  Ghi lại hành trình,<br />
-                  <span className="text-yellow-200">Chia sẻ trải nghiệm</span>
+                  {t("heroTitle", "landing")}<br />
+                  <span className="text-yellow-200">{t("heroHighlight", "landing")}</span>
                 </h1>
                 <p className="text-xl text-white/90 max-w-lg">
-                  WanderLab là nền tảng nhật ký du lịch xác thực, nơi bạn khám phá trải nghiệm thật từ cộng đồng du lịch Việt Nam.
+                  {t("heroSubtitle", "landing")}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Link
                     to="/register"
                     className="px-8 py-4 bg-white text-[#ff3131] rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
                   >
-                    Bắt Đầu Miễn Phí
+                    {t("startFree", "landing")}
                   </Link>
                   <Link
                     to="/explore"
                     className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all"
                   >
-                    Khám Phá
+                    {t("exploreBtn", "landing")}
                   </Link>
                 </div>
               </div>
@@ -129,30 +129,30 @@ export function WanderLanding() {
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Tại sao chọn WanderLab?</h2>
-              <p className="text-xl text-gray-600">Nền tảng nhật ký du lịch đầu tiên tại Việt Nam với xác thực độ tin cậy</p>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("whyWanderLab", "landing")}</h2>
+              <p className="text-xl text-gray-600">{t("whySubtitle", "landing")}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
                 <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <BookOpen className="text-white" size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Nhật Ký Xác Thực</h3>
-                <p className="text-gray-600">Mọi nhật ký được xác minh bởi cộng đồng, đảm bảo trải nghiệm thực tế và đáng tin cậy.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{t("feat1Title", "landing")}</h3>
+                <p className="text-gray-600">{t("feat1Desc", "landing")}</p>
               </div>
               <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
                 <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <MapPin className="text-white" size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Khám Phá Việt Nam</h3>
-                <p className="text-gray-600">Hàng ngàn điểm đến từ 63 tỉnh thành với ngân sách và lịch trình chi tiết.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{t("feat2Title", "landing")}</h3>
+                <p className="text-gray-600">{t("feat2Desc", "landing")}</p>
               </div>
               <div className="text-center p-8 rounded-3xl bg-[#FFF5F3] hover:shadow-lg transition-all">
                 <div className="w-16 h-16 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Shield className="text-white" size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">AI Lập Kế Hoạch</h3>
-                <p className="text-gray-600">Trợ lý AI thông minh giúp bạn lập kế hoạch chuyến đi hoàn hảo trong vài phút.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{t("feat3Title", "landing")}</h3>
+                <p className="text-gray-600">{t("feat3Desc", "landing")}</p>
               </div>
             </div>
           </div>
@@ -161,14 +161,14 @@ export function WanderLanding() {
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0]">
           <div className="max-w-3xl mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">Sẵn sàng khám phá?</h2>
-            <p className="text-xl text-gray-600 mb-8">Tham gia cộng đồng hàng nghìn du khách Việt Nam đang chia sẻ trải nghiệm mỗi ngày.</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">{t("readyToExplore", "landing")}</h2>
+            <p className="text-xl text-gray-600 mb-8">{t("readySubtitle", "landing")}</p>
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
             >
               <Sparkles size={24} />
-              Tạo Tài Khoản Miễn Phí
+              {t("createAccountFree", "landing")}
             </Link>
           </div>
         </section>
@@ -194,7 +194,7 @@ export function WanderLanding() {
                 </div>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
-                <p className="text-xs font-semibold text-gray-900">Tạo tin</p>
+                <p className="text-xs font-semibold text-gray-900">{t("createStory", "landing")}</p>
               </div>
             </div>
           </Link>
@@ -366,17 +366,17 @@ export function WanderLanding() {
               <Compass className="text-[#ff3131]" size={20} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Nhật Ký Du Lịch</h2>
-              <p className="text-gray-600">Khám phá trải nghiệm thật từ cộng đồng</p>
+              <h2 className="text-2xl font-bold text-gray-900">{t("feedTitle", "landing")}</h2>
+              <p className="text-gray-600">{t("feedSubtitle", "landing")}</p>
             </div>
           </div>
 
           {/* Journal Posts Feed */}
           <div className="space-y-6">
             {isLoading ? (
-              <div className="text-center py-10 text-gray-500">Đang tải nhật ký...</div>
+              <div className="text-center py-10 text-gray-500">{t("loadingDiaries", "landing")}</div>
             ) : feedDiaries?.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">Chưa có nhật ký nào được chia sẻ.</div>
+              <div className="text-center py-10 text-gray-500">{t("noDiaries", "landing")}</div>
             ) : (
               feedDiaries?.map((post) => (
                 <JournalPostCard key={post.id} {...post} />
@@ -390,7 +390,7 @@ export function WanderLanding() {
               to="/friends"
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#ff3131] border-2 border-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all"
             >
-              Kết Nối Với Bạn Bè
+              {t("loadMoreFriends", "landing")}
             </Link>
           </div>
         </div>
@@ -401,7 +401,7 @@ export function WanderLanding() {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="text-[#ff3131]" size={20} />
-              <h3 className="font-bold text-gray-900">Điểm Đn Nổi Bật</h3>
+              <h3 className="font-bold text-gray-900">{t("trendingDestinations", "landing")}</h3>
             </div>
             <div className="space-y-3">
               {trendingDestinations.map((dest, index) => (
@@ -428,7 +428,7 @@ export function WanderLanding() {
 
           {/* Suggested Travelers */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-gray-900 mb-4">Du Khách Nổi Bật</h3>
+            <h3 className="font-bold text-gray-900 mb-4">{t("suggestedTravelers", "landing")}</h3>
             <div className="space-y-3">
               {suggestedTravelers.map((traveler) => (
                 <UserCard key={traveler.name} {...traveler} />
@@ -438,7 +438,7 @@ export function WanderLanding() {
               to="/friends"
               className="block text-center text-sm text-[#ff3131] font-semibold mt-4 hover:text-[#ff914d] transition-colors"
             >
-              Xem thêm du khách →
+              {t("seeMoreTravelers", "landing")}
             </Link>
           </div>
         </div>

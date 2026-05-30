@@ -5,7 +5,7 @@ import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useState } from "react";
 import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailModal";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useLanguageStore } from "@/stores";
 
 // User's travel journal posts
 const myJournalPosts = [
@@ -67,19 +67,83 @@ const travelStats = [
 ];
 
 export function WanderDashboard() {
-  const { user } = useAuthStore();
+  const { user, updateProfile, uploadAvatar, uploadCover } = useAuthStore();
+  const { t, language } = useLanguageStore();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "trips">("posts");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const [isUpdatingCover, setIsUpdatingCover] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    location: "",
+    bio: "",
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      fullName: user?.full_name || "",
+      location: user?.location || "",
+      bio: user?.bio || "",
+    });
+    setIsEditingProfile(true);
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUpdatingAvatar(true);
+    try {
+      const publicUrl = await uploadAvatar(file);
+      await updateProfile({ avatar_url: publicUrl });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật ảnh đại diện:", error);
+      alert("Không thể cập nhật ảnh đại diện. Vui lòng thử lại!");
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUpdatingCover(true);
+    try {
+      const publicUrl = await uploadCover(file);
+      await updateProfile({ cover_image_url: publicUrl });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật ảnh bìa:", error);
+      alert("Không thể cập nhật ảnh bìa. Vui lòng thử lại!");
+    } finally {
+      setIsUpdatingCover(false);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateProfile({
+        full_name: editForm.fullName,
+        location: editForm.location,
+        bio: editForm.bio,
+      });
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật thông tin cá nhân:", error);
+      alert("Không thể cập nhật thông tin cá nhân. Vui lòng thử lại!");
+    }
+  };
 
   // Build profile from real auth data
   const userProfile = {
-    name: user?.full_name || "Du Khách",
+    name: user?.full_name || (language === 'vi' ? 'Du Khách' : 'Traveler'),
     avatar: user?.avatar_url || "",
     coverImage: user?.cover_image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
-    location: user?.location || "Chưa cập nhật",
-    bio: user?.bio || "Hãy thêm mô tả về bạn... 🎒🌏",
+    location: user?.location || (language === 'vi' ? 'Chưa cập nhật' : 'Not updated'),
+    bio: user?.bio || (language === 'vi' ? 'Hãy thêm mô tả về bạn... 🎒🌏' : 'Tell us about yourself... 🎒🌏'),
     diariesCount: user?.diaries_count || 0,
     followersCount: user?.followers_count || 0,
     followingCount: user?.following_count || 0,
@@ -99,38 +163,73 @@ export function WanderDashboard() {
           />
           )}
           {/* Edit Cover Button */}
-          <button className="absolute top-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl font-semibold hover:bg-white transition-all flex items-center gap-2">
-            <Image size={16} />
-            Đổi ảnh bìa
-          </button>
+          <input
+            type="file"
+            id="cover-upload"
+            className="hidden"
+            accept="image/*"
+            onChange={handleCoverChange}
+            disabled={isUpdatingCover}
+          />
+          <label
+            htmlFor="cover-upload"
+            className="absolute top-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-xl font-semibold hover:bg-white hover:scale-105 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            {isUpdatingCover ? (
+              <span className="text-xs font-semibold animate-pulse">{t("loading")}</span>
+            ) : (
+              <>
+                <Image size={16} />
+                {t("changeCover")}
+              </>
+            )}
+          </label>
         </div>
 
         {/* Profile Info */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative pb-6">
             {/* Avatar */}
-            <div className="absolute -top-16 md:-top-20">
-              {userProfile.avatar ? (
-              <ImageWithFallback
-                src={userProfile.avatar}
-                alt={userProfile.name}
-                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
+            <div className="absolute -top-16 md:-top-20 group/avatar cursor-pointer">
+              <input
+                type="file"
+                id="avatar-upload"
+                className="hidden"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={isUpdatingAvatar}
               />
-              ) : (
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
-                  {userProfile.name.charAt(0).toUpperCase()}
+              <label htmlFor="avatar-upload" className="cursor-pointer block relative">
+                {userProfile.avatar ? (
+                <ImageWithFallback
+                  src={userProfile.avatar}
+                  alt={userProfile.name}
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
+                />
+                ) : (
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
+                    {userProfile.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                {/* Hover overlay with Camera Icon */}
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  {isUpdatingAvatar ? (
+                    <span className="text-xs font-semibold animate-pulse">{t("loading")}</span>
+                  ) : (
+                    <Image size={24} />
+                  )}
                 </div>
-              )}
+              </label>
             </div>
 
             {/* Profile Actions */}
             <div className="flex justify-end pt-4 gap-3">
               <button
-                onClick={() => setIsEditingProfile(!isEditingProfile)}
+                onClick={openEditModal}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center gap-2"
               >
                 <Settings size={16} />
-                Chỉnh sửa
+                {t("edit")}
               </button>
             </div>
 
@@ -150,18 +249,18 @@ export function WanderDashboard() {
               <div className="flex items-center gap-6 text-sm">
                 <div>
                   <span className="font-bold text-gray-900">{userProfile.diariesCount}</span>
-                  <span className="text-gray-600 ml-1">nhật ký</span>
+                  <span className="text-gray-600 ml-1">{t("diariesInfo")}</span>
                 </div>
                 <div>
                   <button className="hover:text-[#ff3131] transition-colors">
                     <span className="font-bold text-gray-900">{userProfile.followersCount.toLocaleString("vi-VN")}</span>
-                    <span className="text-gray-600 ml-1">người theo dõi</span>
+                    <span className="text-gray-600 ml-1">{t("followInfo")}</span>
                   </button>
                 </div>
                 <div>
                   <button className="hover:text-[#ff3131] transition-colors">
                     <span className="font-bold text-gray-900">{userProfile.followingCount}</span>
-                    <span className="text-gray-600 ml-1">đang theo dõi</span>
+                    <span className="text-gray-600 ml-1">{t("followingInfo")}</span>
                   </button>
                 </div>
               </div>
@@ -178,7 +277,7 @@ export function WanderDashboard() {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Nhật Ký
+              {t("myJournals")}
               {activeTab === "posts" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
               )}
@@ -191,7 +290,7 @@ export function WanderDashboard() {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Đã Lưu
+              {t("savedJournals")}
               {activeTab === "saved" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
               )}
@@ -204,7 +303,7 @@ export function WanderDashboard() {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Thống Kê
+              {t("itineraryStats")}
               {activeTab === "trips" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
               )}
@@ -232,14 +331,14 @@ export function WanderDashboard() {
                       to="/create"
                       className="flex-1 px-4 py-3 bg-[#FFF5F3] text-gray-600 rounded-full hover:bg-gray-100 transition-all"
                     >
-                      Chia sẻ kỷ niệm du lịch của bạn...
+                      {t("shareMemory")}
                     </Link>
                     <Link
                       to="/create"
                       className="px-5 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center gap-2"
                     >
                       <Plus size={18} />
-                      Tạo
+                      {t("create")}
                     </Link>
                   </div>
                 </div>
@@ -253,19 +352,21 @@ export function WanderDashboard() {
 
             {activeTab === "saved" && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Nhật Ký Đã Lưu</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t("savedJournals")}</h2>
                 {savedItineraries.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
                     <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có nhật ký đã lưu</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {language === 'vi' ? 'Chưa có nhật ký đã lưu' : 'No saved journals yet'}
+                    </h3>
                     <p className="text-gray-600 mb-6">
-                      Lưu những nhật ký yêu thích để xem lại sau
+                      {language === 'vi' ? 'Lưu những nhật ký yêu thích để xem lại sau' : 'Save your favorite journals to view them later'}
                     </p>
                     <Link
                       to="/explore"
                       className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
                     >
-                      Khám Phá Nhật Ký
+                      {language === 'vi' ? 'Khám Phá Nhật Ký' : 'Explore Journals'}
                     </Link>
                   </div>
                 ) : (
@@ -287,7 +388,7 @@ export function WanderDashboard() {
                               {itinerary.destination}
                             </h3>
                             <p className="text-sm text-gray-600">
-                              {itinerary.days.length} ngày • {itinerary.budget}
+                              {itinerary.days.length} {language === 'vi' ? 'ngày' : 'days'} • {itinerary.budget}
                             </p>
                           </div>
                         </button>
@@ -306,7 +407,7 @@ export function WanderDashboard() {
 
             {activeTab === "trips" && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">Thống Kê Du Lịch</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t("travelStats")}</h2>
                 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-3 gap-4">
@@ -315,7 +416,13 @@ export function WanderDashboard() {
                       <p className="text-3xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-2">
                         {stat.value}
                       </p>
-                      <p className="text-sm text-gray-600">{stat.label}</p>
+                      <p className="text-sm text-gray-600">
+                        {stat.label === "Tỉnh thành" 
+                          ? (language === 'vi' ? 'Tỉnh thành' : 'Provinces') 
+                          : stat.label === "Quốc gia" 
+                            ? (language === 'vi' ? 'Quốc gia' : 'Countries') 
+                            : (language === 'vi' ? 'Tổng ngày' : 'Total Days')}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -325,7 +432,9 @@ export function WanderDashboard() {
                   <div className="w-full h-64 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-2xl flex items-center justify-center">
                     <div>
                       <MapPin className="mx-auto text-[#ff3131] mb-3" size={48} />
-                      <p className="text-gray-600">Bản đồ hành trình của bạn</p>
+                      <p className="text-gray-600">
+                        {language === 'vi' ? 'Bản đồ hành trình của bạn' : 'Your travel journey map'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -337,50 +446,50 @@ export function WanderDashboard() {
           <div className="space-y-6">
             {/* Quick Actions */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
-              <h3 className="font-bold text-gray-900 mb-4">Hành Động Nhanh</h3>
+              <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
               <Link
                 to="/create"
                 className="block w-full px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md transition-all text-center"
               >
-                📝 Tạo Nhật Ký Mới
+                {t("createJournal")}
               </Link>
               <Link
                 to="/create-itinerary"
                 className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
               >
                 <Route size={16} />
-                Lập Kế Hoạch AI
+                {t("aiPlanner")}
               </Link>
               <Link
                 to="/explore"
                 className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
               >
-                🔍 Khám Phá
+                {t("searchExplore")}
               </Link>
             </div>
 
             {/* Activity Summary */}
             <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Hoạt Động Gần Đây</h3>
+              <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Heart size={14} className="text-[#ff3131]" />
-                    <span>Tổng lượt thích</span>
+                    <span>{t("totalLikes")}</span>
                   </div>
                   <span className="font-bold text-gray-900">1,125</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <MessageCircle size={14} className="text-[#ff3131]" />
-                    <span>Bình luận</span>
+                    <span>{t("comments")}</span>
                   </div>
                   <span className="font-bold text-gray-900">160</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Bookmark size={14} className="text-[#ff3131]" />
-                    <span>Lượt lưu</span>
+                    <span>{t("bookmarks")}</span>
                   </div>
                   <span className="font-bold text-gray-900">89</span>
                 </div>
@@ -396,6 +505,73 @@ export function WanderDashboard() {
           itinerary={openItinerary}
           onClose={() => setOpenItinerary(null)}
         />
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative animate-scale-up">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("editProfile")}</h2>
+            
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  {t("fullNameLabel")}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.fullName}
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#ff3131] focus:ring-1 focus:ring-[#ff3131] outline-none"
+                  placeholder={t("placeholderName")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  {t("locationLabel")}
+                </label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#ff3131] focus:ring-1 focus:ring-[#ff3131] outline-none"
+                  placeholder={t("placeholderLocation")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  {t("bioLabel")}
+                </label>
+                <textarea
+                  rows={3}
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#ff3131] focus:ring-1 focus:ring-[#ff3131] outline-none resize-none"
+                  placeholder={t("placeholderBio")}
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md hover:scale-105 transition-all"
+                >
+                  {t("save")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

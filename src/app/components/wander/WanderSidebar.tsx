@@ -15,23 +15,24 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useLanguageStore } from "@/stores";
 
 export function WanderSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { language, setLanguage, t } = useLanguageStore();
 
   const navItems = [
-    { icon: Home, label: "Trang Chủ", path: "/", public: true },
-    { icon: Compass, label: "Khám Phá", path: "/explore", public: true },
-    { icon: Users, label: "Bạn Bè", path: "/friends", public: false },
-    { icon: PlusSquare, label: "Tạo Nhật Ký", path: "/create", public: false },
-    { icon: Route, label: "Tạo Lịch Trình", path: "/create-itinerary", public: false },
-    { icon: CreditCard, label: "Chọn Gói", path: "/partner", public: true },
-    { icon: User, label: "Dashboard", path: "/dashboard", public: false },
-    ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: "Admin", path: "/admin-dashboard", public: false }] : []),
+    { icon: Home, label: t("home"), path: "/", public: true },
+    { icon: Compass, label: t("explore"), path: "/explore", public: true },
+    { icon: Users, label: t("friends"), path: "/friends", public: false },
+    { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
+    { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
+    { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
+    { icon: User, label: t("dashboard"), path: "/dashboard", public: false },
+    ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),
   ];
 
   const isActive = (path: string) => {
@@ -108,6 +109,35 @@ export function WanderSidebar() {
             })}
           </nav>
 
+          {/* Language Switcher */}
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+              🌐 {language === 'vi' ? 'Tiếng Việt' : 'English'}
+            </span>
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setLanguage('vi')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  language === 'vi'
+                    ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                VI
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  language === 'en'
+                    ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
           {/* User Section */}
           <div className="p-4 border-t border-gray-100">
             {isAuthenticated && user ? (
@@ -140,7 +170,7 @@ export function WanderSidebar() {
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                 >
                   <LogOut size={18} />
-                  <span>Đăng Xuất</span>
+                  <span>{t("logout")}</span>
                 </button>
               </div>
             ) : (
@@ -151,14 +181,14 @@ export function WanderSidebar() {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all"
                 >
                   <LogIn size={18} />
-                  Đăng Nhập
+                  {t("login")}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#ff3131] text-[#ff3131] rounded-xl font-semibold hover:bg-[#FFF5F3] transition-all"
                 >
-                  Đăng Ký
+                  {t("register")}
                 </Link>
               </div>
             )}

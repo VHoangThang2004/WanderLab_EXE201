@@ -30,10 +30,11 @@ import { DIARY_DATA } from "../../data/diaries";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
 import { interactionService } from "@/api/interactionService";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useLanguageStore } from "@/stores";
 
 export function WanderDiaryDetail() {
   const { id } = useParams();
+  const { t, language } = useLanguageStore();
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"timeline" | "budget" | "tips">("timeline");
@@ -64,7 +65,9 @@ export function WanderDiaryDetail() {
 
   const likeMutation = useMutation({
     mutationFn: () => {
-      if (!isAuthenticated || !user) throw new Error("Vui lòng đăng nhập để thích");
+      if (!isAuthenticated || !user) {
+        throw new Error(language === 'vi' ? "Vui lòng đăng nhập để thích" : "Please log in to like");
+      }
       return interactionService.toggleLikeDiary(id!, user.id);
     },
     onSuccess: () => {
@@ -76,7 +79,9 @@ export function WanderDiaryDetail() {
 
   const bookmarkMutation = useMutation({
     mutationFn: () => {
-      if (!isAuthenticated || !user) throw new Error("Vui lòng đăng nhập để lưu");
+      if (!isAuthenticated || !user) {
+        throw new Error(language === 'vi' ? "Vui lòng đăng nhập để lưu" : "Please log in to save");
+      }
       return interactionService.toggleBookmarkDiary(id!, user.id);
     },
     onSuccess: () => {
@@ -104,7 +109,7 @@ export function WanderDiaryDetail() {
       <div className="min-h-screen bg-white flex flex-col">
         <WanderNav />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-500">Đang tải nhật ký...</p>
+          <p className="text-gray-500">{t("loading")}</p>
         </div>
         <WanderFooter />
       </div>
@@ -223,9 +228,9 @@ export function WanderDiaryDetail() {
         <div className="absolute bottom-0 left-0 right-0 text-white z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-14">
             <div className="flex items-center gap-2 text-sm text-white/70 mb-3">
-              <Link to="/" className="hover:text-white transition-colors">Trang chủ</Link>
+              <Link to="/" className="hover:text-white transition-colors">{t("home")}</Link>
               <span>/</span>
-              <Link to="/explore" className="hover:text-white transition-colors">Khám phá</Link>
+              <Link to="/explore" className="hover:text-white transition-colors">{t("explore")}</Link>
               <span>/</span>
               <span className="text-white">{diary.location}</span>
             </div>
@@ -233,11 +238,11 @@ export function WanderDiaryDetail() {
             <div className="flex items-center gap-2 mb-4">
               <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
                 <Shield className="text-white" size={16} />
-                <span className="font-semibold text-sm">Độ Tin Cậy {diary.trustScore}%</span>
+                <span className="font-semibold text-sm">{t("trustScore", "diaryDetail")} {diary.trustScore}%</span>
               </div>
               <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
                 <TrendingUp className="text-white" size={16} />
-                <span className="font-semibold text-sm">Đã Xác Minh</span>
+                <span className="font-semibold text-sm">{t("verified", "diaryDetail")}</span>
               </div>
             </div>
 
@@ -264,8 +269,8 @@ export function WanderDiaryDetail() {
               <Camera className="text-white" size={18} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Ảnh Từ Du Khách</h2>
-              <p className="text-sm text-gray-500">{diary.reviewPhotos.length} ảnh xác thực • Bấm để xem toàn màn hình</p>
+              <h2 className="text-xl font-bold text-gray-900">{t("travelerPhotos", "diaryDetail")}</h2>
+              <p className="text-sm text-gray-500">{diary.reviewPhotos.length} {t("photosDesc", "diaryDetail")}</p>
             </div>
           </div>
 
@@ -399,24 +404,24 @@ export function WanderDiaryDetail() {
                 }`}
               >
                 <Bookmark size={20} fill={isSaved ? "currentColor" : "none"} />
-                {isSaved ? "Đã Lưu" : "Lưu Vào Kế Hoạch"}
+                {isSaved ? t("savedToPlan", "diaryDetail") : t("saveToPlan", "diaryDetail")}
               </button>
               <Link
                 to="/create"
                 className="flex items-center gap-2 px-6 py-3 bg-[#FFE8E0] text-gray-900 rounded-full font-semibold hover:bg-[#FFD5C8] transition-all"
               >
                 <Copy size={20} />
-                Sao Chép Lịch Trình
+                {t("copyItinerary", "diaryDetail")}
               </Link>
               <button className="flex items-center gap-2 px-6 py-3 bg-[#FFF5F3] text-gray-700 rounded-full font-semibold hover:bg-[#FFE8E0] transition-all">
                 <Share2 size={20} />
-                Chia Sẻ
+                {t("share", "diaryDetail")}
               </button>
             </div>
 
             {/* Description */}
             <div className="bg-[#FFF5F3] rounded-2xl p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Về Chuyến Đi Này</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("aboutTrip", "diaryDetail")}</h2>
               <p className="text-gray-700 leading-relaxed">{diary.description}</p>
             </div>
 
@@ -429,7 +434,7 @@ export function WanderDiaryDetail() {
                     onClick={() => setActiveTab(tab)}
                     className={`pb-4 px-2 font-semibold transition-all whitespace-nowrap ${activeTab === tab ? activeTabClass : inactiveTabClass}`}
                   >
-                    {tab === "timeline" ? "Lịch Trình Từng Ngày" : tab === "budget" ? "Chi Tiết Ngân Sách" : "Mẹo & Lưu Ý"}
+                    {tab === "timeline" ? t("dailyItinerary", "diaryDetail") : tab === "budget" ? t("budgetDetail", "diaryDetail") : t("tipsExperience", "diaryDetail")}
                   </button>
                 ))}
               </div>
@@ -443,12 +448,12 @@ export function WanderDiaryDetail() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="inline-block bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white px-4 py-1 rounded-full font-semibold mb-2 text-sm">
-                          Ngày {day.day}
+                          {language === 'vi' ? 'Ngày' : 'Day'} {day.day}
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">{day.title}</h3>
                       </div>
                       <div className="text-right flex-shrink-0 ml-4">
-                        <p className="text-sm text-gray-500">Ngân Sách</p>
+                        <p className="text-sm text-gray-500">{language === 'vi' ? 'Ngân Sách' : 'Budget'}</p>
                         <p className="text-lg font-bold text-[#ff3131]">{day.budget}</p>
                       </div>
                     </div>
@@ -470,7 +475,7 @@ export function WanderDiaryDetail() {
               <div className="space-y-6">
                 <div className="bg-white border border-gray-200 rounded-2xl p-6">
                   <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                    Tổng Chi Phí: <span className="text-[#ff3131]">{diary.totalBudget}</span>
+                    {language === 'vi' ? 'Tổng Chi Phí:' : 'Total Cost:'} <span className="text-[#ff3131]">{diary.totalBudget}</span>
                   </h3>
                   <div className="space-y-5">
                     {diary.budgetBreakdown.map((item) => (
@@ -485,13 +490,13 @@ export function WanderDiaryDetail() {
                             style={{ width: `${item.percentage}%` }}
                           />
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">{item.percentage}% tổng ngân sách</p>
+                        <p className="text-sm text-gray-500 mt-1">{item.percentage}% {t("budgetPct", "diaryDetail")}</p>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="bg-[#FFF5F3] rounded-2xl p-6">
-                  <h4 className="font-bold text-gray-900 mb-4">💡 Lưu Ý Ngân Sách</h4>
+                  <h4 className="font-bold text-gray-900 mb-4">{t("budgetNotes", "diaryDetail")}</h4>
                   <ul className="space-y-2 text-gray-700">
                     {diary.budgetNotes.map((note, i) => (
                       <li key={i} className="flex items-start gap-2">
@@ -508,7 +513,7 @@ export function WanderDiaryDetail() {
             {activeTab === "tips" && (
               <div className="space-y-6">
                 <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Mẹo Kinh Nghiệm</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">{t("tipsExperience", "diaryDetail")}</h3>
                   <ul className="space-y-4">
                     {diary.tips.map((tip, index) => (
                       <li key={index} className="flex items-start gap-4">
@@ -521,10 +526,10 @@ export function WanderDiaryDetail() {
                   </ul>
                 </div>
                 <div className="bg-[#FFF5F3] rounded-2xl p-6">
-                  <h4 className="font-bold text-gray-900 mb-3">📍 Bản Đồ Tương Tác</h4>
+                  <h4 className="font-bold text-gray-900 mb-3">{t("interactiveMap", "diaryDetail")}</h4>
                   <div className="bg-white rounded-xl p-12 text-center text-gray-500">
                     <MapPin className="mx-auto mb-3 text-[#ff914d]" size={40} />
-                    <p className="font-medium">Bản đồ lộ trình tương tác sẽ sớm ra mắt</p>
+                    <p className="font-medium">{t("mapComingSoon", "diaryDetail")}</p>
                   </div>
                 </div>
               </div>
@@ -533,8 +538,8 @@ export function WanderDiaryDetail() {
             {/* Reviews */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Đánh Giá Cộng Đồng
-                <span className="ml-3 text-base font-normal text-gray-500">({diary.reviews.length} đánh giá)</span>
+                {t("communityReviews", "diaryDetail")}
+                <span className="ml-3 text-base font-normal text-gray-500">({diary.reviews.length} {t("reviewsUnit", "diaryDetail")})</span>
               </h3>
               <div className="space-y-5">
                 {diary.reviews.map((review, index) => (
@@ -553,10 +558,10 @@ export function WanderDiaryDetail() {
                     <p className="text-gray-700 mt-2">{review.text}</p>
                     <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
                       <button className="flex items-center gap-1 hover:text-[#ff3131] transition-colors">
-                        <ThumbsUp size={15} /><span>Hữu Ích</span>
+                        <ThumbsUp size={15} /><span>{language === 'vi' ? 'Hữu Ích' : 'Helpful'}</span>
                       </button>
                       <button className="flex items-center gap-1 hover:text-[#ff3131] transition-colors">
-                        <MessageCircle size={15} /><span>Trả Lời</span>
+                        <MessageCircle size={15} /><span>{language === 'vi' ? 'Trả Lời' : 'Reply'}</span>
                       </button>
                     </div>
                   </div>
@@ -567,8 +572,8 @@ export function WanderDiaryDetail() {
             {/* Comments Section */}
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6 px-1">
-                Bình Luận
-                <span className="ml-3 text-base font-normal text-gray-500">({diary.commentsCount || 0} bình luận)</span>
+                {t("commentsTitle", "diaryDetail")}
+                <span className="ml-3 text-base font-normal text-gray-500">({diary.commentsCount || 0} {t("commentsUnit", "diaryDetail")})</span>
               </h3>
               <CommentsSection diaryId={id!} />
             </div>
@@ -582,33 +587,33 @@ export function WanderDiaryDetail() {
                 <ImageWithFallback src={diary.author.avatar} alt={diary.author.name} className="w-16 h-16 rounded-full object-cover" />
                 <div>
                   <h3 className="font-bold text-gray-900">{diary.author.name}</h3>
-                  <p className="text-sm text-gray-600">Nhà Sáng Tạo Du Lịch</p>
+                  <p className="text-sm text-gray-600">{t("creator", "diaryDetail")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
                   <p className="font-bold text-[#ff3131] text-lg">{diary.author.diariesCount}</p>
-                  <p className="text-xs text-gray-600">Nhật Ký</p>
+                  <p className="text-xs text-gray-600">{t("myJournals", "common")}</p>
                 </div>
                 <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
                   <p className="font-bold text-[#ff3131] text-lg">{diary.author.followersCount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-600">Người Theo Dõi</p>
+                  <p className="text-xs text-gray-600">{language === 'vi' ? 'Người Theo Dõi' : 'Followers'}</p>
                 </div>
               </div>
               <button className="w-full py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all">
-                Theo Dõi
+                {t("follow", "diaryDetail")}
               </button>
             </div>
 
             {/* Quick Info */}
             <div className="bg-[#FFF5F3] rounded-2xl p-6 space-y-4">
-              <h3 className="font-bold text-gray-900 mb-2">Thông Tin Chuyến Đi</h3>
+              <h3 className="font-bold text-gray-900 mb-2">{t("tripInfo", "diaryDetail")}</h3>
               {[
-                { icon: Calendar, label: "Thời Gian", value: diary.duration },
-                { icon: Wallet, label: "Tổng Ngân Sách", value: diary.totalBudget },
-                { icon: Users, label: "Số Người", value: diary.groupSize },
-                { icon: Shield, label: "Độ Tin Cậy", value: `${diary.trustScore}% Đã Xác Minh` },
-                { icon: MapPin, label: "Điểm Đến", value: diary.location },
+                { icon: Calendar, label: language === 'vi' ? "Thời Gian" : "Duration", value: language === 'vi' ? diary.duration : diary.duration.replace("ngày", "days") },
+                { icon: Wallet, label: language === 'vi' ? "Tổng Ngân Sách" : "Total Budget", value: diary.totalBudget },
+                { icon: Users, label: language === 'vi' ? "Số Người" : "Group Size", value: language === 'vi' ? diary.groupSize : (diary.groupSize === 'Cặp đôi' ? 'Couple' : diary.groupSize === '1 mình' ? 'Solo' : diary.groupSize === 'Gia đình' ? 'Family' : diary.groupSize) },
+                { icon: Shield, label: t("trustScore", "diaryDetail"), value: `${diary.trustScore}% ${t("verified", "diaryDetail")}` },
+                { icon: MapPin, label: language === 'vi' ? "Điểm Đến" : "Destination", value: diary.location },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-3">
                   <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -624,7 +629,7 @@ export function WanderDiaryDetail() {
 
             {/* Related */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <h3 className="font-bold text-gray-900 mb-4">Chuyến Đi Tương Tự</h3>
+              <h3 className="font-bold text-gray-900 mb-4">{t("similarTrips", "diaryDetail")}</h3>
               <div className="space-y-4">
                 {diary.related.map((rel) => (
                   <Link key={rel.id} to={`/diary/${rel.id}`} className="block group">
@@ -634,10 +639,10 @@ export function WanderDiaryDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-[#ff3131] transition-colors">{rel.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{rel.duration} • {rel.budget}</p>
+                        <p className="text-xs text-gray-500 mt-1">{language === 'vi' ? rel.duration : rel.duration.replace("ngày", "days")} • {rel.budget}</p>
                         <div className="flex items-center gap-1 mt-1">
                           <Shield className="text-[#ff3131]" size={12} />
-                          <p className="text-xs text-[#ff3131] font-semibold">{rel.trustScore}% Tin Cậy</p>
+                          <p className="text-xs text-[#ff3131] font-semibold">{rel.trustScore}% {language === 'vi' ? 'Tin Cậy' : 'Trust'}</p>
                         </div>
                       </div>
                     </div>
@@ -645,7 +650,7 @@ export function WanderDiaryDetail() {
                 ))}
               </div>
               <Link to="/explore" className="mt-4 w-full py-3 border-2 border-[#ff3131] text-[#ff3131] rounded-xl font-semibold hover:bg-[#FFF5F3] transition-all text-center block text-sm">
-                Xem Tất Cả Nhật Ký →
+                {t("viewAllDiaries", "diaryDetail")}
               </Link>
             </div>
           </div>

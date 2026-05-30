@@ -7,6 +7,108 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
+import { useLanguageStore } from "@/stores";
+
+const translateItineraryItem = (text: string, lang: string) => {
+  if (lang === 'vi') return text;
+  const dict: Record<string, string> = {
+    "Bắc Đảo & Hoàng Hôn": "North Island & Sunset",
+    "Sáng: Đến Phú Quốc, check-in resort": "Morning: Arrive in Phu Quoc, check-in resort",
+    "Trưa: Ăn hải sản tươi tại chợ Dương Đông": "Noon: Fresh seafood at Duong Dong market",
+    "Chiều: Tham quan dinh Cậu ngắm hoàng hôn": "Afternoon: Visit Dinh Cau for sunset view",
+    "Tối: Chợ đêm Phú Quốc – thưởng thức đặc sản": "Evening: Phu Quoc Night Market – enjoy local specialties",
+    "Lặn Biển & Cáp Treo": "Snorkeling & Cable Car",
+    "Sáng sớm: Tour lặn biển 3 đảo": "Early morning: 3-island snorkeling tour",
+    "Trưa: Ăn trưa tại nhà hàng nổi": "Noon: Lunch at floating restaurant",
+    "Chiều: Cáp treo Hòn Thơm – view đỉnh": "Afternoon: Hon Thom Cable Car - scenic view",
+    "Tối: Sunset Sanato Beach Club": "Evening: Sunset Sanato Beach Club",
+    "Nam Đảo & Bay Về": "South Island & Return",
+    "Sáng: Tắm biển Bãi Sao – đẹp nhất đảo": "Morning: Swim at Bai Sao Beach – most beautiful",
+    "Trưa: Ăn nhum biển tại bãi biển": "Noon: Eat sea urchin on the beach",
+    "Chiều: Mua quà lưu niệm, check-out": "Afternoon: Buy souvenirs, check-out",
+    "Tối: Bay về": "Evening: Flight back home",
+    "Đến Đảo & Khám Phá Bắc": "Arrive & Explore North",
+    "Bay đến Phú Quốc, nhận phòng": "Fly to Phu Quoc, check-in",
+    "Thăm Làng Chài & khu nuôi cấy ngọc trai": "Visit Fishing Village & pearl farm",
+    "Chiều: Dinh Cậu – ngắm hoàng hôn": "Afternoon: Dinh Cau – sunset watching",
+    "Tối: Bia hơi tươi & hải sản chợ đêm": "Evening: Fresh draft beer & night market seafood",
+    "Tour 3 Đảo & Lặn Biển": "3-Island Tour & Snorkeling",
+    "7h sáng: Xuất phát tour 3 đảo nam": "7:00 AM: Start south 3-island tour",
+    "Lặn ngắm san hô tại Hòn Mây Rút": "Snorkel & view coral at Hon May Rut",
+    "Câu cá & bơi lội tại bãi trống": "Fishing & swimming at open beach",
+    "Ăn hải sản BBQ ngay trên thuyền": "BBQ seafood lunch on the boat",
+    "VinWonders & Cáp Treo": "VinWonders & Cable Car",
+    "Sáng: Cáp treo Hòn Thơm – dài nhất TG": "Morning: Hon Thom Cable Car – longest globally",
+    "Trưa: Ăn trưa tại Grand World": "Noon: Lunch at Grand World",
+    "Chiều: VinWonders Park – đủ trò vui": "Afternoon: VinWonders Park – full of activities",
+    "Tối: Vinpearl Safari nếu thích": "Evening: Vinpearl Safari if desired",
+    "Bắc Đảo & Rừng Nguyên Sinh": "North Island & Primeval Forest",
+    "Sáng: Khám phá rừng quốc gia Phú Quốc": "Morning: Explore Phu Quoc National Forest",
+    "Trưa: Ăn cơm rừng tại nhà hàng sinh thái": "Noon: Forest rice at eco-restaurant",
+    "Chiều: Tham quan làng nghề nước mắm": "Afternoon: Visit fish sauce craft village",
+    "Tối: Spa thư giãn tại resort": "Evening: Relaxing spa at resort",
+    "Bãi Sao & Về Nhà": "Bai Sao Beach & Going Home",
+    "Sáng: Bãi Sao – tắm biển lần cuối": "Morning: Bai Sao Beach – final swim",
+    "Trưa: Ăn bánh mì Phú Quốc, dừa tươi": "Noon: Eat Phu Quoc banh mi, fresh coconut",
+    "Chiều: Check-out, ra sân bay": "Afternoon: Check-out, transfer to airport",
+    "Về với hàng ngàn kỷ niệm đẹp 💫": "Return with thousands of beautiful memories 💫",
+    "Vé máy bay (khứ hồi)": "Flight ticket (round trip)",
+    "Khách sạn / Resort": "Hotel / Resort",
+    "Ăn uống": "Dining",
+    "Tour & Vui chơi": "Tour & Activities",
+    "Di chuyển nội đảo": "On-island transport",
+    "Tổng ước tính": "Total estimate"
+  };
+  return dict[text] || text;
+};
+
+const translateCategory = (text: string, lang: string) => {
+  if (lang === 'vi') return text;
+  const dict: Record<string, string> = {
+    // Tags
+    "Biển & Đảo": "Beach & Island",
+    "Kỳ quan": "Wonder",
+    "Thành phố": "City",
+    "Văn hóa": "Culture",
+    "Biển": "Beach",
+    "Trekking": "Trekking",
+    "Nghỉ dưỡng": "Resort",
+    "Ẩm thực": "Culinary",
+    "Lặn biển": "Snorkeling",
+    
+    // Group sizes
+    "1 mình": "Solo",
+    "Cặp đôi": "Couple",
+    "Nhóm bạn (3–5)": "Friends Group (3–5)",
+    "Gia đình": "Family",
+    "Đoàn lớn (6+)": "Large Group (6+)",
+    
+    // Budgets
+    "Tiết kiệm": "Budget",
+    "Trung bình": "Moderate",
+    "Thoải mái": "Comfortable",
+    "Sang trọng": "Luxury",
+    "< 5 triệu/người": "< 5m VND/person",
+    "5–15 triệu/người": "5–15m VND/person",
+    "15–30 triệu/người": "15–30m VND/person",
+    "> 30 triệu/người": "> 30m VND/person",
+
+    // Durations
+    "3 ngày": "3 days",
+    "4 ngày": "4 days",
+    "5 ngày": "5 days",
+    "6 ngày": "6 days",
+    "7 ngày": "7 days",
+    "10+ ngày": "10+ days",
+    
+    // Interests
+    "Biển & Bơi lội": "Beach & Swimming",
+    "Chụp ảnh": "Photography",
+    "Leo núi": "Mountain Climbing",
+    "Văn hóa & Lịch sử": "Culture & History",
+  };
+  return dict[text] || text;
+};
 
 const DESTINATIONS = [
   { id: "pq", name: "Phú Quốc", region: "Kiên Giang", tag: "Biển & Đảo", image: "https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
@@ -77,6 +179,7 @@ const RELATED_FROM_EXPLORE = [
 type Step = 1 | 2 | 3 | 4;
 
 export function CreateItinerary() {
+  const { t, language } = useLanguageStore();
   const [step, setStep] = useState<Step>(1);
   const [destination, setDestination] = useState("pq");
   const [duration, setDuration] = useState("5 ngày");
@@ -122,21 +225,21 @@ export function CreateItinerary() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles size={22} />
-            <span className="font-semibold text-sm tracking-wide uppercase">AI Lập Kế Hoạch</span>
+            <span className="font-semibold text-sm tracking-wide uppercase">{t("title", "createItinerary")}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold mb-2">Tạo Lịch Trình Cá Nhân Hóa</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2">{t("subtitle", "createItinerary")}</h1>
           <p className="text-white/80 text-sm sm:text-base">
-            Trả lời 3 câu hỏi ngắn – AI sẽ tạo lịch trình hoàn hảo riêng cho bạn
+            {t("desc", "createItinerary")}
           </p>
         </div>
 
         {/* Progress steps */}
         <div className="max-w-2xl mx-auto mt-8 flex items-center gap-0">
           {[
-            { n: 1, label: "Điểm đến" },
-            { n: 2, label: "Nhóm & Ngân sách" },
-            { n: 3, label: "Sở thích" },
-            { n: 4, label: "Lịch trình" },
+            { n: 1, label: t("step1", "createItinerary") },
+            { n: 2, label: t("step2", "createItinerary") },
+            { n: 3, label: t("step3", "createItinerary") },
+            { n: 4, label: t("step4", "createItinerary") },
           ].map(({ n, label }, i) => (
             <div key={n} className="flex items-center flex-1 last:flex-none">
               <div className="flex flex-col items-center">
@@ -169,8 +272,8 @@ export function CreateItinerary() {
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Bạn muốn đi đâu?</h2>
-              <p className="text-sm text-gray-500">Chọn điểm đến mơ ước của bạn</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("question1", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("selectDestDesc", "createItinerary")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {DESTINATIONS.map((dest) => (
@@ -194,7 +297,7 @@ export function CreateItinerary() {
                   )}
                   <div className="absolute bottom-0 left-0 right-0 p-2.5 text-left">
                     <p className="text-white font-bold text-sm leading-tight">{dest.name}</p>
-                    <p className="text-white/70 text-xs">{dest.tag}</p>
+                    <p className="text-white/70 text-xs">{translateCategory(dest.tag, language)}</p>
                   </div>
                 </button>
               ))}
@@ -203,7 +306,7 @@ export function CreateItinerary() {
             {/* Duration picker */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Clock size={16} className="text-[#ff3131]" /> Thời gian chuyến đi
+                <Clock size={16} className="text-[#ff3131]" /> {t("tripDuration", "createItinerary")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {DURATIONS.map((d) => (
@@ -216,7 +319,7 @@ export function CreateItinerary() {
                         : "bg-white text-gray-700 border-gray-200 hover:border-[#ff3131]"
                     }`}
                   >
-                    {d}
+                    {translateCategory(d, language)}
                   </button>
                 ))}
               </div>
@@ -226,7 +329,7 @@ export function CreateItinerary() {
               onClick={() => setStep(2)}
               className={`w-full py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 ${gradientBtn}`}
             >
-              Tiếp theo <ChevronRight size={18} />
+              {t("nextBtn", "createItinerary")} <ChevronRight size={18} />
             </button>
           </div>
         )}
@@ -235,13 +338,13 @@ export function CreateItinerary() {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Nhóm & Ngân sách</h2>
-              <p className="text-sm text-gray-500">Giúp AI tối ưu lịch trình cho bạn</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("step2", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("optimizeDesc", "createItinerary")}</p>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Users size={16} className="text-[#ff3131]" /> Bạn đi cùng ai?
+                <Users size={16} className="text-[#ff3131]" /> {t("question2", "createItinerary")}
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {GROUP_SIZES.map((g) => (
@@ -254,7 +357,7 @@ export function CreateItinerary() {
                         : "bg-white text-gray-700 border-gray-200 hover:border-[#ff3131]"
                     }`}
                   >
-                    {g}
+                    {translateCategory(g, language)}
                   </button>
                 ))}
               </div>
@@ -262,7 +365,7 @@ export function CreateItinerary() {
 
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Wallet size={16} className="text-[#ff3131]" /> Mức ngân sách?
+                <Wallet size={16} className="text-[#ff3131]" /> {t("question3", "createItinerary")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {BUDGETS.map((b) => (
@@ -277,9 +380,9 @@ export function CreateItinerary() {
                   >
                     <div className="text-2xl mb-1">{b.icon}</div>
                     <p className={`font-semibold text-sm ${budget === b.label ? "text-[#ff3131]" : "text-gray-800"}`}>
-                      {b.label}
+                      {translateCategory(b.label, language)}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{b.range}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{translateCategory(b.range, language)}</p>
                   </button>
                 ))}
               </div>
@@ -290,13 +393,13 @@ export function CreateItinerary() {
                 onClick={() => setStep(1)}
                 className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 text-gray-700 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
-                <ChevronLeft size={18} /> Quay lại
+                <ChevronLeft size={18} /> {t("backBtn", "createItinerary")}
               </button>
               <button
                 onClick={() => setStep(3)}
                 className={`flex-[2] py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 ${gradientBtn}`}
               >
-                Tiếp theo <ChevronRight size={18} />
+                {t("nextBtn", "createItinerary")} <ChevronRight size={18} />
               </button>
             </div>
           </div>
@@ -306,8 +409,8 @@ export function CreateItinerary() {
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Bạn thích gì nhất?</h2>
-              <p className="text-sm text-gray-500">Chọn những hoạt động yêu thích (có thể chọn nhiều)</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("question4", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("activitiesDesc", "createItinerary")}</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -322,7 +425,7 @@ export function CreateItinerary() {
                   }`}
                 >
                   <span className={interests.includes(label) ? "text-[#ff3131]" : "text-gray-400"}>{icon}</span>
-                  <span className="text-sm font-medium leading-tight">{label}</span>
+                  <span className="text-sm font-medium leading-tight">{translateCategory(label, language)}</span>
                   {interests.includes(label) && (
                     <Check size={14} className="ml-auto text-[#ff3131] flex-shrink-0" />
                   )}
@@ -332,12 +435,12 @@ export function CreateItinerary() {
 
             {/* Summary card */}
             <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-2xl p-4 border border-red-100">
-              <p className="text-xs font-semibold text-[#ff3131] uppercase tracking-wide mb-3">Tóm tắt lịch trình</p>
+              <p className="text-xs font-semibold text-[#ff3131] uppercase tracking-wide mb-3">{t("itinerarySummary", "createItinerary")}</p>
               <div className="grid grid-cols-2 gap-y-2 text-sm">
                 <div className="flex items-center gap-2 text-gray-600"><MapPin size={14} className="text-[#ff3131]" /> {selectedDest.name}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Clock size={14} className="text-[#ff3131]" /> {duration}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Users size={14} className="text-[#ff3131]" /> {groupSize}</div>
-                <div className="flex items-center gap-2 text-gray-600"><Wallet size={14} className="text-[#ff3131]" /> {budget}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Clock size={14} className="text-[#ff3131]" /> {translateCategory(duration, language)}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Users size={14} className="text-[#ff3131]" /> {translateCategory(groupSize, language)}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Wallet size={14} className="text-[#ff3131]" /> {translateCategory(budget, language)}</div>
               </div>
             </div>
 
@@ -346,7 +449,7 @@ export function CreateItinerary() {
                 onClick={() => setStep(2)}
                 className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 text-gray-700 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
-                <ChevronLeft size={18} /> Quay lại
+                <ChevronLeft size={18} /> {t("backBtn", "createItinerary")}
               </button>
               <button
                 onClick={handleGenerate}
@@ -356,11 +459,11 @@ export function CreateItinerary() {
                 {isGenerating ? (
                   <>
                     <RefreshCw size={18} className="animate-spin" />
-                    AI đang tạo lịch trình...
+                    {t("generating", "createItinerary")}
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} /> Tạo Lịch Trình
+                    <Sparkles size={18} /> {t("generateBtn", "createItinerary")}
                   </>
                 )}
               </button>
@@ -375,22 +478,22 @@ export function CreateItinerary() {
             <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl p-5 text-white">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={18} />
-                <span className="text-sm font-semibold">Lịch trình được tạo bởi AI</span>
+                <span className="text-sm font-semibold">{t("resultTitle", "createItinerary")}</span>
               </div>
               <h2 className="text-xl font-bold mb-1">
-                {selectedDest.name} · {duration}
+                {selectedDest.name} · {translateCategory(duration, language)}
               </h2>
               <div className="flex flex-wrap gap-3 text-sm text-white/90">
-                <span className="flex items-center gap-1"><Users size={13} /> {groupSize}</span>
-                <span className="flex items-center gap-1"><Wallet size={13} /> {budget}</span>
-                <span className="flex items-center gap-1"><Star size={13} /> Phù hợp 96%</span>
+                <span className="flex items-center gap-1"><Users size={13} /> {translateCategory(groupSize, language)}</span>
+                <span className="flex items-center gap-1"><Wallet size={13} /> {translateCategory(budget, language)}</span>
+                <span className="flex items-center gap-1"><Star size={13} /> {t("fitLabel", "createItinerary")} 96%</span>
               </div>
             </div>
 
             {/* Day-by-day */}
             <div className="space-y-4">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <Calendar size={16} className="text-[#ff3131]" /> Lịch trình từng ngày
+                <Calendar size={16} className="text-[#ff3131]" /> {t("dailyItinerary", "createItinerary")}
               </h3>
               {(isPhúQuoc ? itinerary : itinerary).map((day) => (
                 <div key={day.day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -398,8 +501,8 @@ export function CreateItinerary() {
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{day.emoji}</span>
                       <div>
-                        <span className="text-xs font-semibold text-[#ff3131] uppercase">Ngày {day.day}</span>
-                        <p className="font-bold text-gray-900 text-sm">{day.title}</p>
+                        <span className="text-xs font-semibold text-[#ff3131] uppercase">{t("dayLabel", "createItinerary")} {day.day}</span>
+                        <p className="font-bold text-gray-900 text-sm">{translateItineraryItem(day.title, language)}</p>
                       </div>
                     </div>
                     <span className="text-sm font-semibold text-[#ff3131] bg-white px-2 py-1 rounded-lg">
@@ -410,7 +513,7 @@ export function CreateItinerary() {
                     {day.activities.map((act, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                         <span className="w-1.5 h-1.5 bg-[#ff914d] rounded-full mt-1.5 flex-shrink-0" />
-                        {act}
+                        {translateItineraryItem(act, language)}
                       </li>
                     ))}
                   </ul>
@@ -421,7 +524,7 @@ export function CreateItinerary() {
             {/* Budget estimate */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Wallet size={16} className="text-[#ff3131]" /> Ước tính chi phí
+                <Wallet size={16} className="text-[#ff3131]" /> {t("costEstimate", "createItinerary")}
               </h3>
               <div className="space-y-2">
                 {[
@@ -432,13 +535,13 @@ export function CreateItinerary() {
                   { label: "Di chuyển nội đảo", amount: "500.000₫" },
                 ].map(({ label, amount }) => (
                   <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{label}</span>
+                    <span className="text-gray-600">{translateItineraryItem(label, language)}</span>
                     <span className="font-semibold text-gray-900">{amount}</span>
                   </div>
                 ))}
                 <div className="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between">
-                  <span className="font-bold text-gray-900">Tổng ước tính</span>
-                  <span className="font-bold text-[#ff3131] text-base">~11.400.000₫/người</span>
+                  <span className="font-bold text-gray-900">{t("totalEstimate", "createItinerary")}</span>
+                  <span className="font-bold text-[#ff3131] text-base">~11.400.000₫/{language === 'vi' ? 'người' : 'person'}</span>
                 </div>
               </div>
             </div>
@@ -446,7 +549,7 @@ export function CreateItinerary() {
             {/* Related diaries from Explore */}
             <div>
               <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Star size={16} className="text-[#ff3131]" /> Nhật ký thực tế từ cộng đồng
+                <Star size={16} className="text-[#ff3131]" /> {t("communityJournals", "createItinerary")}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {RELATED_FROM_EXPLORE.map((diary) => (
@@ -462,19 +565,19 @@ export function CreateItinerary() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-[#ff3131] text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                        ✓ Tin cậy {diary.trustScore}%
+                        ✓ {t("trustScoreLabel", "createItinerary")} {diary.trustScore}%
                       </div>
                     </div>
                     <div className="p-3">
                       <p className="font-semibold text-gray-900 text-sm mb-1">{diary.title}</p>
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
-                        <span className="flex items-center gap-1"><Clock size={11} />{diary.duration}</span>
+                        <span className="flex items-center gap-1"><Clock size={11} />{translateCategory(diary.duration, language)}</span>
                         <span className="flex items-center gap-1"><Wallet size={11} />{diary.budget}</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {diary.tags.map((tag) => (
                           <span key={tag} className="px-2 py-0.5 bg-red-50 text-[#ff3131] rounded-full text-xs font-medium">
-                            {tag}
+                            {translateCategory(tag, language)}
                           </span>
                         ))}
                       </div>
@@ -486,7 +589,7 @@ export function CreateItinerary() {
                 to="/explore"
                 className="mt-3 flex items-center justify-center gap-2 text-sm text-[#ff3131] font-semibold hover:underline"
               >
-                Xem thêm nhật ký tại Khám phá <ArrowRight size={14} />
+                {t("viewMoreJournals", "createItinerary")} <ArrowRight size={14} />
               </Link>
             </div>
 
@@ -496,7 +599,7 @@ export function CreateItinerary() {
                 onClick={() => { setStep(1); setGenerated(false); setIsSaved(false); }}
                 className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 font-semibold flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
-                <RefreshCw size={16} /> Tạo lại
+                <RefreshCw size={16} /> {t("regenerate", "createItinerary")}
               </button>
               <button
                 onClick={() => {
@@ -528,13 +631,13 @@ export function CreateItinerary() {
                 }`}
               >
                 {isSaved ? (
-                  <><BookmarkCheck size={16} /> Đã lưu!</>
+                  <><BookmarkCheck size={16} /> {t("saved", "createItinerary")}</>
                 ) : (
-                  <><Bookmark size={16} /> Lưu lịch trình</>
+                  <><Bookmark size={16} /> {t("saveItinerary", "createItinerary")}</>
                 )}
               </button>
               <button className={`flex-1 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 ${gradientBtn}`}>
-                <Share2 size={16} /> Chia sẻ
+                <Share2 size={16} /> {t("share", "createItinerary")}
               </button>
             </div>
 
@@ -543,7 +646,7 @@ export function CreateItinerary() {
                 to="/dashboard"
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-semibold hover:shadow-lg transition-all"
               >
-                <BookmarkCheck size={18} /> Xem lịch trình đã lưu trong Dashboard
+                <BookmarkCheck size={18} /> {t("viewSavedDashboard", "createItinerary")}
               </Link>
             )}
           </div>
