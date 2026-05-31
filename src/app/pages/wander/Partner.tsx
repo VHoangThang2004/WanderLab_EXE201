@@ -6,7 +6,6 @@ import {
   Users,
   BarChart3,
   MapPin,
-  DollarSign,
   Star,
   Zap,
   Globe,
@@ -15,126 +14,10 @@ import {
   Briefcase,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-
-const pricingPlans = [
-  {
-    name: "Free",
-    price: "0₫",
-    period: "/tháng",
-    planKey: "free",
-    description: "Bản miễn phí - Đang sử dụng",
-    features: [
-      "AI trợ lý: 5-10 lượt/ngày",
-      "Đăng tải nội dung Full HD",
-      "Giới hạn dung lượng video",
-      "Tạo nhật ký du lịch",
-      "Chia sẻ với cộng đồng",
-    ],
-    color: "bg-[#FFF5F3]",
-    popular: false,
-    isCurrent: true,
-  },
-  {
-    name: "Starter",
-    price: "50.000₫",
-    period: "/tháng",
-    planKey: "starter",
-    description: "Phù hợp cho người dùng thường xuyên",
-    features: [
-      "AI trợ lý: 100 lượt/tháng",
-      "Chất lượng video 2K",
-      "Video không giới hạn dung lượng",
-      "Phân tích cơ bản",
-      "Hỗ trợ qua email",
-      "Lưu trữ không giới hạn",
-    ],
-    color: "bg-[#FFE8E0]",
-    popular: true,
-    isCurrent: false,
-  },
-  {
-    name: "Professional",
-    price: "150.000₫",
-    period: "/tháng",
-    planKey: "professional",
-    description: "Dành cho người sáng tạo nội dung chuyên nghiệp",
-    features: [
-      "AI trợ lý: Không giới hạn",
-      "Nội dung 4K siêu nét",
-      "Không giới hạn dung lượng",
-      "Cá nhân hóa trang cá nhân",
-      "Phân tích & thông tin nâng cao",
-      "Hỗ trợ ưu tiên 24/7",
-      "Huy hiệu xác minh",
-      "Truy cập API",
-    ],
-    color: "bg-gradient-to-br from-[#ff3131] to-[#ff914d]",
-    popular: false,
-    isCurrent: false,
-  },
-];
-
-const benefits = [
-  {
-    icon: Users,
-    title: "50.000+ Du Khách Đang Hoạt Động",
-    description: "Kết nối với cộng đồng du khách được xác minh đang tích cực lên kế hoạch chuyến đi",
-  },
-  {
-    icon: Target,
-    title: "Tiếp Cận Mục Tiêu",
-    description: "Được khám phá bởi du khách quan tâm cụ thể đến điểm đến và dịch vụ của bạn",
-  },
-  {
-    icon: TrendingUp,
-    title: "ROI Trung Bình 250%",
-    description: "Đối tác của chúng tôi thấy tăng trưởng đáng kể về đặt chỗ và hiển thị thương hiệu",
-  },
-  {
-    icon: Shield,
-    title: "Tin Tưởng & Xác Minh",
-    description: "Hưởng lợi từ hệ thống xác minh xây dựng niềm tin của du khách",
-  },
-  {
-    icon: BarChart3,
-    title: "Phân Tích Thời Gian Thực",
-    description: "Theo dõi hiển thị, nhấp chuột và chuyển đổi với thông tin chi tiết",
-  },
-  {
-    icon: Zap,
-    title: "Tích Hợp Dễ Dàng",
-    description: "Thiết lập liền mạch với hệ thống đặt chỗ và trang web hiện có",
-  },
-];
-
-const testimonials = [
-  {
-    company: "Phú Quốc Resort",
-    author: "Nguyễn Minh Châu",
-    role: "Chủ Sở Hữu",
-    image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    text: "WanderLab đã biến đổi doanh nghiệp của chúng tôi. Chúng tôi đã thấy tăng 300% đặt phòng từ du khách quốc tế.",
-    rating: 5,
-  },
-  {
-    company: "Sa Pa Adventures",
-    author: "Trần Văn Hùng",
-    role: "Giám Đốc Marketing",
-    image: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBjYXN1YWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3OTYyMTd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    text: "Chất lượng khách hàng tiềm năng rất xuất sắc. Đây là những du khách thực sự quan tâm và sẵn sàng đặt chỗ.",
-    rating: 5,
-  },
-  {
-    company: "Hội An Food Tours",
-    author: "Lê Thị Hương",
-    role: "Người Sáng Lập",
-    image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    text: "Bảng điều khiển phân tích cung cấp thông tin chi tiết mà chúng tôi chưa từng có. Giờ đây chúng tôi có thể tối ưu hóa dịch vụ dựa trên dữ liệu thực.",
-    rating: 5,
-  },
-];
+import { useLanguageStore } from "@/stores";
 
 export function WanderPartner() {
+  const { t, language } = useLanguageStore();
   const [formData, setFormData] = useState({
     businessName: "",
     contactName: "",
@@ -146,9 +29,127 @@ export function WanderPartner() {
     message: "",
   });
 
+  const pricingPlans = [
+    {
+      name: "Free",
+      price: "0₫",
+      period: language === 'vi' ? "/tháng" : "/month",
+      planKey: "free",
+      description: t("planFreeDesc", "partner"),
+      features: [
+        t("featureFree1", "partner"),
+        t("featureFree2", "partner"),
+        t("featureFree3", "partner"),
+        t("featureFree4", "partner"),
+        t("featureFree5", "partner"),
+      ],
+      color: "bg-[#FFF5F3]",
+      popular: false,
+      isCurrent: true,
+    },
+    {
+      name: "Starter",
+      price: "50.000₫",
+      period: language === 'vi' ? "/tháng" : "/month",
+      planKey: "starter",
+      description: t("planStarterDesc", "partner"),
+      features: [
+        t("featureStarter1", "partner"),
+        t("featureStarter2", "partner"),
+        t("featureStarter3", "partner"),
+        t("featureStarter4", "partner"),
+        t("featureStarter5", "partner"),
+        t("featureStarter6", "partner"),
+      ],
+      color: "bg-[#FFE8E0]",
+      popular: true,
+      isCurrent: false,
+    },
+    {
+      name: "Professional",
+      price: "150.000₫",
+      period: language === 'vi' ? "/tháng" : "/month",
+      planKey: "professional",
+      description: t("planProfessionalDesc", "partner"),
+      features: [
+        t("featureProfessional1", "partner"),
+        t("featureProfessional2", "partner"),
+        t("featureProfessional3", "partner"),
+        t("featureProfessional4", "partner"),
+        t("featureProfessional5", "partner"),
+        t("featureProfessional6", "partner"),
+        t("featureProfessional7", "partner"),
+        t("featureProfessional8", "partner"),
+      ],
+      color: "bg-gradient-to-br from-[#ff3131] to-[#ff914d]",
+      popular: false,
+      isCurrent: false,
+    },
+  ];
+
+  const benefits = [
+    {
+      icon: Users,
+      title: t("benefit1Title", "partner"),
+      description: t("benefit1Desc", "partner"),
+    },
+    {
+      icon: Target,
+      title: t("benefit2Title", "partner"),
+      description: t("benefit2Desc", "partner"),
+    },
+    {
+      icon: TrendingUp,
+      title: t("benefit3Title", "partner"),
+      description: t("benefit3Desc", "partner"),
+    },
+    {
+      icon: Shield,
+      title: t("benefit4Title", "partner"),
+      description: t("benefit4Desc", "partner"),
+    },
+    {
+      icon: BarChart3,
+      title: t("benefit5Title", "partner"),
+      description: t("benefit5Desc", "partner"),
+    },
+    {
+      icon: Zap,
+      title: t("benefit6Title", "partner"),
+      description: t("benefit6Desc", "partner"),
+    },
+  ];
+
+  const testimonials = [
+    {
+      company: "Phú Quốc Resort",
+      author: "Nguyễn Minh Châu",
+      role: t("testimonial1Role", "partner"),
+      image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      text: t("testimonial1Text", "partner"),
+      rating: 5,
+    },
+    {
+      company: "Sa Pa Adventures",
+      author: "Trần Văn Hùng",
+      role: t("testimonial2Role", "partner"),
+      image: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBjYXN1YWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3OTYyMTd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      text: t("testimonial2Text", "partner"),
+      rating: 5,
+    },
+    {
+      company: "Hội An Food Tours",
+      author: "Lê Thị Hương",
+      role: t("testimonial3Role", "partner"),
+      image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      text: t("testimonial3Text", "partner"),
+      rating: 5,
+    },
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Cảm ơn bạn đã quan tâm! Chúng tôi sẽ liên hệ trong vòng 24 giờ.");
+    alert(t("submitSuccess", "partner"));
   };
 
   return (
@@ -160,15 +161,15 @@ export function WanderPartner() {
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
                 <Briefcase className="text-white" size={18} />
-                <span className="text-sm font-medium">Dành Cho Doanh Nghiệp Du Lịch</span>
+                <span className="text-sm font-medium">{t("badge", "partner")}</span>
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                Chọn Gói Của Bạn
+                {t("title", "partner")}
               </h1>
 
               <p className="text-xl text-white/90 leading-relaxed">
-                Tham gia mạng lưới đã xác minh của WanderLab và tiếp cận 50.000+ du khách đang hoạt động lên kế hoạch chuyến phiêu lưu tiếp theo.
+                {t("subtitle", "partner")}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -176,28 +177,28 @@ export function WanderPartner() {
                   href="#pricing"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all shadow-lg"
                 >
-                  Xem Giá
+                  {t("viewPricingBtn", "partner")}
                 </a>
                 <a
                   href="#contact"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-semibold hover:bg-white/10 transition-all"
                 >
-                  Đặt Lịch Demo
+                  {t("bookDemoBtn", "partner")}
                 </a>
               </div>
 
               <div className="grid grid-cols-3 gap-6 pt-6">
                 <div>
                   <p className="text-3xl font-bold">500+</p>
-                  <p className="text-sm text-white/80">Doanh Nghiệp Đối Tác</p>
+                  <p className="text-sm text-white/80">{t("partnerCount", "partner")}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold">50k+</p>
-                  <p className="text-sm text-white/80">Du Khách Hoạt Động</p>
+                  <p className="text-sm text-white/80">{t("activeTravelers", "partner")}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold">250%</p>
-                  <p className="text-sm text-white/80">Tăng ROI Trung Bình</p>
+                  <p className="text-sm text-white/80">{t("avgRoi", "partner")}</p>
                 </div>
               </div>
             </div>
@@ -206,25 +207,25 @@ export function WanderPartner() {
               <div className="space-y-4">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <TrendingUp className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">Phân Tích Tăng Trưởng</h3>
-                  <p className="text-sm text-white/80">Theo dõi hiệu suất với thông tin chi tiết thời gian thực</p>
+                  <h3 className="font-bold mb-2">{t("growthAnalytics", "partner")}</h3>
+                  <p className="text-sm text-white/80">{t("growthAnalyticsDesc", "partner")}</p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <Shield className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">Huy Hiệu Tin Cậy</h3>
-                  <p className="text-sm text-white/80">Trạng thái đối tác đã xác minh xây dựng uy tín</p>
+                  <h3 className="font-bold mb-2">{t("trustBadge", "partner")}</h3>
+                  <p className="text-sm text-white/80">{t("trustBadgeDesc", "partner")}</p>
                 </div>
               </div>
               <div className="space-y-4 pt-8">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <Users className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">Khách Hàng Chất Lượng</h3>
-                  <p className="text-sm text-white/80">Kết nối với du khách sẵn sàng đặt chỗ</p>
+                  <h3 className="font-bold mb-2">{t("qualityCustomers", "partner")}</h3>
+                  <p className="text-sm text-white/80">{t("qualityCustomersDesc", "partner")}</p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <Globe className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">Tiếp Cận Toàn Cầu</h3>
-                  <p className="text-sm text-white/80">Truy cập thị trường quốc tế dễ dàng</p>
+                  <h3 className="font-bold mb-2">{t("globalReach", "partner")}</h3>
+                  <p className="text-sm text-white/80">{t("globalReachDesc", "partner")}</p>
                 </div>
               </div>
             </div>
@@ -237,9 +238,9 @@ export function WanderPartner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
-              Tại Sao Hợp Tác Với WanderLab?
+              {t("whyPartnerTitle", "partner")}
             </h2>
-            <p className="text-xl text-gray-600">Mọi thứ bạn cần để phát triển doanh nghiệp du lịch</p>
+            <p className="text-xl text-gray-600">{t("whyPartnerSubtitle", "partner")}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -264,9 +265,9 @@ export function WanderPartner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
-              Giá Cả Đơn Giản, Minh Bạch
+              {t("pricingTitle", "partner")}
             </h2>
-            <p className="text-xl text-gray-600">Chọn gói phù hợp với nhu cầu doanh nghiệp của bạn</p>
+            <p className="text-xl text-gray-600">{t("pricingSubtitle", "partner")}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -279,7 +280,7 @@ export function WanderPartner() {
               >
                 {plan.popular && (
                   <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-center py-2 text-sm font-semibold">
-                    Phổ Biến Nhất
+                    {t("mostPopular", "partner")}
                   </div>
                 )}
                 <div className="p-8">
@@ -300,9 +301,9 @@ export function WanderPartner() {
                     disabled={plan.isCurrent}
                   >
                     {plan.isCurrent ? (
-                      "Đang Sử Dụng"
+                      t("currentPlan", "partner")
                     ) : (
-                      <Link to={`/checkout?plan=${plan.planKey}`}>Nâng Cấp</Link>
+                      <Link to={`/checkout?plan=${plan.planKey}`}>{t("upgrade", "partner")}</Link>
                     )}
                   </button>
                   <ul className="mt-8 space-y-4">
@@ -324,8 +325,8 @@ export function WanderPartner() {
       <section className="py-20 bg-[#FFF5F3]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Được Tin Tưởng Bởi Các Doanh Nghiệp Hàng Đầu</h2>
-            <p className="text-xl text-gray-600">Xem đối tác của chúng tôi nói gì</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("trustedTitle", "partner")}</h2>
+            <p className="text-xl text-gray-600">{t("trustedSubtitle", "partner")}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -359,15 +360,15 @@ export function WanderPartner() {
       <section id="contact" className="py-20 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Sẵn Sàng Bắt Đầu?</h2>
-            <p className="text-xl text-gray-600">Điền form và chúng tôi sẽ liên hệ trong vòng 24 giờ</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("readyTitle", "partner")}</h2>
+            <p className="text-xl text-gray-600">{t("readySubtitle", "partner")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Tên Doanh Nghiệp *
+                  {t("labelBusinessName", "partner")}
                 </label>
                 <input
                   type="text"
@@ -380,7 +381,7 @@ export function WanderPartner() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Tên Liên Hệ *
+                  {t("labelContactName", "partner")}
                 </label>
                 <input
                   type="text"
@@ -395,7 +396,7 @@ export function WanderPartner() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Địa Chỉ Email *
+                  {t("labelEmail", "partner")}
                 </label>
                 <input
                   type="email"
@@ -408,7 +409,7 @@ export function WanderPartner() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Số Điện Thoại
+                  {t("labelPhone", "partner")}
                 </label>
                 <input
                   type="tel"
@@ -422,7 +423,7 @@ export function WanderPartner() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Loại Hình Doanh Nghiệp *
+                  {t("labelBusinessType", "partner")}
                 </label>
                 <select
                   required
@@ -430,19 +431,19 @@ export function WanderPartner() {
                   onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent bg-white"
                 >
-                  <option value="">Chọn loại hình</option>
-                  <option value="hotel">Khách Sạn / Resort</option>
-                  <option value="tour">Công Ty Lữ Hành</option>
-                  <option value="activity">Nhà Cung Cấp Hoạt Động</option>
-                  <option value="restaurant">Nhà Hàng</option>
-                  <option value="transport">Vận Chuyển</option>
-                  <option value="other">Khác</option>
+                  <option value="">{t("selectTypePlaceholder", "partner")}</option>
+                  <option value="hotel">{t("typeHotel", "partner")}</option>
+                  <option value="tour">{t("typeTour", "partner")}</option>
+                  <option value="activity">{t("typeActivity", "partner")}</option>
+                  <option value="restaurant">{t("typeRestaurant", "partner")}</option>
+                  <option value="transport">{t("typeTransport", "partner")}</option>
+                  <option value="other">{t("typeOther", "partner")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Địa Điểm *
+                  {t("labelLocation", "partner")}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -451,7 +452,7 @@ export function WanderPartner() {
                     required
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="Thành phố, Việt Nam"
+                    placeholder={t("placeholderLocation", "partner")}
                     className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
                   />
                 </div>
@@ -460,7 +461,7 @@ export function WanderPartner() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Website
+                {t("labelWebsite", "partner")}
               </label>
               <input
                 type="url"
@@ -473,13 +474,13 @@ export function WanderPartner() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Giới thiệu về doanh nghiệp của bạn
+                {t("labelIntro", "partner")}
               </label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={4}
-                placeholder="Doanh nghiệp bạn cung cấp dịch vụ gì? Mục tiêu của bạn với WanderLab là gì?"
+                placeholder={t("placeholderIntro", "partner")}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent resize-none"
               />
             </div>
@@ -488,13 +489,15 @@ export function WanderPartner() {
               type="submit"
               className="w-full py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all text-lg"
             >
-              Gửi Đơn Đăng Ký
+              {t("submitBtn", "partner")}
             </button>
 
             <p className="text-sm text-gray-600 text-center">
-              Bằng cách gửi, bạn đồng ý với{" "}
-              <a href="#" className="text-[#ff3131] hover:underline">Điều Khoản Dịch Vụ</a> và{" "}
-              <a href="#" className="text-[#ff3131] hover:underline">Chính Sách Bảo Mật</a> của chúng tôi
+              {language === 'vi' ? 'Bằng cách gửi, bạn đồng ý với ' : 'By submitting, you agree to our '}
+              <a href="#" className="text-[#ff3131] hover:underline">{t("termsLink", "partner")}</a>
+              {language === 'vi' ? ' và ' : ' and '}
+              <a href="#" className="text-[#ff3131] hover:underline">{t("privacyLink", "partner")}</a>
+              {language === 'vi' ? ' của chúng tôi' : ''}
             </p>
           </form>
         </div>

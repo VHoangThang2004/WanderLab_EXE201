@@ -46,7 +46,19 @@ const trendingDestinations = [
 
 export function WanderLanding() {
   const { isAuthenticated } = useAuthStore();
-  const { t } = useLanguageStore();
+  const { t, language } = useLanguageStore();
+
+  const translateTrendingDestName = (name: string, lang: string) => {
+    if (lang === 'vi') return name;
+    const dict: Record<string, string> = {
+      "Vịnh Hạ Long": "Ha Long Bay",
+      "Phú Quốc": "Phu Quoc",
+      "Sa Pa": "Sapa",
+      "Hội An": "Hoi An",
+      "Đà Lạt": "Da Lat",
+    };
+    return dict[name] || name;
+  };
 
   const { data: feedDiaries, isLoading } = useQuery({
     queryKey: ['feedDiaries'],
@@ -416,9 +428,11 @@ export function WanderLanding() {
                     </span>
                     <div>
                       <p className="font-semibold text-gray-900 group-hover:text-[#ff3131] transition-colors">
-                        {dest.name}
+                        {translateTrendingDestName(dest.name, language)}
                       </p>
-                      <p className="text-xs text-gray-500">{dest.count}</p>
+                      <p className="text-xs text-gray-500">
+                        {language === 'vi' ? dest.count : dest.count.replace("nhật ký", "journals")}
+                      </p>
                     </div>
                   </div>
                 </Link>
