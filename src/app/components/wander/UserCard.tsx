@@ -2,6 +2,17 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { MapPin, Check } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
+import { useLanguageStore } from "@/stores";
+
+const translateLocation = (loc: string, lang: string) => {
+  if (lang === 'vi') return loc;
+  const dict: Record<string, string> = {
+    "Hà Nội": "Hanoi",
+    "TP. Hồ Chí Minh": "Ho Chi Minh City",
+    "Đà Nẵng": "Da Nang",
+  };
+  return dict[loc] || loc;
+};
 
 interface UserCardProps {
   name: string;
@@ -20,6 +31,7 @@ export function UserCard({
   followersCount,
   isFollowing: initialIsFollowing = false,
 }: UserCardProps) {
+  const { language } = useLanguageStore();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followers, setFollowers] = useState(followersCount);
 
@@ -48,12 +60,12 @@ export function UserCard({
           </Link>
           <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
             <MapPin size={12} />
-            <span className="truncate">{location}</span>
+            <span className="truncate">{translateLocation(location, language)}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-600">
-            <span><strong className="text-gray-900">{diariesCount}</strong> nhật ký</span>
+            <span><strong className="text-gray-900">{diariesCount}</strong> {language === 'vi' ? 'nhật ký' : 'journals'}</span>
             <span>•</span>
-            <span><strong className="text-gray-900">{followers.toLocaleString("vi-VN")}</strong> người theo dõi</span>
+            <span><strong className="text-gray-900">{followers.toLocaleString(language === 'vi' ? "vi-VN" : "en-US")}</strong> {language === 'vi' ? 'người theo dõi' : 'followers'}</span>
           </div>
         </div>
 
@@ -68,10 +80,10 @@ export function UserCard({
           {isFollowing ? (
             <>
               <Check size={14} />
-              Đang theo dõi
+              {language === 'vi' ? 'Đang theo dõi' : 'Following'}
             </>
           ) : (
-            "Theo dõi"
+            language === 'vi' ? 'Theo dõi' : 'Follow'
           )}
         </button>
       </div>
