@@ -171,7 +171,7 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
       {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-[#030213] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-6 flex-1">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent">
@@ -185,38 +185,38 @@ export function AdminDashboard() {
                 placeholder="Tìm kiếm người dùng, nhật ký, báo cáo..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell size={20} className="text-gray-600" />
+              <Bell size={20} className="text-gray-600 dark:text-gray-400" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
               <ImageWithFallback
                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop"
                 alt="Admin"
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div className="text-sm">
-                <p className="font-semibold text-gray-900">Admin</p>
-                <p className="text-xs text-gray-500">Quản trị viên</p>
+                <p className="font-semibold text-gray-900 dark:text-white">Admin</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Quản trị viên</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-1 px-6 border-t border-gray-100">
+        <div className="flex gap-1 px-6 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={() => setSelectedTab("overview")}
             className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
               selectedTab === "overview"
                 ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
             }`}
           >
             <Activity size={16} className="inline mr-2" />
@@ -227,7 +227,7 @@ export function AdminDashboard() {
             className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
               selectedTab === "users"
                 ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
             }`}
           >
             <Users size={16} className="inline mr-2" />
@@ -238,7 +238,7 @@ export function AdminDashboard() {
             className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
               selectedTab === "content"
                 ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
             }`}
           >
             <FileText size={16} className="inline mr-2" />
@@ -249,7 +249,7 @@ export function AdminDashboard() {
             className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
               selectedTab === "ai"
                 ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
             }`}
           >
             <Sparkles size={16} className="inline mr-2" />
@@ -281,23 +281,23 @@ export function AdminDashboard() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.4 }}
                       whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(255, 49, 49, 0.1)" }}
-                      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+                      className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800"
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.title}</p>
                           <motion.p
                             initial={{ scale: 0.5 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: index * 0.1 + 0.2, type: "spring", stiffness: 200 }}
-                            className="text-3xl font-bold text-gray-900 mb-2"
+                            className="text-3xl font-bold text-gray-900 dark:text-white mb-2"
                           >
                             {stat.value}
                           </motion.p>
                           <div className="flex items-center gap-1 text-sm">
                             <TrendingUp size={14} className="text-green-600" />
                             <span className="text-green-600 font-semibold">{stat.change}</span>
-                            <span className="text-gray-500 ml-1">so với tháng trước</span>
+                            <span className="text-gray-500 dark:text-gray-400 ml-1">so với tháng trước</span>
                           </div>
                         </div>
                         <motion.div
@@ -320,11 +320,11 @@ export function AdminDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+                  className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-gray-900">Tăng Trưởng Người Dùng</h3>
-                    <select className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tăng Trưởng Người Dùng</h3>
+                    <select className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
                       <option>7 ngày qua</option>
                       <option>30 ngày qua</option>
                       <option>3 tháng qua</option>
@@ -340,7 +340,7 @@ export function AdminDashboard() {
                           whileHover={{ scale: 1.05, opacity: 0.8 }}
                           className="w-full bg-gradient-to-t from-[#ff3131] to-[#ff914d] rounded-t-lg cursor-pointer"
                         ></motion.div>
-                        <span className="text-xs text-gray-500">T{i + 2}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">T{i + 2}</span>
                       </div>
                     ))}
                   </div>
@@ -351,9 +351,9 @@ export function AdminDashboard() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+                  className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800"
                 >
-                  <h3 className="text-lg font-bold text-gray-900 mb-6">Hoạt Động Theo Địa Lý</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Hoạt Động Theo Địa Lý</h3>
                   <div className="space-y-4">
                     {[
                       { location: "Phú Quốc", count: 342, percent: 85 },
@@ -371,9 +371,9 @@ export function AdminDashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <MapPin size={16} className="text-gray-400" />
-                            <span className="text-sm font-medium text-gray-900">{item.location}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{item.location}</span>
                           </div>
-                          <span className="text-sm font-bold text-gray-700">{item.count}</span>
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{item.count}</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                           <motion.div
@@ -390,8 +390,8 @@ export function AdminDashboard() {
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt Động Gần Đây</h3>
+              <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Hoạt Động Gần Đây</h3>
                 <div className="space-y-4">
                   {[
                     { type: "journal", user: "Nguyễn Văn An", action: "đã tạo nhật ký mới", item: '"Thiên Đường Phú Quốc"', time: "2 phút trước" },
@@ -399,18 +399,18 @@ export function AdminDashboard() {
                     { type: "user", user: "Trần Thị Bình", action: "đã đăng ký tài khoản", item: "Local Provider", time: "1 giờ trước" },
                     { type: "verify", user: "Admin", action: "đã xác minh đối tác", item: "Sa Pa Adventures", time: "2 giờ trước" },
                   ].map((activity, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div key={i} className="flex items-start gap-3 p-3 hover:bg-gray-50 dark:bg-gray-900 rounded-lg transition-colors">
                       <div className={`w-2 h-2 rounded-full mt-2 ${
                         activity.type === "report" ? "bg-red-500" :
                         activity.type === "verify" ? "bg-green-500" :
                         "bg-blue-500"
                       }`}></div>
                       <div className="flex-1">
-                        <p className="text-sm text-gray-900">
+                        <p className="text-sm text-gray-900 dark:text-white">
                           <span className="font-semibold">{activity.user}</span> {activity.action}{" "}
                           <span className="font-semibold text-[#ff3131]">{activity.item}</span>
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{activity.time}</p>
                       </div>
                     </div>
                   ))}
@@ -429,19 +429,19 @@ export function AdminDashboard() {
               className="space-y-6"
             >
               {/* Filters */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="bg-white dark:bg-[#030213] rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-4">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition-colors">
                     <Filter size={16} />
                     Lọc
                   </button>
-                  <select className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
+                  <select className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
                     <option>Tất cả vai trò</option>
                     <option>Explorer</option>
                     <option>Planner</option>
                     <option>Local Provider</option>
                   </select>
-                  <select className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
+                  <select className="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
                     <option>Tất cả trạng thái</option>
                     <option>Đang hoạt động</option>
                     <option>Chờ duyệt</option>
@@ -455,34 +455,34 @@ export function AdminDashboard() {
               </div>
 
               {/* Users Table */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Người dùng
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Vai trò
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Trạng thái
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Uy tín
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Ngày tham gia
                         </th>
-                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Hành động
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={user.id} className="hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <ImageWithFallback
@@ -491,8 +491,8 @@ export function AdminDashboard() {
                                 className="w-10 h-10 rounded-full object-cover"
                               />
                               <div>
-                                <p className="font-semibold text-gray-900 text-sm">{user.name}</p>
-                                <p className="text-xs text-gray-500">{user.email}</p>
+                                <p className="font-semibold text-gray-900 dark:text-white text-sm">{user.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                               </div>
                             </div>
                           </td>
@@ -515,13 +515,13 @@ export function AdminDashboard() {
                                     style={{ width: `${user.reputation}%` }}
                                   ></div>
                                 </div>
-                                <span className="text-sm font-semibold text-gray-700">{user.reputation}</span>
+                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{user.reputation}</span>
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400">N/A</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                             {new Date(user.joinDate).toLocaleDateString("vi-VN")}
                           </td>
                           <td className="px-6 py-4">
@@ -539,7 +539,7 @@ export function AdminDashboard() {
                               <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Xem chi tiết">
                                 <Eye size={16} />
                               </button>
-                              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                              <button className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors">
                                 <MoreVertical size={16} />
                               </button>
                             </div>
@@ -567,10 +567,10 @@ export function AdminDashboard() {
                 <button className="px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-lg font-medium text-sm">
                   Chờ duyệt ({pendingJournals.filter(j => j.status === "pending").length})
                 </button>
-                <button className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium text-sm border border-gray-200 hover:bg-gray-50 transition-colors">
+                <button className="px-4 py-2 bg-white dark:bg-[#030213] text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                   Đã gắn cờ ({pendingJournals.filter(j => j.status === "flagged").length})
                 </button>
-                <button className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium text-sm border border-gray-200 hover:bg-gray-50 transition-colors">
+                <button className="px-4 py-2 bg-white dark:bg-[#030213] text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                   Báo cáo cộng đồng (5)
                 </button>
               </div>
@@ -578,7 +578,7 @@ export function AdminDashboard() {
               {/* Journal Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {pendingJournals.map((journal) => (
-                  <div key={journal.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                  <div key={journal.id} className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition-shadow">
                     {/* Cover Image */}
                     <div className="relative h-48">
                       <ImageWithFallback
@@ -604,28 +604,28 @@ export function AdminDashboard() {
 
                     {/* Content */}
                     <div className="p-5">
-                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{journal.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3">bởi {journal.author}</p>
+                      <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">{journal.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">bởi {journal.author}</p>
                       
                       <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <MapPin size={14} className="text-gray-400" />
                           {journal.location}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <DollarSign size={14} className="text-gray-400" />
                           Ngân sách: {journal.budget}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <Clock size={14} className="text-gray-400" />
                           {journal.submittedAt}
                         </div>
                       </div>
 
                       {/* Authenticity Score */}
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-gray-600">Độ tin cậy AI</span>
+                          <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Độ tin cậy AI</span>
                           <span className={`text-xs font-bold ${
                             journal.authenticity >= 90 ? "text-green-600" :
                             journal.authenticity >= 70 ? "text-yellow-600" :
@@ -679,37 +679,37 @@ export function AdminDashboard() {
             >
               {/* AI System Status */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Hệ Thống AI</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Hệ Thống AI</h3>
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                   </div>
                   <p className="text-3xl font-bold text-green-600 mb-2">Hoạt động bình thường</p>
-                  <p className="text-sm text-gray-600">Uptime: 99.8%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Uptime: 99.8%</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Độ Chính Xác</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Độ Chính Xác</h3>
                     <BarChart3 size={20} className="text-[#ff3131]" />
                   </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">94.2%</p>
-                  <p className="text-sm text-gray-600">Gợi ý lịch trình</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">94.2%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Gợi ý lịch trình</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Cảnh Báo</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Cảnh Báo</h3>
                     <AlertTriangle size={20} className="text-yellow-500" />
                   </div>
                   <p className="text-3xl font-bold text-yellow-600 mb-2">2</p>
-                  <p className="text-sm text-gray-600">Gợi ý quá mainstream</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Gợi ý quá mainstream</p>
                 </div>
               </div>
 
               {/* Data Flow Visualization */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Luồng Dữ Liệu AI</h3>
+              <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Luồng Dữ Liệu AI</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {[
                     { label: "Nhật ký du lịch", value: "1,247", icon: FileText, color: "blue" },
@@ -719,10 +719,10 @@ export function AdminDashboard() {
                   ].map((item, i) => {
                     const IconComponent = item.icon;
                     return (
-                      <div key={i} className="bg-gray-50 rounded-xl p-4">
+                      <div key={i} className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
                         <IconComponent size={24} className={`text-${item.color}-600 mb-3`} />
-                        <p className="text-2xl font-bold text-gray-900 mb-1">{item.value}</p>
-                        <p className="text-xs text-gray-600">{item.label}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{item.value}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{item.label}</p>
                       </div>
                     );
                   })}
@@ -730,8 +730,8 @@ export function AdminDashboard() {
               </div>
 
               {/* AI Activity Logs */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Nhật Ký Hoạt Động AI</h3>
+              <div className="bg-white dark:bg-[#030213] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nhật Ký Hoạt Động AI</h3>
                 <div className="space-y-3">
                   {[
                     { time: "14:32", action: "Tạo lịch trình cho Nguyễn Văn An", result: "Thành công", confidence: 94 },
@@ -740,15 +740,15 @@ export function AdminDashboard() {
                     { time: "13:58", action: "Gợi ý điểm đến cho Lê Minh Châu", result: "Thành công", confidence: 92 },
                     { time: "13:42", action: "Phân tích độ tin cậy nhật ký", result: "Thành công", confidence: 95 },
                   ].map((log, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                      <span className="text-xs font-mono text-gray-500 w-12">{log.time}</span>
-                      <p className="flex-1 text-sm text-gray-900">{log.action}</p>
+                    <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <span className="text-xs font-mono text-gray-500 dark:text-gray-400 w-12">{log.time}</span>
+                      <p className="flex-1 text-sm text-gray-900 dark:text-white">{log.action}</p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         log.result === "Thành công" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                       }`}>
                         {log.result}
                       </span>
-                      <span className="text-xs text-gray-600">{log.confidence}%</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{log.confidence}%</span>
                     </div>
                   ))}
                 </div>

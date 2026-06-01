@@ -127,21 +127,21 @@ export function WanderExplore() {
   });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#030213]">
       {/* Hero Search */}
-      <section className="bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] py-16">
+      <section className="bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] dark:from-gray-900 dark:to-[#030213] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
               {t("title", "explore")}
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               {t("subtitle", "explore")}
             </p>
           </div>
 
           <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2">
+            <div className="bg-white dark:bg-[#030213] dark:border dark:border-gray-800 rounded-2xl shadow-lg p-2 flex gap-2">
               <div className="flex-1 flex items-center gap-3 px-4">
                 <Search className="text-gray-400 flex-shrink-0" size={20} />
                 <input
@@ -149,7 +149,7 @@ export function WanderExplore() {
                   placeholder={t("searchPlaceholder", "explore")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 outline-none text-gray-900"
+                  className="flex-1 outline-none text-gray-900 dark:text-white dark:bg-[#030213]"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-gray-600">
@@ -182,12 +182,12 @@ export function WanderExplore() {
 
         {/* ── Filter Panel ── */}
         {showFilters && (
-          <div className="mb-8 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
+          <div className="mb-8 bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg overflow-hidden">
             {/* Panel Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-[#FFF5F3] to-white">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-[#FFF5F3] to-white dark:from-gray-900 dark:to-[#030213]">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="text-[#ff3131]" size={20} />
-                <span className="font-bold text-gray-900">{t("advancedFilters", "explore")}</span>
+                <span className="font-bold text-gray-900 dark:text-white">{t("advancedFilters", "explore")}</span>
                 {activeFilterCount > 0 && (
                   <span className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
                     {activeFilterCount} {t("activeFilters", "explore")}
@@ -210,7 +210,7 @@ export function WanderExplore() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100 dark:divide-gray-800">
 
               {/* ── 1. Sở Thích ── */}
               <div className="p-5">
@@ -218,7 +218,7 @@ export function WanderExplore() {
                   className="w-full flex items-center justify-between mb-3"
                   onClick={() => toggleSection("interest")}
                 >
-                  <span className="font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">✦</span>
                     {t("interests", "explore")}
                     {selectedInterests.length > 0 && (
@@ -241,7 +241,7 @@ export function WanderExplore() {
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
                             active
                               ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#ff914d] hover:text-[#ff3131]"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-[#ff914d] hover:text-[#ff3131]"
                           }`}
                         >
                           {active && <Check size={12} />}
@@ -259,7 +259,7 @@ export function WanderExplore() {
                   className="w-full flex items-center justify-between mb-3"
                   onClick={() => toggleSection("style")}
                 >
-                  <span className="font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">🗺</span>
                     {t("styles", "explore")}
                     {selectedStyles.length > 0 && (
@@ -282,7 +282,7 @@ export function WanderExplore() {
                           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                             active
                               ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#ff914d] hover:bg-[#FFF5F3]"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-[#ff914d] hover:bg-[#FFF5F3] dark:hover:bg-gray-700"
                           }`}
                         >
                           <span>{style}</span>
@@ -300,7 +300,7 @@ export function WanderExplore() {
                   className="w-full flex items-center justify-between mb-3"
                   onClick={() => toggleSection("price")}
                 >
-                  <span className="font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">₫</span>
                     {t("budget", "explore")}
                     {(priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX) && (
@@ -331,7 +331,7 @@ export function WanderExplore() {
                     <div className="pt-2 pb-4 px-2">
                       <div
                         ref={priceTrackRef}
-                        className="relative h-2 bg-gray-200 rounded-full select-none"
+                        className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full select-none"
                       >
                         {/* Filled range */}
                         <div
@@ -341,7 +341,7 @@ export function WanderExplore() {
 
                         {/* Min thumb */}
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-[#ff3131] rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white dark:bg-[#030213] border-2 border-[#ff3131] rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
                           style={{ left: `${minPct}%` }}
                           onMouseDown={handlePriceMouseDown("min")}
                           onTouchStart={handlePriceMouseDown("min")}
@@ -349,7 +349,7 @@ export function WanderExplore() {
 
                         {/* Max thumb */}
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-[#ff914d] rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white dark:bg-[#030213] border-2 border-[#ff914d] rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
                           style={{ left: `${maxPct}%` }}
                           onMouseDown={handlePriceMouseDown("max")}
                           onTouchStart={handlePriceMouseDown("max")}
@@ -379,7 +379,7 @@ export function WanderExplore() {
                             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                               active
                                 ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent"
-                                : "border-gray-200 text-gray-600 hover:border-[#ff914d] hover:text-[#ff3131]"
+                                : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-[#ff914d] hover:text-[#ff3131]"
                             }`}
                           >
                             {label}
@@ -397,7 +397,7 @@ export function WanderExplore() {
                   className="w-full flex items-center justify-between mb-3"
                   onClick={() => toggleSection("duration")}
                 >
-                  <span className="font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-lg flex items-center justify-center text-white text-xs">⏱</span>
                     {t("duration", "explore")}
                     {selectedDuration !== "Tất cả" && (
@@ -418,7 +418,7 @@ export function WanderExplore() {
                           className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                             active
                               ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#ff914d] hover:bg-[#FFF5F3]"
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-[#ff914d] hover:bg-[#FFF5F3] dark:hover:bg-gray-700"
                           }`}
                         >
                           <span>{label}</span>
@@ -433,28 +433,28 @@ export function WanderExplore() {
 
             {/* Active filter tags */}
             {activeFilterCount > 0 && (
-              <div className="px-6 py-3 border-t border-gray-100 bg-[#FFF5F3] flex flex-wrap gap-2 items-center">
+              <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 bg-[#FFF5F3] dark:bg-[#030213] flex flex-wrap gap-2 items-center">
                 <span className="text-xs text-gray-500 font-medium">{language === 'vi' ? 'Đang lọc:' : 'Filtering:'}</span>
                 {selectedStyles.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 bg-white border border-[#ff3131] text-[#ff3131] text-xs font-semibold px-3 py-1 rounded-full">
+                  <span key={s} className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 border border-[#ff3131] text-[#ff3131] text-xs font-semibold px-3 py-1 rounded-full">
                     {s}
                     <button onClick={() => toggleStyle(s)}><X size={11} /></button>
                   </span>
                 ))}
                 {selectedInterests.map((i) => (
-                  <span key={i} className="inline-flex items-center gap-1 bg-white border border-[#ff914d] text-[#ff914d] text-xs font-semibold px-3 py-1 rounded-full">
+                  <span key={i} className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 border border-[#ff914d] text-[#ff914d] text-xs font-semibold px-3 py-1 rounded-full">
                     {i}
                     <button onClick={() => toggleInterest(i)}><X size={11} /></button>
                   </span>
                 ))}
                 {selectedDuration !== "Tất cả" && (
-                  <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">
                     ⏱ {selectedDuration}
                     <button onClick={() => setSelectedDuration("Tất cả")}><X size={11} /></button>
                   </span>
                 )}
                 {(priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX) && (
-                  <span className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">
                     ₫ {priceRange[0]}tr – {priceRange[1]}tr
                     <button onClick={() => setPriceRange([PRICE_MIN, PRICE_MAX])}><X size={11} /></button>
                   </span>
@@ -472,7 +472,7 @@ export function WanderExplore() {
               className={`px-5 py-2 rounded-full font-medium transition-all text-sm ${
                 selectedStyles.length === 0
                   ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
-                  : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
+                  : "bg-[#FFF5F3] dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:hover:bg-gray-700"
               }`}
             >
               {t("all", "explore")}
@@ -484,7 +484,7 @@ export function WanderExplore() {
                 className={`px-5 py-2 rounded-full font-medium transition-all text-sm ${
                   selectedStyles.includes(style)
                     ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
-                    : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
+                    : "bg-[#FFF5F3] dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:hover:bg-gray-700"
                 }`}
               >
                 {style}
@@ -496,7 +496,7 @@ export function WanderExplore() {
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-all ${
-                viewMode === "grid" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] text-gray-700"
+                viewMode === "grid" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               }`}
               title={t("gridView", "explore")}
             >
@@ -505,7 +505,7 @@ export function WanderExplore() {
             <button
               onClick={() => setViewMode("map")}
               className={`p-2 rounded-lg transition-all ${
-                viewMode === "map" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] text-gray-700"
+                viewMode === "map" ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white" : "bg-[#FFF5F3] dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               }`}
               title={t("mapView", "explore")}
             >
@@ -516,7 +516,7 @@ export function WanderExplore() {
 
         {/* Results count */}
         <div className="mb-6 flex items-center gap-3">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             {t("showingDiaries", "explore")} <span className="font-semibold text-[#ff3131]">{filteredDiaries.length}</span> {t("journalsUnit", "explore")}
           </p>
           {activeFilterCount > 0 && (
@@ -531,10 +531,10 @@ export function WanderExplore() {
 
         {/* Map view */}
         {viewMode === "map" && (
-          <div className="bg-[#FFF5F3] rounded-2xl p-12 mb-8 text-center">
+          <div className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-12 mb-8 text-center">
             <Map className="mx-auto mb-4 text-[#ff3131]" size={48} />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t("mapPlaceholderTitle", "explore")}</h3>
-            <p className="text-gray-600">{t("mapPlaceholderDesc", "explore")}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t("mapPlaceholderTitle", "explore")}</h3>
+            <p className="text-gray-600 dark:text-gray-400">{t("mapPlaceholderDesc", "explore")}</p>
           </div>
         )}
 
@@ -545,7 +545,7 @@ export function WanderExplore() {
               <Link
                 key={diary.id}
                 to={`/diary/${diary.id}`}
-                className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-2xl transition-all group"
+                className="bg-white dark:bg-[#030213] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-2xl transition-all group"
               >
                 <div className="relative h-64 overflow-hidden">
                   <ImageWithFallback
@@ -553,17 +553,17 @@ export function WanderExplore() {
                     alt={diary.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                  <div className="absolute top-4 left-4 bg-white/90 dark:bg-[#030213]/90 backdrop-blur-sm px-3 py-1 rounded-full">
                     <span className="text-xs font-semibold text-[#ff3131]">{diary.style}</span>
                   </div>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
+                  <div className="absolute top-4 right-4 bg-white/90 dark:bg-[#030213]/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
                     <Shield className="text-[#ff3131]" size={14} />
                     <span className="text-sm font-semibold text-[#ff3131]">{diary.trustScore}%</span>
                   </div>
                 </div>
                 <div className="p-5 space-y-3">
-                  <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{diary.title}</h3>
-                  <p className="text-gray-600 flex items-center gap-1">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{diary.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
                     <MapPin size={16} className="flex-shrink-0" />
                     <span className="line-clamp-1">{diary.location}</span>
                   </p>
@@ -576,7 +576,7 @@ export function WanderExplore() {
                         className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                           selectedInterests.includes(tag)
                             ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white"
-                            : "bg-[#FFF5F3] text-[#ff3131]"
+                            : "bg-[#FFF5F3] dark:bg-gray-800 text-[#ff3131]"
                         }`}
                       >
                         {tag}
@@ -584,13 +584,13 @@ export function WanderExplore() {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-1 text-sm">
                       <span className="font-semibold text-[#ff3131]">{diary.budget}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm">
                       <Clock size={16} className="text-gray-500" />
-                      <span className="font-semibold text-gray-900">{diary.duration}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{diary.duration}</span>
                     </div>
                   </div>
                   <p className="text-sm text-gray-500">{t("by", "explore")} {diary.author}</p>
@@ -603,11 +603,11 @@ export function WanderExplore() {
         {/* No results */}
         {filteredDiaries.length === 0 && (
           <div className="text-center py-20">
-            <div className="w-20 h-20 bg-[#FFF5F3] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-[#FFF5F3] dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="text-[#ff914d]" size={36} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t("noResults", "explore")}</h3>
-            <p className="text-gray-600 mb-6">{t("noResultsDesc", "explore")}</p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t("noResults", "explore")}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{t("noResultsDesc", "explore")}</p>
             <button
               onClick={resetFilters}
               className="px-8 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-lg transition-all"

@@ -105,7 +105,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div 
-        className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden grid grid-cols-1 lg:grid-cols-2"
+        className="bg-white dark:bg-[#030213] rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden grid grid-cols-1 lg:grid-cols-2"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Side - Image */}
@@ -120,7 +120,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
         {/* Right Side - Details & Comments */}
         <div className="flex flex-col h-[90vh] lg:h-auto">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
               <ImageWithFallback
                 src={post.author.avatar}
@@ -128,8 +128,8 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div>
-                <p className="font-bold text-gray-900">{post.author.name}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <p className="font-bold text-gray-900 dark:text-white">{post.author.name}</p>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <MapPin size={12} />
                   <span>{post.location}</span>
                 </div>
@@ -137,14 +137,14 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-full transition-colors"
             >
-              <X size={24} className="text-gray-600" />
+              <X size={24} className="text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
           {/* Caption */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-start gap-3 mb-3">
               <ImageWithFallback
                 src={post.author.avatar}
@@ -152,7 +152,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                 className="w-8 h-8 rounded-full object-cover flex-shrink-0"
               />
               <div>
-                <p className="text-gray-900">
+                <p className="text-gray-900 dark:text-white">
                   <span className="font-bold mr-2">{post.author.name}</span>
                   {post.caption}
                 </p>
@@ -160,7 +160,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
             </div>
             
             {/* Trip Info */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-3">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400 mt-3">
               <div className="flex items-center gap-1.5">
                 <Calendar size={16} className="text-[#ff3131]" />
                 <span>{post.date}</span>
@@ -182,20 +182,20 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                   className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                 />
                 <div className="flex-1">
-                  <div className="bg-gray-100 rounded-2xl px-4 py-2">
-                    <p className="font-bold text-sm text-gray-900">{comment.author.name}</p>
-                    <p className="text-gray-800 text-sm">{comment.content}</p>
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
+                    <p className="font-bold text-sm text-gray-900 dark:text-white">{comment.author.name}</p>
+                    <p className="text-gray-800 dark:text-gray-200 text-sm">{comment.content}</p>
                   </div>
                   <div className="flex items-center gap-4 mt-1 px-2">
-                    <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                    <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-[#ff3131] font-semibold">
                       Thích
                     </button>
-                    <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                    <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-[#ff3131] font-semibold">
                       Trả lời
                     </button>
                     <span className="text-xs text-gray-400">{comment.timestamp}</span>
                     {comment.likes > 0 && (
-                      <span className="text-xs text-gray-500">{comment.likes} thích</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{comment.likes} thích</span>
                     )}
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
           </div>
 
           {/* Actions Bar */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 dark:border-gray-800 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-4">
                 <button
@@ -213,14 +213,14 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                 >
                   <Heart
                     size={24}
-                    className={isLiked ? "fill-[#ff3131] text-[#ff3131]" : "text-gray-700"}
+                    className={isLiked ? "fill-[#ff3131] text-[#ff3131]" : "text-gray-700 dark:text-gray-300"}
                   />
                 </button>
                 <button className="hover:scale-110 transition-transform">
-                  <MessageCircle size={24} className="text-gray-700" />
+                  <MessageCircle size={24} className="text-gray-700 dark:text-gray-300" />
                 </button>
                 <button className="hover:scale-110 transition-transform">
-                  <Share2 size={24} className="text-gray-700" />
+                  <Share2 size={24} className="text-gray-700 dark:text-gray-300" />
                 </button>
               </div>
               <button
@@ -229,12 +229,12 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
               >
                 <Bookmark
                   size={24}
-                  className={isSaved ? "fill-gray-900 text-gray-900" : "text-gray-700"}
+                  className={isSaved ? "fill-gray-900 text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}
                 />
               </button>
             </div>
 
-            <p className="font-bold text-sm text-gray-900 mb-3">
+            <p className="font-bold text-sm text-gray-900 dark:text-white mb-3">
               {likesCount.toLocaleString()} lượt thích
             </p>
 
@@ -251,7 +251,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleComment()}
                 placeholder="Viết bình luận..."
-                className="flex-1 px-4 py-2 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff3131]"
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff3131]"
               />
               {commentText.trim() && (
                 <button

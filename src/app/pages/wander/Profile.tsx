@@ -111,7 +111,7 @@ export function WanderProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF5F3]">
+    <div className="min-h-screen bg-[#FFF5F3] dark:bg-[#030213]">
       {/* Profile Header with Cover Photo */}
       <div className="bg-white dark:bg-[#030213] border-b border-gray-100 dark:border-gray-800">
         {/* Cover Image */}
@@ -134,7 +134,7 @@ export function WanderProfile() {
           />
           <label
             htmlFor="cover-upload"
-            className="absolute top-4 right-4 px-4 py-2 bg-white dark:bg-[#030213]/90 backdrop-blur-sm text-gray-700 rounded-xl font-semibold hover:bg-white dark:bg-[#030213] hover:scale-105 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+            className="absolute top-4 right-4 px-4 py-2 bg-white/90 dark:bg-[#030213]/90 backdrop-blur-sm text-gray-700 rounded-xl font-semibold hover:bg-white dark:bg-[#030213] hover:scale-105 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             {isUpdatingCover ? (
               <span className="text-xs font-semibold animate-pulse">{t("loading")}</span>
@@ -290,7 +290,7 @@ export function WanderProfile() {
                     />
                     <Link
                       to="/create"
-                      className="flex-1 px-4 py-3 bg-[#FFF5F3] text-gray-600 dark:text-gray-400 rounded-full hover:bg-gray-100 dark:bg-gray-800 transition-all"
+                      className="flex-1 px-4 py-3 bg-[#FFF5F3] dark:bg-gray-900 text-gray-600 dark:text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                     >
                       {t("shareMemory")}
                     </Link>
@@ -400,7 +400,7 @@ export function WanderProfile() {
 
                 {/* Travel Map Placeholder */}
                 <div className="bg-white dark:bg-[#030213] rounded-3xl border border-gray-100 dark:border-gray-800 p-8 text-center">
-                  <div className="w-full h-64 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-2xl flex items-center justify-center">
+                  <div className="w-full h-64 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] dark:from-gray-900 dark:to-[#030213] rounded-2xl flex items-center justify-center">
                     <div>
                       <MapPin className="mx-auto text-[#ff3131] mb-3" size={48} />
                       <p className="text-gray-600 dark:text-gray-400">
@@ -426,21 +426,21 @@ export function WanderProfile() {
               </Link>
               <Link
                 to="/create-itinerary"
-                className="block w-full px-4 py-3 bg-white dark:bg-[#030213] border-2 border-gray-200 dark:border-gray-700 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
+                className="block w-full px-4 py-3 bg-white dark:bg-[#030213] border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
               >
                 <Route size={16} />
                 {t("aiPlanner")}
               </Link>
               <Link
                 to="/explore"
-                className="block w-full px-4 py-3 bg-white dark:bg-[#030213] border-2 border-gray-200 dark:border-gray-700 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
+                className="block w-full px-4 py-3 bg-white dark:bg-[#030213] border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
               >
                 {t("searchExplore")}
               </Link>
             </div>
 
             {/* Activity Summary */}
-            <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
+            <div className="bg-gradient-to-br from-[#FFF5F3] to-white dark:from-[#030213] dark:to-gray-900 rounded-3xl border border-red-100 dark:border-gray-800 p-6">
               <h3 className="font-bold text-gray-900 dark:text-white mb-4">{t("recentActivity")}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">

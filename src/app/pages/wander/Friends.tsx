@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
 import { Link } from "react-router";
+import { useLanguageStore } from "@/stores";
 
 // Friend requests data
 const friendRequests = [
@@ -123,6 +124,7 @@ const travelGroups = [
 export function WanderFriends() {
   const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("requests");
   const [searchQuery, setSearchQuery] = useState("");
+  const { t } = useLanguageStore();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -133,8 +135,8 @@ export function WanderFriends() {
             <Users className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Bạn Bè</h1>
-            <p className="text-gray-600">Kết nối và chia sẻ trải nghiệm du lịch</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title", "friends")}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t("subtitle", "friends")}</p>
           </div>
         </div>
 
@@ -143,25 +145,25 @@ export function WanderFriends() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Tìm kiếm bạn bè..."
+            placeholder={t("searchPlaceholder", "friends")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-[#030213] rounded-full border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-800">
         <button
           onClick={() => setActiveTab("requests")}
           className={`px-6 py-3 font-semibold transition-all relative ${
             activeTab === "requests"
               ? "text-[#ff3131]"
-              : "text-gray-600 hover:text-gray-900"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
           }`}
         >
-          Lời mời kết bạn
+          {t("requests", "friends")}
           {friendRequests.length > 0 && (
             <span className="ml-2 px-2 py-0.5 bg-[#ff3131] text-white text-xs rounded-full">
               {friendRequests.length}
@@ -176,10 +178,10 @@ export function WanderFriends() {
           className={`px-6 py-3 font-semibold transition-all relative ${
             activeTab === "friends"
               ? "text-[#ff3131]"
-              : "text-gray-600 hover:text-gray-900"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
           }`}
         >
-          Bạn bè ({myFriends.length})
+          {t("friendsList", "friends")} ({myFriends.length})
           {activeTab === "friends" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
@@ -189,10 +191,10 @@ export function WanderFriends() {
           className={`px-6 py-3 font-semibold transition-all relative ${
             activeTab === "groups"
               ? "text-[#ff3131]"
-              : "text-gray-600 hover:text-gray-900"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
           }`}
         >
-          Nhóm du lịch ({travelGroups.length})
+          {t("groups", "friends")} ({travelGroups.length})
           {activeTab === "groups" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
@@ -205,7 +207,7 @@ export function WanderFriends() {
           {friendRequests.map((request) => (
             <div
               key={request.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
+              className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 hover:shadow-md transition-all"
             >
               <div className="flex flex-col items-center text-center">
                 <ImageWithFallback
@@ -213,18 +215,18 @@ export function WanderFriends() {
                   alt={request.name}
                   className="w-20 h-20 rounded-full object-cover mb-3"
                 />
-                <h3 className="font-bold text-gray-900 mb-1">{request.name}</h3>
-                <p className="text-sm text-gray-500 mb-2">{request.location}</p>
-                <p className="text-xs text-gray-400 mb-4">{request.mutualFriends} bạn chung</p>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1">{request.name}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{request.location}</p>
+                <p className="text-xs text-gray-400 mb-4">{request.mutualFriends} {t("mutualFriends", "friends")}</p>
                 
                 <div className="flex gap-2 w-full">
                   <button className="flex-1 px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
                     <Check size={16} />
-                    Chấp nhận
+                    {t("accept", "friends")}
                   </button>
-                  <button className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                  <button className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2">
                     <X size={16} />
-                    Từ chối
+                    {t("decline", "friends")}
                   </button>
                 </div>
               </div>
@@ -239,7 +241,7 @@ export function WanderFriends() {
           {myFriends.map((friend) => (
             <div
               key={friend.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
+              className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex gap-3">
@@ -254,12 +256,12 @@ export function WanderFriends() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">{friend.name}</h3>
-                    <p className="text-sm text-gray-500">{friend.location}</p>
-                    <p className="text-xs text-gray-400">{friend.diariesCount} nhật ký</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">{friend.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{friend.location}</p>
+                    <p className="text-xs text-gray-400">{friend.diariesCount} {t("diaries", "friends")}</p>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                   <MoreVertical size={20} />
                 </button>
               </div>
@@ -269,9 +271,9 @@ export function WanderFriends() {
                   to={`/profile/${friend.id}`}
                   className="flex-1 px-4 py-2 bg-[#FFF5F3] text-[#ff3131] rounded-full font-semibold hover:bg-[#FFE5E0] transition-all text-center"
                 >
-                  Trang cá nhân
+                  {t("dashboard", "common")}
                 </Link>
-                <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all">
+                <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
                   <MessageCircle size={18} />
                 </button>
               </div>
@@ -287,7 +289,7 @@ export function WanderFriends() {
           <div className="mb-6">
             <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all">
               <UserPlus size={20} />
-              Tạo nhóm mới
+              {t("create", "common")}
             </button>
           </div>
 
@@ -296,7 +298,7 @@ export function WanderFriends() {
             {travelGroups.map((group) => (
               <div
                 key={group.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all"
+                className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition-all"
               >
                 {/* Group Cover */}
                 <div className="relative h-40">
@@ -309,13 +311,13 @@ export function WanderFriends() {
                   {group.isPrivate && (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-gray-900/70 backdrop-blur-sm rounded-full flex items-center gap-1.5">
                       <Lock size={14} className="text-white" />
-                      <span className="text-xs text-white font-medium">Riêng tư</span>
+                      <span className="text-xs text-white font-medium">{t("privacyPrivate", "createDiary")}</span>
                     </div>
                   )}
                   {!group.isPrivate && (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-gray-900/70 backdrop-blur-sm rounded-full flex items-center gap-1.5">
                       <Globe size={14} className="text-white" />
-                      <span className="text-xs text-white font-medium">Công khai</span>
+                      <span className="text-xs text-white font-medium">{t("privacyPublic", "createDiary")}</span>
                     </div>
                   )}
                 </div>
@@ -324,27 +326,27 @@ export function WanderFriends() {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg mb-1">{group.name}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{group.description}</p>
+                      <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">{group.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{group.description}</p>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600 ml-2">
+                    <button className="text-gray-400 hover:text-gray-600 dark:text-gray-400 ml-2">
                       <Settings size={20} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center gap-1">
                       <Users size={16} />
-                      <span>{group.members.toLocaleString()} thành viên</span>
+                      <span>{group.members.toLocaleString()} {t("members", "friends")}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <MessageCircle size={16} />
-                      <span>{group.posts.toLocaleString()} bài viết</span>
+                      <span>{group.posts.toLocaleString()} {t("posts", "friends")}</span>
                     </div>
                   </div>
 
                   <button className="w-full px-4 py-2.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all">
-                    Tham gia nhóm
+                    {t("join", "friends")}
                   </button>
                 </div>
               </div>

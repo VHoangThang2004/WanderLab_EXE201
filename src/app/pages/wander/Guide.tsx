@@ -93,21 +93,21 @@ const features = [
 
 export function WanderGuide() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#030213]">
       <WanderNav />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#030213] rounded-full shadow-sm mb-6">
               <BookOpen className="text-[#ff3131]" size={18} />
-              <span className="text-sm font-medium text-gray-700">Hướng Dẫn Bắt Đầu</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Hướng Dẫn Bắt Đầu</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
               Cách Sử Dụng WanderLab
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
               Hướng dẫn đầy đủ để khám phá, lên kế hoạch và chia sẻ những trải nghiệm du lịch xác thực
             </p>
           </div>
@@ -115,9 +115,9 @@ export function WanderGuide() {
       </section>
 
       {/* Quick Start */}
-      <section className="py-16 bg-white border-b border-gray-200">
+      <section className="py-16 bg-white dark:bg-[#030213] border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Bắt Đầu Nhanh</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">Bắt Đầu Nhanh</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { num: "1", label: "Đăng Ký", desc: "Tạo tài khoản và thiết lập sở thích du lịch" },
@@ -128,8 +128,8 @@ export function WanderGuide() {
                 <div className="w-16 h-16 bg-gradient-to-br from-[#ff3131] to-[#ff914d] rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
                   {num}
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{label}</h3>
-                <p className="text-sm text-gray-600">{desc}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">{label}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{desc}</p>
               </div>
             ))}
           </div>
@@ -137,28 +137,28 @@ export function WanderGuide() {
       </section>
 
       {/* Detailed Guides */}
-      <section className="py-20 bg-[#FFF5F3]">
+      <section className="py-20 bg-[#FFF5F3] dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Hướng Dẫn Chi Tiết</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12 text-center">Hướng Dẫn Chi Tiết</h2>
           <div className="space-y-8">
             {guides.map((guide, index) => {
               const IconComponent = guide.icon;
               return (
-                <div key={index} className="bg-white rounded-2xl shadow-sm p-8">
+                <div key={index} className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm p-8">
                   <div className="flex items-start gap-6">
                     <div className="w-14 h-14 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-xl flex items-center justify-center flex-shrink-0">
                       <IconComponent className="text-[#ff3131]" size={28} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">{guide.title}</h3>
-                      <p className="text-gray-600 mb-6">{guide.description}</p>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{guide.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-6">{guide.description}</p>
                       <div className="space-y-3">
                         {guide.steps.map((step, stepIndex) => (
                           <div key={stepIndex} className="flex items-start gap-3">
                             <div className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
                               {stepIndex + 1}
                             </div>
-                            <p className="text-gray-700 pt-0.5">{step}</p>
+                            <p className="text-gray-700 dark:text-gray-300 pt-0.5">{step}</p>
                           </div>
                         ))}
                       </div>
@@ -172,19 +172,19 @@ export function WanderGuide() {
       </section>
 
       {/* Additional Features */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-[#030213]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Tính Năng Bổ Sung</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12 text-center">Tính Năng Bổ Sung</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
-                <div key={index} className="bg-[#FFF5F3] rounded-2xl p-6 text-center">
-                  <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center mx-auto mb-4">
+                <div key={index} className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-6 text-center">
+                  <div className="w-14 h-14 bg-white dark:bg-[#030213] rounded-xl flex items-center justify-center mx-auto mb-4">
                     <IconComponent className="text-[#ff3131]" size={28} />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
                 </div>
               );
             })}
@@ -201,25 +201,25 @@ export function WanderGuide() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <div className="bg-white dark:bg-[#030213]/10 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="font-bold text-white mb-2">💡 Hoàn Thiện Hồ Sơ</h3>
               <p className="text-white/90 text-sm">
                 Điền đầy đủ hồ sơ cá nhân để tăng điểm tin cậy và nhận gợi ý được cá nhân hoá tốt hơn
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <div className="bg-white dark:bg-[#030213]/10 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="font-bold text-white mb-2">📸 Dùng Ảnh Chất Lượng Cao</h3>
               <p className="text-white/90 text-sm">
                 Hình ảnh chất lượng cao thu hút gấp 3 lần lượt tương tác khi tạo nhật ký
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <div className="bg-white dark:bg-[#030213]/10 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="font-bold text-white mb-2">🎯 Tìm Kiếm Cụ Thể</h3>
               <p className="text-white/90 text-sm">
                 Dùng bộ lọc tìm kiếm chi tiết để tìm chính xác những gì bạn muốn
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <div className="bg-white dark:bg-[#030213]/10 backdrop-blur-sm rounded-2xl p-6">
               <h3 className="font-bold text-white mb-2">🤝 Tương Tác Cộng Đồng</h3>
               <p className="text-white/90 text-sm">
                 Bình luận và đặt câu hỏi – cộng đồng WanderLab luôn sẵn sàng hỗ trợ những người đồng hành
@@ -230,10 +230,10 @@ export function WanderGuide() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-[#030213]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Sẵn Sàng Bắt Đầu Khám Phá?</h2>
-          <p className="text-xl text-gray-600 mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Sẵn Sàng Bắt Đầu Khám Phá?</h2>
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
             Tham gia hàng nghìn người Việt đang chia sẻ những trải nghiệm du lịch xác thực
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -245,7 +245,7 @@ export function WanderGuide() {
             </Link>
             <Link
               to="/explore"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#ff3131] border-2 border-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white dark:bg-[#030213] text-[#ff3131] border-2 border-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] dark:bg-gray-900 transition-all"
             >
               Duyệt Nhật Ký
             </Link>
@@ -254,9 +254,9 @@ export function WanderGuide() {
       </section>
 
       {/* FAQ Link */}
-      <section className="py-12 bg-[#FFF5F3] border-t border-gray-200">
+      <section className="py-12 bg-[#FFF5F3] dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-600 mb-4">Vẫn còn thắc mắc?</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Vẫn còn thắc mắc?</p>
           <a href="#" className="text-[#ff3131] font-semibold hover:text-[#ff914d]">
             Truy cập trang Câu Hỏi Thường Gặp →
           </a>
@@ -267,3 +267,4 @@ export function WanderGuide() {
     </div>
   );
 }
+

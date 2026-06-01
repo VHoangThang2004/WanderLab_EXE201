@@ -93,7 +93,7 @@ export function WanderLanding() {
                   </Link>
                   <Link
                     to="/explore"
-                    className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white dark:bg-[#030213]/10 transition-all"
+                    className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white/10 dark:hover:bg-[#030213]/10 transition-all"
                   >
                     {t("exploreBtn", "landing")}
                   </Link>
