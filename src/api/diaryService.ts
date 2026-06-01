@@ -77,6 +77,62 @@ export const diaryService = {
   },
 
   /**
+   * Lấy danh sách nhật ký của người dùng hiện tại
+   */
+  async fetchMyDiaries(): Promise<DiaryFeedItem[]> {
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) return [];
+
+      const { data, error } = await supabase
+        .from('diaries')
+        .select(`
+          id,
+          location,
+          cover_image_url,
+          created_at,
+          description,
+          group_size,
+          likes_count,
+          comments_count,
+          author:profiles!diaries_author_id_fkey(id, full_name, avatar_url),
+          likes(user_id),
+          bookmarks(user_id)
+        `)
+        .eq('author_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch error:', error);
+        return [];
+      }
+      
+      if (data) {
+        return data.map((item: any) => ({
+          id: item.id,
+          author: {
+            id: item.author?.id || 'unknown',
+            name: item.author?.full_name || 'Unknown User',
+            avatar: item.author?.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
+          },
+          image: item.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
+          location: item.location,
+          date: new Date(item.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
+          caption: item.description,
+          likes: item.likes_count || 0,
+          comments: item.comments_count || 0,
+          is_liked: item.likes?.some((l: any) => l.user_id === currentUser.id) || false,
+          is_saved: item.bookmarks?.some((b: any) => b.user_id === currentUser.id) || false,
+          group_size: item.group_size || '',
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to fetch my diaries from Supabase", err);
+    }
+    return [];
+  },
+
+  /**
    * Upload ảnh bìa lên Supabase Storage bucket 'diaries'
    */
   async uploadDiaryImage(file: File): Promise<string> {

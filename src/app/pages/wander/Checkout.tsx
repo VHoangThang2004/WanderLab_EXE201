@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router";
+import { useAuthStore } from "@/stores";
 import { WanderLogo } from "../../components/wander/WanderLogo";
 import {
   CheckCircle2, Lock, ChevronLeft, CreditCard, Smartphone,
@@ -104,10 +105,10 @@ function SuccessScreen({ plan }: { plan: PlanDef }) {
 
         <div className="flex flex-col gap-3">
           <Link
-            to="/dashboard"
+            to="/profile"
             className="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-2xl font-bold hover:shadow-xl transition-all"
           >
-            <Sparkles size={18} /> Đến Dashboard của bạn
+            <Sparkles size={18} /> Đến Profile của bạn
           </Link>
           <Link
             to="/partner"
@@ -126,6 +127,7 @@ export function CheckoutPage() {
   const [params] = useSearchParams();
   const planKey = params.get("plan") ?? "starter";
   const plan = PLANS[planKey] ?? PLANS.starter;
+  const { updateProfile } = useAuthStore();
 
   const [payMethod, setPayMethod] = useState("card");
   const [cardNum, setCardNum] = useState("");
@@ -152,13 +154,25 @@ export function CheckoutPage() {
     return e;
   };
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    setTimeout(() => { setLoading(false); setDone(true); }, 2000);
+    
+    // Simulate payment processing
+    await new Promise(r => setTimeout(r, 1500));
+    
+    try {
+      await updateProfile({ plan: planKey });
+      setDone(true);
+    } catch (err) {
+      console.error(err);
+      alert("Đã có lỗi xảy ra khi cập nhật gói của bạn.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tax = Math.round(plan.priceNum * 0.1);

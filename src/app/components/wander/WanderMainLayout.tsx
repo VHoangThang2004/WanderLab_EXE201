@@ -3,7 +3,7 @@ import { WanderSidebar } from "./WanderSidebar";
 
 export function WanderMainLayout() {
   return (
-    <div className="min-h-screen bg-[#FFF5F3]">
+    <div className="min-h-screen bg-[#FFF5F3] dark:bg-black transition-colors duration-300">
       <WanderSidebar />
       
       {/* Main Content - with left margin for sidebar on desktop */}

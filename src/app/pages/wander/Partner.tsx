@@ -15,6 +15,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { useAuthStore } from "@/stores";
 
 const pricingPlans = [
   {
@@ -135,6 +136,9 @@ const testimonials = [
 ];
 
 export function WanderPartner() {
+  const { user } = useAuthStore();
+  const currentPlan = user?.plan || "free";
+
   const [formData, setFormData] = useState({
     businessName: "",
     contactName: "",
@@ -270,43 +274,45 @@ export function WanderPartner() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
+            {pricingPlans.map((planDef, index) => {
+              const isCurrent = planDef.planKey === currentPlan;
+              return (
               <div
                 key={index}
                 className={`bg-white rounded-3xl shadow-lg overflow-hidden ${
-                  plan.popular ? "ring-4 ring-[#ff3131]" : ""
+                  planDef.popular ? "ring-4 ring-[#ff3131]" : ""
                 }`}
               >
-                {plan.popular && (
+                {planDef.popular && (
                   <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-center py-2 text-sm font-semibold">
                     Phổ Biến Nhất
                   </div>
                 )}
                 <div className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{planDef.name}</h3>
+                  <p className="text-gray-600 mb-6">{isCurrent ? "Đang sử dụng" : planDef.description}</p>
                   <div className="mb-6">
-                    <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
-                    {plan.period && <span className="text-gray-600">{plan.period}</span>}
+                    <span className="text-5xl font-bold text-gray-900">{planDef.price}</span>
+                    {planDef.period && <span className="text-gray-600">{planDef.period}</span>}
                   </div>
                   <button
                     className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                      plan.popular
+                      planDef.popular && !isCurrent
                         ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg"
-                        : plan.isCurrent
+                        : isCurrent
                         ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                         : "bg-[#FFE8E0] text-gray-900 hover:bg-[#FFF5F3]"
                     }`}
-                    disabled={plan.isCurrent}
+                    disabled={isCurrent}
                   >
-                    {plan.isCurrent ? (
+                    {isCurrent ? (
                       "Đang Sử Dụng"
                     ) : (
-                      <Link to={`/checkout?plan=${plan.planKey}`}>Nâng Cấp</Link>
+                      <Link to={`/checkout?plan=${planDef.planKey}`}>Nâng Cấp</Link>
                     )}
                   </button>
                   <ul className="mt-8 space-y-4">
-                    {plan.features.map((feature, fIndex) => (
+                    {planDef.features.map((feature, fIndex) => (
                       <li key={fIndex} className="flex items-start gap-3">
                         <CheckCircle className="text-[#ff3131] flex-shrink-0 mt-1" size={20} />
                         <span className="text-gray-700">{feature}</span>
@@ -315,7 +321,7 @@ export function WanderPartner() {
                   </ul>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </section>

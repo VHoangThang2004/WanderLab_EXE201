@@ -20,12 +20,15 @@ import {
 import { useNavigate } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
-import { useLanguageStore } from "@/stores";
+import { useLanguageStore, useDiaryStore, useAuthStore } from "@/stores";
+import { toast } from "sonner";
 
 type PrivacySetting = "private" | "friends" | "public";
 
 export function WanderCreateDiary() {
   const { t, language } = useLanguageStore();
+  const { addDiary } = useDiaryStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
@@ -133,7 +136,7 @@ export function WanderCreateDiary() {
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.location || !coverFile) {
-      alert("Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!");
+      toast.error(language === 'vi' ? "Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!" : "Please fill in title, location and upload a cover image!");
       return;
     }
 
@@ -169,14 +172,24 @@ export function WanderCreateDiary() {
         ]
       };
 
-      // 3. Create diary
-      const newDiaryId = await diaryService.createDiary(payload, coverUrl);
+      // 3. Mock create diary locally using Zustand store
+      addDiary({
+        title: formData.title,
+        location: formData.location,
+        image: coverPreview, // use preview as mock uploaded url
+        author: {
+          name: user?.full_name || "User",
+          avatar: user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
+        },
+        caption: formData.description,
+        groupSize: formData.groupSize + " người"
+      });
 
-      alert(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
-      navigate(`/diary/${newDiaryId}`);
+      toast.success(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
+      navigate("/profile");
     } catch (err: any) {
       console.error(err);
-      alert(`${language === 'vi' ? 'Đăng nhật ký thất bại' : 'Failed to publish travel journal'}: ${err.message}`);
+      toast.error(`${language === 'vi' ? 'Đăng nhật ký thất bại' : 'Failed to publish travel journal'}: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }

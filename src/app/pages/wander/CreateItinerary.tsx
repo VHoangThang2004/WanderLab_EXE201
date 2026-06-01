@@ -8,6 +8,7 @@ import {
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
+import { toast } from "sonner";
 
 const translateItineraryItem = (text: string, lang: string) => {
   if (lang === 'vi') return text;
@@ -623,6 +624,7 @@ export function CreateItinerary() {
                     ],
                   });
                   setIsSaved(true);
+                  toast.success(language === 'vi' ? 'Đã lưu lịch trình thành công!' : 'Itinerary saved successfully!');
                 }}
                 className={`flex-1 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all border-2 ${
                   isSaved
@@ -643,7 +645,7 @@ export function CreateItinerary() {
 
             {isSaved && (
               <Link
-                to="/dashboard"
+                to="/profile"
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-semibold hover:shadow-lg transition-all"
               >
                 <BookmarkCheck size={18} /> {t("viewSavedDashboard", "createItinerary")}

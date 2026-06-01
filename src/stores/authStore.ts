@@ -25,6 +25,7 @@ interface AuthState {
     location?: string | null;
     avatar_url?: string | null;
     cover_image_url?: string | null;
+    plan?: string;
   }) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   uploadCover: (file: File) => Promise<string>;
@@ -48,6 +49,7 @@ function buildUser(
     location: (profile?.location as string) || null,
     role: (profile?.role as User['role']) || 'explorer',
     status: (profile?.status as User['status']) || 'active',
+    plan: (profile?.plan as string) || 'free',
     reputation_score: (profile?.reputation_score as number) || 0,
     diaries_count: (profile?.diaries_count as number) || 0,
     followers_count: (profile?.followers_count as number) || 0,
@@ -131,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/dashboard`,
+            redirectTo: `${window.location.origin}/profile`,
           },
         });
         if (error) throw error;
@@ -141,7 +143,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'facebook',
           options: {
-            redirectTo: `${window.location.origin}/dashboard`,
+            redirectTo: `${window.location.origin}/profile`,
           },
         });
         if (error) throw error;

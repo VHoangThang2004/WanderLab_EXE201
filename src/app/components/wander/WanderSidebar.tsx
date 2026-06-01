@@ -11,11 +11,13 @@ import {
   ShieldCheck,
   LogIn,
   LogOut,
-  Compass
+  Compass,
+  Moon,
+  Sun
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
-import { useAuthStore, useLanguageStore } from "@/stores";
+import { useAuthStore, useLanguageStore, useThemeStore } from "@/stores";
 
 export function WanderSidebar() {
   const location = useLocation();
@@ -23,6 +25,7 @@ export function WanderSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
   const { language, setLanguage, t } = useLanguageStore();
+  const { theme, toggleTheme } = useThemeStore();
 
   const navItems = [
     { icon: Home, label: t("home"), path: "/", public: true },
@@ -31,7 +34,6 @@ export function WanderSidebar() {
     { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
     { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
     { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
-    { icon: User, label: t("dashboard"), path: "/dashboard", public: false },
     ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),
   ];
 
@@ -54,11 +56,11 @@ export function WanderSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 z-50 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#030213] border-b border-gray-200 dark:border-gray-800 px-4 py-3 z-50 flex items-center justify-between transition-colors">
         <WanderLogo size="sm" />
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white rounded-lg transition-colors"
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -74,13 +76,13 @@ export function WanderSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-[#030213] border-r border-gray-200 dark:border-gray-800 z-40 transform transition-transform duration-300 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Section */}
-          <div className="p-6 border-b border-gray-100">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-800">
             <WanderLogo size="lg" />
           </div>
 
@@ -99,7 +101,7 @@ export function WanderSidebar() {
                   className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-medium ${
                     active
                       ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
-                      : "text-gray-700 hover:bg-[#FFF5F3] hover:text-[#ff3131]"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-[#FFF5F3] dark:hover:bg-gray-800 hover:text-[#ff3131] dark:hover:text-[#ff914d]"
                   }`}
                 >
                   <Icon size={22} />
@@ -109,18 +111,22 @@ export function WanderSidebar() {
             })}
           </nav>
 
-          {/* Language Switcher */}
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-600 flex items-center gap-2">
-              🌐 {language === 'vi' ? 'Tiếng Việt' : 'English'}
-            </span>
-            <div className="flex bg-gray-100 rounded-lg p-0.5">
+          {/* Theme & Language Switcher */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
               <button
                 onClick={() => setLanguage('vi')}
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
                   language === 'vi'
                     ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 VI
@@ -130,7 +136,7 @@ export function WanderSidebar() {
                 className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
                   language === 'en'
                     ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 EN
@@ -139,14 +145,14 @@ export function WanderSidebar() {
           </div>
 
           {/* User Section */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-gray-100 dark:border-gray-800">
             {isAuthenticated && user ? (
               <div className="space-y-3">
                 {/* User info */}
                 <Link
-                  to="/dashboard"
+                  to="/profile"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#FFF5F3] transition-all"
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#FFF5F3] dark:hover:bg-gray-800 transition-all"
                 >
                   {user.avatar_url ? (
                     <img
@@ -160,14 +166,14 @@ export function WanderSidebar() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.full_name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.full_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                   </div>
                 </Link>
                 {/* Logout button */}
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                 >
                   <LogOut size={18} />
                   <span>{t("logout")}</span>
