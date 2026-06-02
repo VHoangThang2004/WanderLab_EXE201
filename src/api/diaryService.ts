@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase';
 import type { DiaryFeedItem, CreateDiaryPayload } from '@/types/diary';
-import { DIARY_DATA } from '@/app/data/diaries';
-
 export const diaryService = {
   /**
    * Lấy danh sách nhật ký cho Feed ở trang chủ.
@@ -53,27 +51,10 @@ export const diaryService = {
         }));
       }
     } catch (err) {
-      console.warn("Failed to fetch from Supabase, falling back to mock data", err);
+      console.warn("Failed to fetch from Supabase", err);
     }
     
-    // FALLBACK TO MOCK DATA (nếu DB chưa có dữ liệu)
-    return Object.values(DIARY_DATA).map(diary => ({
-      id: diary.id,
-      author: {
-        id: diary.author.name,
-        name: diary.author.name,
-        avatar: diary.author.avatar,
-      },
-      image: diary.image,
-      location: diary.location,
-      date: diary.dates,
-      caption: diary.description,
-      likes: diary.trustScore * 3, // mock likes
-      comments: 10,
-      is_liked: false,
-      is_saved: false,
-      group_size: diary.groupSize,
-    }));
+    return [];
   },
 
   /**
@@ -207,6 +188,7 @@ export const diaryService = {
             }
           ],
           author: {
+            id: data.author?.id,
             name: data.author?.full_name || 'Người dùng ẩn danh',
             avatar: data.author?.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
             diariesCount: data.author?.diaries_count || 0,
@@ -247,7 +229,7 @@ export const diaryService = {
     } catch(e) {
       console.warn("fetchDiaryById failed", e);
     }
-    return DIARY_DATA[id] || Object.values(DIARY_DATA)[0];
+    return null;
   },
 
   /**
@@ -296,24 +278,7 @@ export const diaryService = {
     } catch(e) {
       console.warn("fetchExploreDiaries failed", e);
     }
-    
-    // Fallback to mock logic
-    const { VIETNAMESE_DESTINATIONS } = await import('@/app/data/destinations');
-    return VIETNAMESE_DESTINATIONS.map((dest) => ({
-      id: dest.id || dest.name,
-      title: dest.name,
-      location: dest.name,
-      country: "Việt Nam",
-      image: dest.image,
-      style: dest.style,
-      interests: dest.interests,
-      budget: dest.budget,
-      budgetNum: dest.budgetNum,
-      duration: dest.duration,
-      durationDays: dest.durationDays,
-      trustScore: Math.floor(Math.random() * 10) + 90,
-      author: dest.bestMonth ? "Nguyễn Thị Mai" : "Trần Văn Minh"
-    }));
+    return [];
   },
 
   /**
@@ -386,5 +351,75 @@ export const diaryService = {
     }
 
     return diaryId;
+  },
+
+  /**
+   * Cập nhật nhật ký
+   */
+  async updateDiary(id: string, payload: Partial<CreateDiaryPayload>, coverImageUrl?: string): Promise<void> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('User not authenticated');
+
+    const updateData: any = { ...payload };
+    
+    // Loại bỏ các trường mảng vì ta phải update các bảng phụ riêng
+    delete updateData.timeline;
+    delete updateData.budget_breakdown;
+
+    if (coverImageUrl) {
+      updateData.cover_image_url = coverImageUrl;
+    }
+
+    const { error } = await supabase
+      .from('diaries')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', userData.user.id);
+
+    if (error) throw error;
+    
+    // Nếu có update timeline hoặc budget_breakdown, ta xóa cũ và insert mới cho nhanh
+    if (payload.timeline) {
+      await supabase.from('diary_days').delete().eq('diary_id', id);
+      if (payload.timeline.length > 0) {
+        const daysToInsert = payload.timeline.map((day) => ({
+          diary_id: id,
+          day_number: day.day,
+          title: day.title,
+          activities: day.activities,
+          budget: day.budget,
+        }));
+        await supabase.from('diary_days').insert(daysToInsert);
+      }
+    }
+
+    if (payload.budget_breakdown) {
+      await supabase.from('budget_items').delete().eq('diary_id', id);
+      if (payload.budget_breakdown.length > 0) {
+        const budgetToInsert = payload.budget_breakdown.map((item) => ({
+          diary_id: id,
+          category: item.category,
+          amount: item.amount,
+          percentage: item.percentage,
+        }));
+        await supabase.from('budget_items').insert(budgetToInsert);
+      }
+    }
+  },
+
+  /**
+   * Xóa nhật ký
+   */
+  async deleteDiary(id: string): Promise<void> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('diaries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userData.user.id); // Chỉ author mới xóa được
+
+    if (error) throw error;
   }
 };

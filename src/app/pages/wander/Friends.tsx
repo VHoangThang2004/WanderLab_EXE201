@@ -4,82 +4,13 @@ import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, 
 import { Link } from "react-router";
 import { useLanguageStore } from "@/stores";
 
-// Friend requests data
-const friendRequests = [
-  {
-    id: "1",
-    name: "Nguyễn Thị Lan",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    mutualFriends: 12,
-    location: "Hà Nội",
-  },
-  {
-    id: "2",
-    name: "Trần Minh Tuấn",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    mutualFriends: 8,
-    location: "Đà Nẵng",
-  },
-  {
-    id: "3",
-    name: "Lê Hương Giang",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    mutualFriends: 15,
-    location: "TP. Hồ Chí Minh",
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { friendService } from "@/api/friendService";
+import { useAuthStore } from "@/stores";
 
-// Friends list
-const myFriends = [
-  {
-    id: "1",
-    name: "Nguyễn Thị Mai",
-    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Hà Nội",
-    diariesCount: 15,
-    isOnline: true,
-  },
-  {
-    id: "2",
-    name: "Lê Văn Tuấn",
-    avatar: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "TP. Hồ Chí Minh",
-    diariesCount: 22,
-    isOnline: false,
-  },
-  {
-    id: "3",
-    name: "Trần Phương Linh",
-    avatar: "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Đà Nẵng",
-    diariesCount: 18,
-    isOnline: true,
-  },
-  {
-    id: "4",
-    name: "Phạm Minh Anh",
-    avatar: "https://images.unsplash.com/photo-1552058544-f2b08422138a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Huế",
-    diariesCount: 12,
-    isOnline: false,
-  },
-  {
-    id: "5",
-    name: "Võ Thị Lan",
-    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Nha Trang",
-    diariesCount: 9,
-    isOnline: true,
-  },
-  {
-    id: "6",
-    name: "Hoàng Văn Nam",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Cần Thơ",
-    diariesCount: 14,
-    isOnline: false,
-  },
-];
+// Friend requests mock (fallback when no data)
+const MOCK_REQUESTS: any[] = [];
+const MOCK_FRIENDS: any[] = [];
 
 // Travel groups
 const travelGroups = [
@@ -122,9 +53,43 @@ const travelGroups = [
 ];
 
 export function WanderFriends() {
-  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("friends");
   const [searchQuery, setSearchQuery] = useState("");
   const { t } = useLanguageStore();
+  const { user, isAuthenticated } = useAuthStore();
+
+  const { data: myFriends = MOCK_FRIENDS } = useQuery({
+    queryKey: ['friends', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const following = await friendService.getFollowing(user.id);
+      return following.map(f => ({
+        id: f.id,
+        name: f.full_name,
+        avatar: f.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
+        location: f.bio || "Việt Nam",
+        diariesCount: f.followers_count || 0,
+        isOnline: true,
+      }));
+    },
+    enabled: !!user
+  });
+
+  const { data: friendRequests = MOCK_REQUESTS } = useQuery({
+    queryKey: ['friend_requests', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const followers = await friendService.getFollowers(user.id);
+      return followers.map(f => ({
+        id: f.id,
+        name: f.full_name,
+        avatar: f.avatar_url || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+        location: f.bio || "Việt Nam",
+        mutualFriends: Math.floor(Math.random() * 10),
+      }));
+    },
+    enabled: !!user
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -201,9 +166,14 @@ export function WanderFriends() {
         </button>
       </div>
 
-      {/* Friend Requests Tab */}
+      {/* Friend Requests Tab (Người theo dõi bạn) */}
       {activeTab === "requests" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {friendRequests.length === 0 && (
+             <div className="col-span-full py-10 text-center text-gray-500">
+               Hiện chưa có lời mời hoặc người theo dõi mới nào.
+             </div>
+          )}
           {friendRequests.map((request) => (
             <div
               key={request.id}
@@ -222,11 +192,7 @@ export function WanderFriends() {
                 <div className="flex gap-2 w-full">
                   <button className="flex-1 px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
                     <Check size={16} />
-                    {t("accept", "friends")}
-                  </button>
-                  <button className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2">
-                    <X size={16} />
-                    {t("decline", "friends")}
+                    Theo dõi lại
                   </button>
                 </div>
               </div>
@@ -235,9 +201,14 @@ export function WanderFriends() {
         </div>
       )}
 
-      {/* Friends List Tab */}
+      {/* Friends List Tab (Người bạn đang theo dõi) */}
       {activeTab === "friends" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {myFriends.length === 0 && (
+            <div className="col-span-full py-10 text-center text-gray-500">
+               Bạn chưa theo dõi ai. Hãy khám phá và kết nối thêm bạn bè!
+            </div>
+          )}
           {myFriends.map((friend) => (
             <div
               key={friend.id}
@@ -258,7 +229,7 @@ export function WanderFriends() {
                   <div>
                     <h3 className="font-bold text-gray-900 dark:text-white">{friend.name}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{friend.location}</p>
-                    <p className="text-xs text-gray-400">{friend.diariesCount} {t("diaries", "friends")}</p>
+                    <p className="text-xs text-gray-400">{friend.diariesCount} người theo dõi</p>
                   </div>
                 </div>
                 <button className="text-gray-400 hover:text-gray-600 dark:text-gray-400">

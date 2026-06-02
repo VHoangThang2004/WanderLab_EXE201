@@ -1,6 +1,10 @@
-import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon } from "lucide-react";
+import { X, Heart, MessageCircle, Bookmark, Share2, MapPin, Calendar, Users as UsersIcon, Edit, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { useState } from "react";
+import { CommentsSection } from "./CommentsSection";
+import { useAuthStore } from "@/stores";
+import { useNavigate } from "react-router";
+import { diaryService } from "@/api/diaryService";
 
 interface Comment {
   id: string;
@@ -19,6 +23,7 @@ interface PostModalProps {
   post: {
     id: string;
     author: {
+      id?: string;
       name: string;
       avatar: string;
     };
@@ -38,41 +43,8 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [isSaved, setIsSaved] = useState(post.isSaved);
   const [likesCount, setLikesCount] = useState(post.likes);
-  const [commentText, setCommentText] = useState("");
-
-  // Mock comments data
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      author: {
-        name: "Lê Văn Tuấn",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Đẹp quá! Mình cũng muốn đi nơi này lắm! 😍",
-      timestamp: "2 giờ trước",
-      likes: 12,
-    },
-    {
-      id: "2",
-      author: {
-        name: "Trần Phương Linh",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Cho mình hỏi đi mấy người vậy bạn? Mình cũng đang lên kế hoạch đi đây!",
-      timestamp: "1 giờ trước",
-      likes: 5,
-    },
-    {
-      id: "3",
-      author: {
-        name: "Nguyễn Minh Anh",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Cảm ơn bạn đã chia sẻ! Rất hữu ích cho chuyến đi sắp tới của mình 🙏",
-      timestamp: "30 phút trước",
-      likes: 8,
-    },
-  ]);
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
@@ -85,20 +57,15 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
     setIsSaved(!isSaved);
   };
 
-  const handleComment = () => {
-    if (commentText.trim()) {
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        author: {
-          name: "Phan Văn Minh",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-        },
-        content: commentText,
-        timestamp: "Vừa xong",
-        likes: 0,
-      };
-      setComments([...comments, newComment]);
-      setCommentText("");
+  const handleDelete = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa nhật ký này?")) {
+      try {
+        await diaryService.deleteDiary(post.id);
+        alert("Đã xóa nhật ký");
+        window.location.reload(); // Quick refresh
+      } catch (err) {
+        alert("Có lỗi xảy ra khi xóa");
+      }
     }
   };
 
@@ -174,33 +141,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
 
           {/* Comments Section */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-3">
-                <ImageWithFallback
-                  src={comment.author.avatar}
-                  alt={comment.author.name}
-                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
-                    <p className="font-bold text-sm text-gray-900 dark:text-white">{comment.author.name}</p>
-                    <p className="text-gray-800 dark:text-gray-200 text-sm">{comment.content}</p>
-                  </div>
-                  <div className="flex items-center gap-4 mt-1 px-2">
-                    <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-[#ff3131] font-semibold">
-                      Thích
-                    </button>
-                    <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-[#ff3131] font-semibold">
-                      Trả lời
-                    </button>
-                    <span className="text-xs text-gray-400">{comment.timestamp}</span>
-                    {comment.likes > 0 && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{comment.likes} thích</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+            <CommentsSection diaryId={post.id} />
           </div>
 
           {/* Actions Bar */}
@@ -209,12 +150,13 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleLike}
-                  className="hover:scale-110 transition-transform"
+                  className="hover:scale-110 transition-transform flex items-center gap-1 text-gray-700 dark:text-gray-300"
                 >
                   <Heart
                     size={24}
                     className={isLiked ? "fill-[#ff3131] text-[#ff3131]" : "text-gray-700 dark:text-gray-300"}
                   />
+                  <span className="font-bold text-sm ml-1">{likesCount.toLocaleString()}</span>
                 </button>
                 <button className="hover:scale-110 transition-transform">
                   <MessageCircle size={24} className="text-gray-700 dark:text-gray-300" />
@@ -223,44 +165,27 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                   <Share2 size={24} className="text-gray-700 dark:text-gray-300" />
                 </button>
               </div>
-              <button
-                onClick={handleSave}
-                className="hover:scale-110 transition-transform"
-              >
-                <Bookmark
-                  size={24}
-                  className={isSaved ? "fill-gray-900 text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}
-                />
-              </button>
-            </div>
-
-            <p className="font-bold text-sm text-gray-900 dark:text-white mb-3">
-              {likesCount.toLocaleString()} lượt thích
-            </p>
-
-            {/* Comment Input */}
-            <div className="flex items-center gap-2">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
-                alt="Phan Văn Minh"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleComment()}
-                placeholder="Viết bình luận..."
-                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ff3131]"
-              />
-              {commentText.trim() && (
+              <div className="flex items-center gap-4">
+                {user?.id === post.author.id && (
+                  <>
+                    <button onClick={() => { onClose(); navigate(`/edit/${post.id}`); }} className="text-gray-500 hover:text-blue-500 transition-colors">
+                      <Edit size={20} />
+                    </button>
+                    <button onClick={handleDelete} className="text-gray-500 hover:text-red-500 transition-colors">
+                      <Trash2 size={20} />
+                    </button>
+                  </>
+                )}
                 <button
-                  onClick={handleComment}
-                  className="text-[#ff3131] font-bold text-sm hover:text-[#ff914d]"
+                  onClick={handleSave}
+                  className="hover:scale-110 transition-transform"
                 >
-                  Đăng
+                  <Bookmark
+                    size={24}
+                    className={isSaved ? "fill-gray-900 text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}
+                  />
                 </button>
-              )}
+              </div>
             </div>
           </div>
         </div>

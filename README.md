@@ -136,9 +136,15 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 ## 📋 Tiến Độ
 
 - [x] **Phase 1** — Foundation: Dependencies, folder structure, types, stores, common components
-- [ ] **Phase 2** — Core Features: Diary CRUD, social interactions, file upload
-- [ ] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments
-- [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment
+- [x] **Phase 2** — Core Features: Diary CRUD, social interactions, file upload (Đã hoàn thiện Dark/Light theme, Đa ngôn ngữ, API Supabase)
+- [x] **Phase 3** — Advanced: Chat realtime, AI chatbot lập lịch trình, payments (Đã dựng UI và tích hợp cơ bản)
+- [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment (Đã có UI Admin, đang trong giai đoạn bug fixing & chuẩn bị deploy)
+
+**Cập nhật mới nhất:**
+- Đã sửa lỗi chức năng Viết và Submit nhật ký (Diary).
+- Hoàn thiện UI và chức năng chuyển đổi ngôn ngữ (Tiếng Anh/Tiếng Việt).
+- Thêm chức năng Dark/Light theme và đồng bộ dữ liệu tài khoản người dùng với Supabase.
+- Tích hợp dữ liệu các tỉnh thành Việt Nam để tạo nhật ký du lịch.
 
 ---
 

@@ -2,7 +2,7 @@ import { WanderNav } from "../../components/wander/WanderNav";
 import { WanderFooter } from "../../components/wander/WanderFooter";
 import { Lightbox } from "../../components/wander/Lightbox";
 import { CommentsSection } from "../../components/wander/CommentsSection";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import { useState, useCallback } from "react";
 import {
   MapPin,
@@ -36,6 +36,7 @@ export function WanderDiaryDetail() {
   const { id } = useParams();
   const { t, language } = useLanguageStore();
   const { user, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"timeline" | "budget" | "tips">("timeline");
   const [heroIndex, setHeroIndex] = useState(0);
@@ -50,25 +51,25 @@ export function WanderDiaryDetail() {
   const { data: interactionState } = useQuery({
     queryKey: ['diaryInteraction', id, user?.id],
     queryFn: async () => {
-      if (!isAuthenticated || !user) return { isLiked: false, isSaved: false };
-      const [isLiked, isSaved] = await Promise.all([
-        interactionService.checkUserLiked(id!, user.id),
+      if (!isAuthenticated || !user) return { reaction: null, isSaved: false };
+      const [reaction, isSaved] = await Promise.all([
+        interactionService.getUserReaction(id!, user.id),
         interactionService.checkUserBookmarked(id!, user.id)
       ]);
-      return { isLiked, isSaved };
+      return { reaction, isSaved };
     },
     enabled: !!id && isAuthenticated
   });
 
-  const isLiked = interactionState?.isLiked || false;
-  const isSaved = interactionState?.isSaved || false;
+  const reaction = interactionState?.reaction || null;
+  const isLiked = !!reaction;
 
   const likeMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (type: string = 'like') => {
       if (!isAuthenticated || !user) {
         throw new Error(language === 'vi' ? "Vui lòng đăng nhập để thích" : "Please log in to like");
       }
-      return interactionService.toggleLikeDiary(id!, user.id);
+      return interactionService.setReactionDiary(id!, user.id, type, true);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['diaryInteraction', id, user?.id] });
@@ -381,18 +382,28 @@ export function WanderDiaryDetail() {
           <div className="lg:col-span-2 space-y-8">
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => likeMutation.mutate()}
-                disabled={likeMutation.isPending}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
-                  isLiked
-                    ? "bg-[#FFE8E0] dark:bg-gray-800 text-[#ff3131]"
-                    : "bg-[#FFF5F3] dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:bg-gray-800"
-                }`}
-              >
-                <Heart size={20} className={isLiked ? "fill-current" : ""} />
-                {diary.likesCount || 0}
-              </button>
+              <div className="relative group">
+                <button
+                  onClick={() => likeMutation.mutate(reaction || 'like')}
+                  disabled={likeMutation.isPending}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                    isLiked
+                      ? "bg-[#FFE8E0] dark:bg-gray-800 text-[#ff3131]"
+                      : "bg-[#FFF5F3] dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:bg-gray-800"
+                  }`}
+                >
+                  {reaction === 'love' ? '❤️' : reaction === 'haha' ? '😆' : reaction === 'wow' ? '😮' : reaction === 'sad' ? '😢' : reaction === 'angry' ? '😡' : <ThumbsUp size={20} className={isLiked ? "text-[#ff3131] fill-[#ff3131]" : ""} />}
+                  {diary.likesCount || 0}
+                </button>
+                {/* Emoji picker on hover */}
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex bg-white dark:bg-gray-800 shadow-xl rounded-full px-3 py-2 gap-2 border border-gray-100 dark:border-gray-700 z-20">
+                  {['like', 'love', 'haha', 'wow', 'sad', 'angry'].map(type => (
+                    <button key={type} onClick={() => likeMutation.mutate(type)} className="text-xl hover:scale-125 transition-transform" title={type}>
+                      {type === 'like' ? '👍' : type === 'love' ? '❤️' : type === 'haha' ? '😆' : type === 'wow' ? '😮' : type === 'sad' ? '😢' : '😡'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               
               <button
                 onClick={() => bookmarkMutation.mutate()}
@@ -417,6 +428,23 @@ export function WanderDiaryDetail() {
                 <Share2 size={20} />
                 {t("share", "diaryDetail")}
               </button>
+              
+              {/* Author Actions (Edit/Delete) */}
+              {user?.id === diary.author.id && (
+                <div className="flex items-center gap-2 ml-auto">
+                  <button onClick={() => navigate(`/edit/${id}`)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Sửa
+                  </button>
+                  <button onClick={async () => {
+                    if (confirm('Bạn có chắc chắn muốn xóa nhật ký này?')) {
+                      await diaryService.deleteDiary(id!);
+                      window.location.href = '/explore';
+                    }
+                  }} className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
+                    Xóa
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Description */}
