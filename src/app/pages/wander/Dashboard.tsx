@@ -1,11 +1,12 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { Link } from "react-router";
-import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X } from "lucide-react";
+import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailModal";
 import { useAuthStore, useLanguageStore } from "@/stores";
+import { diaryService } from "@/api/diaryService";
 
 // User's travel journal posts
 const myJournalPosts = [
@@ -83,6 +84,42 @@ export function WanderDashboard() {
     bio: "",
   });
 
+  const [userDiaries, setUserDiaries] = useState<any[]>([]);
+  const [savedDiaries, setSavedDiaries] = useState<any[]>([]);
+  const [isLoadingDiaries, setIsLoadingDiaries] = useState(false);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      const loadDiaries = async () => {
+        setIsLoadingDiaries(true);
+        try {
+          const res = await diaryService.fetchUserDiaries(user.id);
+          setUserDiaries(res);
+        } catch (err) {
+          console.error("Failed to fetch user diaries", err);
+        } finally {
+          setIsLoadingDiaries(false);
+        }
+      };
+
+      const loadSaved = async () => {
+        setIsLoadingSaved(true);
+        try {
+          const res = await diaryService.fetchSavedDiaries(user.id);
+          setSavedDiaries(res);
+        } catch (err) {
+          console.error("Failed to fetch saved diaries", err);
+        } finally {
+          setIsLoadingSaved(false);
+        }
+      };
+
+      loadDiaries();
+      loadSaved();
+    }
+  }, [user?.id]);
+
   const openEditModal = () => {
     setEditForm({
       fullName: user?.full_name || "",
@@ -146,7 +183,7 @@ export function WanderDashboard() {
     coverImage: user?.cover_image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
     location: user?.location || (language === 'vi' ? 'Chưa cập nhật' : 'Not updated'),
     bio: user?.bio || (language === 'vi' ? 'Hãy thêm mô tả về bạn... 🎒🌏' : 'Tell us about yourself... 🎒🌏'),
-    diariesCount: user?.diaries_count || 0,
+    diariesCount: userDiaries.length || user?.diaries_count || 0,
     followersCount: user?.followers_count || 0,
     followingCount: user?.following_count || 0,
   };
@@ -346,16 +383,42 @@ export function WanderDashboard() {
                 </div>
 
                 {/* Journal Posts */}
-                {myJournalPosts.map((post) => (
-                  <JournalPostCard key={post.id} {...post} />
-                ))}
+                {isLoadingDiaries ? (
+                  <div className="text-center py-10 text-gray-500">
+                    {language === 'vi' ? 'Đang tải nhật ký...' : 'Loading journals...'}
+                  </div>
+                ) : userDiaries.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+                    <BookOpen className="mx-auto text-gray-300 mb-4" size={48} />
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {language === 'vi' ? 'Bạn chưa có nhật ký nào' : 'No journals yet'}
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      {language === 'vi' ? 'Hãy tạo nhật ký đầu tiên để lưu giữ kỷ niệm chuyến đi của bạn!' : 'Create your first journal to save your trip memories!'}
+                    </p>
+                    <Link
+                      to="/create"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                    >
+                      {t("createJournal")}
+                    </Link>
+                  </div>
+                ) : (
+                  userDiaries.map((post) => (
+                    <JournalPostCard key={post.id} {...post} />
+                  ))
+                )}
               </div>
             )}
 
             {activeTab === "saved" && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-900">{t("savedJournals")}</h2>
-                {savedItineraries.length === 0 ? (
+                {isLoadingSaved ? (
+                  <div className="text-center py-10 text-gray-500">
+                    {language === 'vi' ? 'Đang tải...' : 'Loading...'}
+                  </div>
+                ) : savedDiaries.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
                     <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
                     <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -372,35 +435,9 @@ export function WanderDashboard() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {savedItineraries.map((itinerary) => (
-                      <div
-                        key={itinerary.id}
-                        className="bg-white rounded-2xl p-4 flex gap-4 hover:shadow-md transition-all"
-                      >
-                        <button
-                          onClick={() => setOpenItinerary(itinerary)}
-                          className="text-left flex-1 flex gap-4"
-                        >
-                          <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                            {/* Placeholder for itinerary preview */}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 mb-1">
-                              {itinerary.destination}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {itinerary.days.length} {language === 'vi' ? 'ngày' : 'days'} • {itinerary.budget}
-                            </p>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => removeItinerary(itinerary.id)}
-                          className="px-3 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Bookmark size={20} className="fill-current" />
-                        </button>
-                      </div>
+                  <div className="space-y-6">
+                    {savedDiaries.map((post) => (
+                      <JournalPostCard key={post.id} {...post} />
                     ))}
                   </div>
                 )}

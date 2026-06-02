@@ -18,8 +18,8 @@ export const interactionService = {
   // === LIKES ===
   async checkUserLiked(diaryId: string, userId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('likes')
-      .select('id')
+      .from('diary_likes')
+      .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
       .single();
@@ -37,7 +37,7 @@ export const interactionService = {
     if (isCurrentlyLiked) {
       // Unlike
       await supabase
-        .from('likes')
+        .from('diary_likes')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
@@ -48,7 +48,7 @@ export const interactionService = {
     } else {
       // Like
       await supabase
-        .from('likes')
+        .from('diary_likes')
         .insert({ diary_id: diaryId, user_id: userId });
         
       // Tang like_count trong diaries
@@ -60,8 +60,8 @@ export const interactionService = {
   // === BOOKMARKS ===
   async checkUserBookmarked(diaryId: string, userId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('bookmarks')
-      .select('id')
+      .from('diary_bookmarks')
+      .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
       .single();
@@ -78,14 +78,14 @@ export const interactionService = {
     
     if (isCurrentlyBookmarked) {
       await supabase
-        .from('bookmarks')
+        .from('diary_bookmarks')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
       return { isBookmarked: false };
     } else {
       await supabase
-        .from('bookmarks')
+        .from('diary_bookmarks')
         .insert({ diary_id: diaryId, user_id: userId });
       return { isBookmarked: true };
     }

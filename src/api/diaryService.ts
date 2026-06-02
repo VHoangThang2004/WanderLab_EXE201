@@ -23,8 +23,8 @@ export const diaryService = {
           likes_count,
           comments_count,
           author:profiles(id, full_name, avatar_url),
-          likes(user_id),
-          bookmarks(user_id)
+          likes:diary_likes(user_id),
+          bookmarks:diary_bookmarks(user_id)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
@@ -49,6 +49,8 @@ export const diaryService = {
           comments: item.comments_count || 0,
           is_liked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
           is_saved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
+          isLiked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
+          isSaved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
           group_size: item.group_size || '',
         }));
       }
@@ -106,7 +108,7 @@ export const diaryService = {
           *,
           author:profiles(id, full_name, avatar_url, diaries_count, followers_count),
           timeline:diary_days(*),
-          budget_breakdown:budget_items(*)
+          budget_breakdown:diary_budget_breakdown(*)
         `)
         .eq('id', id)
         .single();
@@ -311,9 +313,118 @@ export const diaryService = {
         amount: item.amount,
         percentage: item.percentage,
       }));
-      await supabase.from('budget_items').insert(budgetToInsert);
+      await supabase.from('diary_budget_breakdown').insert(budgetToInsert);
     }
 
     return diaryId;
+  },
+
+  /**
+   * Lấy danh sách nhật ký của một user cụ thể
+   */
+  async fetchUserDiaries(userId: string): Promise<DiaryFeedItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('diaries')
+        .select(`
+          id,
+          location,
+          cover_image_url,
+          created_at,
+          description,
+          group_size,
+          likes_count,
+          comments_count,
+          author:profiles(id, full_name, avatar_url),
+          likes:diary_likes(user_id),
+          bookmarks:diary_bookmarks(user_id)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch user diaries error:', error);
+      } else if (data) {
+        return data.map((item: any) => ({
+          id: item.id,
+          author: {
+            id: item.author?.id || 'unknown',
+            name: item.author?.full_name || 'Unknown User',
+            avatar: item.author?.avatar_url || '',
+          },
+          image: item.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
+          location: item.location,
+          date: new Date(item.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
+          caption: item.description,
+          likes: item.likes_count || 0,
+          comments: item.comments_count || 0,
+          is_liked: item.likes?.some((l: any) => l.user_id === userId) || false,
+          is_saved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
+          isLiked: item.likes?.some((l: any) => l.user_id === userId) || false,
+          isSaved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
+          group_size: item.group_size || '',
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to fetch user diaries from Supabase", err);
+    }
+    return [];
+  },
+
+  /**
+   * Lấy danh sách nhật ký đã lưu (bookmarked) của user
+   */
+  async fetchSavedDiaries(userId: string): Promise<DiaryFeedItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('diary_bookmarks')
+        .select(`
+          diary:diaries(
+            id,
+            location,
+            cover_image_url,
+            created_at,
+            description,
+            group_size,
+            likes_count,
+            comments_count,
+            author:profiles(id, full_name, avatar_url),
+            likes:diary_likes(user_id),
+            bookmarks:diary_bookmarks(user_id)
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch saved diaries error:', error);
+      } else if (data) {
+        return data
+          .map((item: any) => item.diary)
+          .filter(Boolean)
+          .map((item: any) => ({
+            id: item.id,
+            author: {
+              id: item.author?.id || 'unknown',
+              name: item.author?.full_name || 'Unknown User',
+              avatar: item.author?.avatar_url || '',
+            },
+            image: item.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
+            location: item.location,
+            date: new Date(item.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
+            caption: item.description,
+            likes: item.likes_count || 0,
+            comments: item.comments_count || 0,
+            is_liked: item.likes?.some((l: any) => l.user_id === userId) || false,
+            is_saved: true,
+            isLiked: item.likes?.some((l: any) => l.user_id === userId) || false,
+            isSaved: true,
+            group_size: item.group_size || '',
+          }));
+      }
+    } catch (err) {
+      console.warn("Failed to fetch saved diaries from Supabase", err);
+    }
+    return [];
   }
 };
