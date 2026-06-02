@@ -62,13 +62,30 @@ function buildUser(
 /**
  * Helper: try to fetch profile, return null if table doesn't exist.
  */
-async function fetchProfile(userId: string) {
+async function fetchProfile(authUser: any) {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', authUser.id)
       .single();
+      
+    if (error && error.code === 'PGRST116') {
+      // Profile not found, let's create it
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUser.id,
+          full_name: authUser.user_metadata?.full_name || 'Người dùng mới',
+          avatar_url: authUser.user_metadata?.avatar_url || null,
+        })
+        .select()
+        .single();
+        
+      if (!insertError) return newProfile;
+    }
+    
+    if (error) throw error;
     return data;
   } catch {
     // profiles table may not exist yet — that's ok
@@ -98,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (error) throw error;
 
-          const profile = await fetchProfile(data.user.id);
+          const profile = await fetchProfile(data.user);
           const user = buildUser(data.user, profile);
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
@@ -159,7 +176,7 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session?.user) {
-            const profile = await fetchProfile(session.user.id);
+            const profile = await fetchProfile(session.user);
             const user = buildUser(session.user, profile);
             set({ user, isAuthenticated: true, isLoading: false });
           } else {

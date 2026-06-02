@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface CommentItem {
   id: string;
   diary_id: string;
-  author_id: string;
+  user_id: string;
   content: string;
   likes_count: number;
   created_at: string;
@@ -18,7 +18,7 @@ export const interactionService = {
   // === LIKES ===
   async checkUserLiked(diaryId: string, userId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('likes')
+      .from('diary_likes')
       .select('id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
@@ -37,7 +37,7 @@ export const interactionService = {
     if (isCurrentlyLiked) {
       // Unlike
       await supabase
-        .from('likes')
+        .from('diary_likes')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
@@ -48,7 +48,7 @@ export const interactionService = {
     } else {
       // Like
       await supabase
-        .from('likes')
+        .from('diary_likes')
         .insert({ diary_id: diaryId, user_id: userId });
         
       // Tang like_count trong diaries
@@ -60,7 +60,7 @@ export const interactionService = {
   // === BOOKMARKS ===
   async checkUserBookmarked(diaryId: string, userId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('bookmarks')
+      .from('diary_bookmarks')
       .select('id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
@@ -78,14 +78,14 @@ export const interactionService = {
     
     if (isCurrentlyBookmarked) {
       await supabase
-        .from('bookmarks')
+        .from('diary_bookmarks')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
       return { isBookmarked: false };
     } else {
       await supabase
-        .from('bookmarks')
+        .from('diary_bookmarks')
         .insert({ diary_id: diaryId, user_id: userId });
       return { isBookmarked: true };
     }
@@ -98,7 +98,7 @@ export const interactionService = {
       .select(`
         id,
         diary_id,
-        author_id,
+        user_id,
         content,
         likes_count,
         created_at,
@@ -126,13 +126,13 @@ export const interactionService = {
       .from('comments')
       .insert({
         diary_id: diaryId,
-        author_id: userId,
+        user_id: userId,
         content: content,
       })
       .select(`
         id,
         diary_id,
-        author_id,
+        user_id,
         content,
         likes_count,
         created_at,

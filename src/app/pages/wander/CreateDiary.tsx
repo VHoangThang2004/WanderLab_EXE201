@@ -22,6 +22,7 @@ import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
 import { useLanguageStore, useDiaryStore, useAuthStore } from "@/stores";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type PrivacySetting = "private" | "friends" | "public";
 
@@ -30,7 +31,9 @@ export function WanderCreateDiary() {
   const { addDiary } = useDiaryStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
+  const [errorMessage, setErrorMessage] = useState("");
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
   const [isFlipping, setIsFlipping] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,11 +140,14 @@ export function WanderCreateDiary() {
   const handleSubmit = async () => {
     if (!formData.title || !formData.location || !coverFile) {
       toast.error(language === 'vi' ? "Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!" : "Please fill in title, location and upload a cover image!");
+      setCurrentStep(1);
+      window.scrollTo(0, 0);
       return;
     }
 
     try {
       setIsSubmitting(true);
+      setErrorMessage("");
 
       // 1. Upload ảnh
       const coverUrl = await diaryService.uploadDiaryImage(coverFile);
@@ -153,7 +159,7 @@ export function WanderCreateDiary() {
         country: "Việt Nam",
         duration: "Nhiều ngày",
         dates: `${formData.startDate} - ${formData.endDate}`,
-        total_budget: formData.budget ? `${(parseInt(formData.budget) / 1000000).toFixed(1)} triệu ₫` : "0đ",
+        total_budget: formData.budget ? `${(parseInt(formData.budget.replace(/\\D/g, '')) / 1000000).toFixed(1)} triệu ₫` : "0đ",
         group_size: `${formData.groupSize} người`,
         description: formData.description,
         status: privacySetting === "private" ? "draft" : "published",
@@ -163,7 +169,7 @@ export function WanderCreateDiary() {
           day: day.day,
           title: day.title || `Ngày ${day.day}`,
           activities: day.activities.filter(a => a.trim() !== ""),
-          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ"
+          budget: day.budget ? `${(parseInt(day.budget.replace(/\\D/g, '')) / 1000000).toFixed(1)} tr` : "0đ"
         })),
         budget_breakdown: [
           { category: "Di chuyển", amount: "Vừa phải", percentage: 30 },
@@ -172,7 +178,10 @@ export function WanderCreateDiary() {
         ]
       };
 
-      // 3. Mock create diary locally using Zustand store
+      // 3. Gọi API lưu vào Supabase
+      await diaryService.createDiary(payload, coverUrl);
+
+      // 4. Update local state (cho UI mượt)
       addDiary({
         title: formData.title,
         location: formData.location,
@@ -185,11 +194,17 @@ export function WanderCreateDiary() {
         groupSize: formData.groupSize + " người"
       });
 
+      // 5. Invalidate react-query cache để Profile tự fetch lại dữ liệu mới nhất
+      queryClient.invalidateQueries({ queryKey: ['myDiaries'] });
+      queryClient.invalidateQueries({ queryKey: ['exploreDiaries'] });
+
       toast.success(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
       navigate("/profile");
     } catch (err: any) {
       console.error(err);
-      toast.error(`${language === 'vi' ? 'Đăng nhật ký thất bại' : 'Failed to publish travel journal'}: ${err.message}`);
+      const errMsg = err.message || JSON.stringify(err);
+      setErrorMessage(`Lỗi chi tiết: ${errMsg}`);
+      toast.error(`${language === 'vi' ? 'Đăng nhật ký thất bại' : 'Failed to publish travel journal'}: ${errMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -792,6 +807,11 @@ export function WanderCreateDiary() {
 
             {/* Page Footer / Navigation */}
             <div className="px-16 py-6 border-t-2 border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-[#030213]/80">
+              {errorMessage && (
+                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-xl font-medium">
+                  {errorMessage}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <button
                   onClick={handleBack}

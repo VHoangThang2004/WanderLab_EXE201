@@ -22,9 +22,9 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles(id, full_name, avatar_url),
-          likes(user_id),
-          bookmarks(user_id)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+          diary_likes(user_id),
+          diary_bookmarks(user_id)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
@@ -47,8 +47,8 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
-          is_saved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
+          is_liked: currentUser ? item.diary_likes?.some((l: any) => l.user_id === currentUser.id) : false,
+          is_saved: currentUser ? item.diary_bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
           group_size: item.group_size || '',
         }));
       }
@@ -95,11 +95,11 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles!diaries_author_id_fkey(id, full_name, avatar_url),
-          likes(user_id),
-          bookmarks(user_id)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+          diary_likes(user_id),
+          diary_bookmarks(user_id)
         `)
-        .eq('author_id', currentUser.id)
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -121,8 +121,8 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: item.likes?.some((l: any) => l.user_id === currentUser.id) || false,
-          is_saved: item.bookmarks?.some((b: any) => b.user_id === currentUser.id) || false,
+          is_liked: item.diary_likes?.some((l: any) => l.user_id === currentUser.id) || false,
+          is_saved: item.diary_bookmarks?.some((b: any) => b.user_id === currentUser.id) || false,
           group_size: item.group_size || '',
         }));
       }
@@ -259,7 +259,7 @@ export const diaryService = {
         .from('diaries')
         .select(`
           id, title, location, country, cover_image_url, duration, total_budget, trust_score,
-          author:profiles(id, full_name, avatar_url)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false });
@@ -323,11 +323,26 @@ export const diaryService = {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error('User not authenticated');
 
+    // Ensure profile exists to avoid foreign key violation
+    const { error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userData.user.id)
+      .single();
+      
+    if (profileCheckError && profileCheckError.code === 'PGRST116') {
+      await supabase.from('profiles').insert({
+        id: userData.user.id,
+        full_name: userData.user.user_metadata?.full_name || 'Người dùng mới',
+        avatar_url: userData.user.user_metadata?.avatar_url || null,
+      });
+    }
+
     // 1. Insert diary record
     const { data: diary, error: diaryError } = await supabase
       .from('diaries')
       .insert({
-        author_id: userData.user.id,
+        user_id: userData.user.id,
         title: payload.title,
         location: payload.location,
         country: payload.country,
