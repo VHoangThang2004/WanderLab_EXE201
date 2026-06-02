@@ -427,12 +427,10 @@ export function WanderLanding() {
                       {index + 1}
                     </span>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white group-hover:text-[#ff3131] transition-colors">
-                        {translateTrendingDestName(dest.name, language)}
+                      <p className="font-semibold text-gray-900 group-hover:text-[#ff3131] transition-colors">
+                        {dest.name}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {language === 'vi' ? dest.count : dest.count.replace("nhật ký", "journals")}
-                      </p>
+                      <p className="text-xs text-gray-500">{dest.count}</p>
                     </div>
                   </div>
                 </Link>

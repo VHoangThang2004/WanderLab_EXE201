@@ -2,15 +2,83 @@ import { useState } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
 import { Link } from "react-router";
-import { useLanguageStore } from "@/stores";
 
-import { useQuery } from "@tanstack/react-query";
-import { friendService } from "@/api/friendService";
-import { useAuthStore } from "@/stores";
+// Friend requests data
+const friendRequests = [
+  {
+    id: "1",
+    name: "Nguyễn Thị Lan",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    mutualFriends: 12,
+    location: "Hà Nội",
+  },
+  {
+    id: "2",
+    name: "Trần Minh Tuấn",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    mutualFriends: 8,
+    location: "Đà Nẵng",
+  },
+  {
+    id: "3",
+    name: "Lê Hương Giang",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    mutualFriends: 15,
+    location: "TP. Hồ Chí Minh",
+  },
+];
 
-// Friend requests mock (fallback when no data)
-const MOCK_REQUESTS: any[] = [];
-const MOCK_FRIENDS: any[] = [];
+// Friends list
+const myFriends = [
+  {
+    id: "1",
+    name: "Nguyễn Thị Mai",
+    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Hà Nội",
+    diariesCount: 15,
+    isOnline: true,
+  },
+  {
+    id: "2",
+    name: "Lê Văn Tuấn",
+    avatar: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "TP. Hồ Chí Minh",
+    diariesCount: 22,
+    isOnline: false,
+  },
+  {
+    id: "3",
+    name: "Trần Phương Linh",
+    avatar: "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Đà Nẵng",
+    diariesCount: 18,
+    isOnline: true,
+  },
+  {
+    id: "4",
+    name: "Phạm Minh Anh",
+    avatar: "https://images.unsplash.com/photo-1552058544-f2b08422138a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Huế",
+    diariesCount: 12,
+    isOnline: false,
+  },
+  {
+    id: "5",
+    name: "Võ Thị Lan",
+    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Nha Trang",
+    diariesCount: 9,
+    isOnline: true,
+  },
+  {
+    id: "6",
+    name: "Hoàng Văn Nam",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    location: "Cần Thơ",
+    diariesCount: 14,
+    isOnline: false,
+  },
+];
 
 // Travel groups
 const travelGroups = [
@@ -55,41 +123,6 @@ const travelGroups = [
 export function WanderFriends() {
   const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("friends");
   const [searchQuery, setSearchQuery] = useState("");
-  const { t } = useLanguageStore();
-  const { user, isAuthenticated } = useAuthStore();
-
-  const { data: myFriends = MOCK_FRIENDS } = useQuery({
-    queryKey: ['friends', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const following = await friendService.getFollowing(user.id);
-      return following.map(f => ({
-        id: f.id,
-        name: f.full_name,
-        avatar: f.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
-        location: f.bio || "Việt Nam",
-        diariesCount: f.followers_count || 0,
-        isOnline: true,
-      }));
-    },
-    enabled: !!user
-  });
-
-  const { data: friendRequests = MOCK_REQUESTS } = useQuery({
-    queryKey: ['friend_requests', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const followers = await friendService.getFollowers(user.id);
-      return followers.map(f => ({
-        id: f.id,
-        name: f.full_name,
-        avatar: f.avatar_url || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
-        location: f.bio || "Việt Nam",
-        mutualFriends: Math.floor(Math.random() * 10),
-      }));
-    },
-    enabled: !!user
-  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -122,16 +155,15 @@ export function WanderFriends() {
       <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-800">
         <button
           onClick={() => setActiveTab("requests")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "requests"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "requests"
               ? "text-[#ff3131]"
               : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
-          }`}
+            }`}
         >
-          {t("requests", "friends")}
+          Lời mời kết bạn
           {friendRequests.length > 0 && (
             <span className="ml-2 px-2 py-0.5 bg-[#ff3131] text-white text-xs rounded-full">
-              {friendRequests.length}
+              {filteredRequests.length}
             </span>
           )}
           {activeTab === "requests" && (
@@ -140,26 +172,24 @@ export function WanderFriends() {
         </button>
         <button
           onClick={() => setActiveTab("friends")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "friends"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "friends"
               ? "text-[#ff3131]"
               : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
-          }`}
+            }`}
         >
-          {t("friendsList", "friends")} ({myFriends.length})
+          Bạn bè ({myFriends.length})
           {activeTab === "friends" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("groups")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "groups"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "groups"
               ? "text-[#ff3131]"
               : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
-          }`}
+            }`}
         >
-          {t("groups", "friends")} ({travelGroups.length})
+          Nhóm du lịch ({travelGroups.length})
           {activeTab === "groups" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
@@ -169,15 +199,10 @@ export function WanderFriends() {
       {/* Friend Requests Tab (Người theo dõi bạn) */}
       {activeTab === "requests" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {friendRequests.length === 0 && (
-             <div className="col-span-full py-10 text-center text-gray-500">
-               Hiện chưa có lời mời hoặc người theo dõi mới nào.
-             </div>
-          )}
           {friendRequests.map((request) => (
             <div
               key={request.id}
-              className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 hover:shadow-md transition-all"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
             >
               <div className="flex flex-col items-center text-center">
                 <ImageWithFallback
@@ -185,14 +210,18 @@ export function WanderFriends() {
                   alt={request.name}
                   className="w-20 h-20 rounded-full object-cover mb-3"
                 />
-                <h3 className="font-bold text-gray-900 dark:text-white mb-1">{request.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{request.location}</p>
-                <p className="text-xs text-gray-400 mb-4">{request.mutualFriends} {t("mutualFriends", "friends")}</p>
-                
+                <h3 className="font-bold text-gray-900 mb-1">{request.name}</h3>
+                <p className="text-sm text-gray-500 mb-2">{request.location}</p>
+                <p className="text-xs text-gray-400 mb-4">{request.mutualFriends} bạn chung</p>
+
                 <div className="flex gap-2 w-full">
                   <button className="flex-1 px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2">
                     <Check size={16} />
-                    Theo dõi lại
+                    Chấp nhận
+                  </button>
+                  <button className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                    <X size={16} />
+                    Từ chối
                   </button>
                 </div>
               </div>
@@ -204,15 +233,10 @@ export function WanderFriends() {
       {/* Friends List Tab (Người bạn đang theo dõi) */}
       {activeTab === "friends" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myFriends.length === 0 && (
-            <div className="col-span-full py-10 text-center text-gray-500">
-               Bạn chưa theo dõi ai. Hãy khám phá và kết nối thêm bạn bè!
-            </div>
-          )}
           {myFriends.map((friend) => (
             <div
               key={friend.id}
-              className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 hover:shadow-md transition-all"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex gap-3">
@@ -227,12 +251,12 @@ export function WanderFriends() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">{friend.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{friend.location}</p>
-                    <p className="text-xs text-gray-400">{friend.diariesCount} người theo dõi</p>
+                    <h3 className="font-bold text-gray-900">{friend.name}</h3>
+                    <p className="text-sm text-gray-500">{friend.location}</p>
+                    <p className="text-xs text-gray-400">{friend.diariesCount} nhật ký</p>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                <button className="text-gray-400 hover:text-gray-600">
                   <MoreVertical size={20} />
                 </button>
               </div>
@@ -242,9 +266,9 @@ export function WanderFriends() {
                   to={`/profile/${friend.id}`}
                   className="flex-1 px-4 py-2 bg-[#FFF5F3] text-[#ff3131] rounded-full font-semibold hover:bg-[#FFE5E0] transition-all text-center"
                 >
-                  {t("dashboard", "common")}
+                  Trang cá nhân
                 </Link>
-                <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
+                <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all">
                   <MessageCircle size={18} />
                 </button>
               </div>
@@ -258,7 +282,10 @@ export function WanderFriends() {
         <div>
           {/* Create Group Button */}
           <div className="mb-6">
-            <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all">
+            <button
+              onClick={handleCreateGroup}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+            >
               <UserPlus size={20} />
               {t("create", "common")}
             </button>
@@ -269,7 +296,7 @@ export function WanderFriends() {
             {travelGroups.map((group) => (
               <div
                 key={group.id}
-                className="bg-white dark:bg-[#030213] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition-all"
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all"
               >
                 {/* Group Cover */}
                 <div className="relative h-40">
@@ -282,13 +309,13 @@ export function WanderFriends() {
                   {group.isPrivate && (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-gray-900/70 backdrop-blur-sm rounded-full flex items-center gap-1.5">
                       <Lock size={14} className="text-white" />
-                      <span className="text-xs text-white font-medium">{t("privacyPrivate", "createDiary")}</span>
+                      <span className="text-xs text-white font-medium">Riêng tư</span>
                     </div>
                   )}
                   {!group.isPrivate && (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-gray-900/70 backdrop-blur-sm rounded-full flex items-center gap-1.5">
                       <Globe size={14} className="text-white" />
-                      <span className="text-xs text-white font-medium">{t("privacyPublic", "createDiary")}</span>
+                      <span className="text-xs text-white font-medium">Công khai</span>
                     </div>
                   )}
                 </div>
@@ -297,27 +324,27 @@ export function WanderFriends() {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">{group.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{group.description}</p>
+                      <h3 className="font-bold text-gray-900 text-lg mb-1">{group.name}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{group.description}</p>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600 dark:text-gray-400 ml-2">
+                    <button className="text-gray-400 hover:text-gray-600 ml-2">
                       <Settings size={20} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <Users size={16} />
-                      <span>{group.members.toLocaleString()} {t("members", "friends")}</span>
+                      <span>{group.members.toLocaleString()} thành viên</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <MessageCircle size={16} />
-                      <span>{group.posts.toLocaleString()} {t("posts", "friends")}</span>
+                      <span>{group.posts.toLocaleString()} bài viết</span>
                     </div>
                   </div>
 
                   <button className="w-full px-4 py-2.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all">
-                    {t("join", "friends")}
+                    Tham gia nhóm
                   </button>
                 </div>
               </div>
