@@ -1,6 +1,6 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { Link } from "react-router";
-import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route } from "lucide-react";
+import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useState } from "react";
@@ -75,6 +75,8 @@ export function WanderDashboard() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isUpdatingCover, setIsUpdatingCover] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+  const [showFullAvatar, setShowFullAvatar] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: "",
     location: "",
@@ -156,11 +158,11 @@ export function WanderDashboard() {
         {/* Cover Image */}
         <div className="relative h-64 md:h-80 bg-gradient-to-r from-[#ff3131] to-[#ff914d]">
           {userProfile.coverImage && (
-          <ImageWithFallback
-            src={userProfile.coverImage}
-            alt="Cover"
-            className="w-full h-full object-cover opacity-90"
-          />
+            <ImageWithFallback
+              src={userProfile.coverImage}
+              alt="Cover"
+              className="w-full h-full object-cover opacity-90"
+            />
           )}
           {/* Edit Cover Button */}
           <input
@@ -199,13 +201,16 @@ export function WanderDashboard() {
                 onChange={handleAvatarChange}
                 disabled={isUpdatingAvatar}
               />
-              <label htmlFor="avatar-upload" className="cursor-pointer block relative">
+              <div
+                onClick={() => setShowAvatarOptions(true)}
+                className="cursor-pointer block relative"
+              >
                 {userProfile.avatar ? (
-                <ImageWithFallback
-                  src={userProfile.avatar}
-                  alt={userProfile.name}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
-                />
+                  <ImageWithFallback
+                    src={userProfile.avatar}
+                    alt={userProfile.name}
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
+                  />
                 ) : (
                   <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
                     {userProfile.name.charAt(0).toUpperCase()}
@@ -219,7 +224,7 @@ export function WanderDashboard() {
                     <Image size={24} />
                   )}
                 </div>
-              </label>
+              </div>
             </div>
 
             {/* Profile Actions */}
@@ -271,11 +276,10 @@ export function WanderDashboard() {
           <div className="flex gap-8 border-t border-gray-100">
             <button
               onClick={() => setActiveTab("posts")}
-              className={`px-4 py-4 font-semibold transition-all relative ${
-                activeTab === "posts"
+              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "posts"
                   ? "text-[#ff3131]"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               {t("myJournals")}
               {activeTab === "posts" && (
@@ -284,11 +288,10 @@ export function WanderDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("saved")}
-              className={`px-4 py-4 font-semibold transition-all relative ${
-                activeTab === "saved"
+              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved"
                   ? "text-[#ff3131]"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               {t("savedJournals")}
               {activeTab === "saved" && (
@@ -297,11 +300,10 @@ export function WanderDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("trips")}
-              className={`px-4 py-4 font-semibold transition-all relative ${
-                activeTab === "trips"
+              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "trips"
                   ? "text-[#ff3131]"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               {t("itineraryStats")}
               {activeTab === "trips" && (
@@ -408,7 +410,7 @@ export function WanderDashboard() {
             {activeTab === "trips" && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-900">{t("travelStats")}</h2>
-                
+
                 {/* Stats Cards */}
                 <div className="grid grid-cols-3 gap-4">
                   {travelStats.map((stat) => (
@@ -417,10 +419,10 @@ export function WanderDashboard() {
                         {stat.value}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {stat.label === "Tỉnh thành" 
-                          ? (language === 'vi' ? 'Tỉnh thành' : 'Provinces') 
-                          : stat.label === "Quốc gia" 
-                            ? (language === 'vi' ? 'Quốc gia' : 'Countries') 
+                        {stat.label === "Tỉnh thành"
+                          ? (language === 'vi' ? 'Tỉnh thành' : 'Provinces')
+                          : stat.label === "Quốc gia"
+                            ? (language === 'vi' ? 'Quốc gia' : 'Countries')
                             : (language === 'vi' ? 'Tổng ngày' : 'Total Days')}
                       </p>
                     </div>
@@ -512,7 +514,7 @@ export function WanderDashboard() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative animate-scale-up">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("editProfile")}</h2>
-            
+
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -570,6 +572,81 @@ export function WanderDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Options Modal */}
+      {showAvatarOptions && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowAvatarOptions(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl space-y-2 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold text-gray-900 text-base border-b border-gray-100 pb-2">
+              {language === 'vi' ? 'Ảnh đại diện' : 'Profile Picture'}
+            </h3>
+
+            <button
+              onClick={() => {
+                setShowAvatarOptions(false);
+                setShowFullAvatar(true);
+              }}
+              className="w-full py-2.5 text-sm font-semibold text-gray-700 hover:bg-[#FFF5F3] hover:text-[#ff3131] rounded-xl transition-all"
+            >
+              {language === 'vi' ? 'Xem ảnh đại diện' : 'View profile picture'}
+            </button>
+
+            <button
+              onClick={() => {
+                setShowAvatarOptions(false);
+                document.getElementById('avatar-upload')?.click();
+              }}
+              className="w-full py-2.5 text-sm font-semibold text-gray-700 hover:bg-[#FFF5F3] hover:text-[#ff3131] rounded-xl transition-all"
+            >
+              {language === 'vi' ? 'Thay đổi ảnh đại diện' : 'Change profile picture'}
+            </button>
+
+            <button
+              onClick={() => setShowAvatarOptions(false)}
+              className="w-full py-2.5 text-sm font-semibold text-gray-400 hover:bg-gray-50 rounded-xl transition-all"
+            >
+              {language === 'vi' ? 'Hủy' : 'Cancel'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Full Avatar View Modal */}
+      {showFullAvatar && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          onClick={() => setShowFullAvatar(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2"
+            onClick={() => setShowFullAvatar(false)}
+          >
+            <X size={28} />
+          </button>
+          <div
+            className="max-w-2xl w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {userProfile.avatar ? (
+              <img
+                src={userProfile.avatar}
+                alt={userProfile.name}
+                className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl border-4 border-white/20"
+              />
+            ) : (
+              <div className="w-64 h-64 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-7xl shadow-2xl">
+                {userProfile.name.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
         </div>
       )}
