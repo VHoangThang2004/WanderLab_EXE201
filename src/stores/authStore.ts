@@ -25,6 +25,7 @@ interface AuthState {
     location?: string | null;
     avatar_url?: string | null;
     cover_image_url?: string | null;
+    plan?: string;
   }) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   uploadCover: (file: File) => Promise<string>;
@@ -48,6 +49,7 @@ function buildUser(
     location: (profile?.location as string) || null,
     role: (profile?.role as User['role']) || 'explorer',
     status: (profile?.status as User['status']) || 'active',
+    plan: (profile?.plan as string) || 'free',
     reputation_score: (profile?.reputation_score as number) || 0,
     diaries_count: (profile?.diaries_count as number) || 0,
     followers_count: (profile?.followers_count as number) || 0,
@@ -60,13 +62,30 @@ function buildUser(
 /**
  * Helper: try to fetch profile, return null if table doesn't exist.
  */
-async function fetchProfile(userId: string) {
+async function fetchProfile(authUser: any) {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', authUser.id)
       .single();
+      
+    if (error && error.code === 'PGRST116') {
+      // Profile not found, let's create it
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUser.id,
+          full_name: authUser.user_metadata?.full_name || 'Người dùng mới',
+          avatar_url: authUser.user_metadata?.avatar_url || null,
+        })
+        .select()
+        .single();
+        
+      if (!insertError) return newProfile;
+    }
+    
+    if (error) throw error;
     return data;
   } catch {
     // profiles table may not exist yet — that's ok
@@ -96,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (error) throw error;
 
-          const profile = await fetchProfile(data.user.id);
+          const profile = await fetchProfile(data.user);
           const user = buildUser(data.user, profile);
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
@@ -131,7 +150,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/dashboard`,
+            redirectTo: `${window.location.origin}/profile`,
           },
         });
         if (error) throw error;
@@ -141,7 +160,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'facebook',
           options: {
-            redirectTo: `${window.location.origin}/dashboard`,
+            redirectTo: `${window.location.origin}/profile`,
           },
         });
         if (error) throw error;
@@ -157,7 +176,7 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session?.user) {
-            const profile = await fetchProfile(session.user.id);
+            const profile = await fetchProfile(session.user);
             const user = buildUser(session.user, profile);
             set({ user, isAuthenticated: true, isLoading: false });
           } else {

@@ -17,20 +17,21 @@ import {
   BookOpen,
 } from "lucide-react";
 
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
 import { useLanguageStore, useDiaryStore, useAuthStore } from "@/stores";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 type PrivacySetting = "private" | "friends" | "public";
 
-export function WanderCreateDiary() {
+export function WanderEditDiary() {
   const { t, language } = useLanguageStore();
   const { addDiary } = useDiaryStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
   const [errorMessage, setErrorMessage] = useState("");
@@ -72,9 +73,40 @@ export function WanderCreateDiary() {
     return normalizedProvince.includes(normalizedInput);
   });
 
-  const [timeline, setTimeline] = useState([
+  const [timeline, setTimeline] = useState<any[]>([
     { day: 1, title: "", activities: [""], budget: "" },
   ]);
+
+  // Fetch diary data
+  const { data: diary, isLoading } = useQuery({
+    queryKey: ['diary', id],
+    queryFn: () => diaryService.fetchDiaryById(id!),
+    enabled: !!id
+  });
+
+  useEffect(() => {
+    if (diary) {
+      setFormData({
+        title: diary.title || "",
+        location: diary.location || "",
+        startDate: "", // We might not have exact split dates from API
+        endDate: "",
+        budget: diary.totalBudget ? diary.totalBudget.replace(/\D/g, '') : "",
+        groupSize: diary.groupSize ? diary.groupSize.replace(/\D/g, '') : "1",
+        description: diary.description || "",
+        style: diary.style || "",
+      });
+      if (diary.timeline && diary.timeline.length > 0) {
+        setTimeline(diary.timeline.map((d: any) => ({
+          day: d.day,
+          title: d.title,
+          activities: d.activities.length > 0 ? d.activities : [""],
+          budget: d.budget ? d.budget.replace(/\D/g, '') : ""
+        })));
+      }
+      setCoverPreview(diary.image);
+    }
+  }, [diary]);
 
   const totalSteps = 5;
 
@@ -138,8 +170,8 @@ export function WanderCreateDiary() {
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.location || !coverFile) {
-      toast.error(language === 'vi' ? "Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!" : "Please fill in title, location and upload a cover image!");
+    if (!formData.title || !formData.location) {
+      toast.error(language === 'vi' ? "Vui lòng điền tiêu đề và địa điểm!" : "Please fill in title and location!");
       setCurrentStep(1);
       window.scrollTo(0, 0);
       return;
@@ -150,7 +182,10 @@ export function WanderCreateDiary() {
       setErrorMessage("");
 
       // 1. Upload ảnh
-      const coverUrl = await diaryService.uploadDiaryImage(coverFile);
+      let coverUrl = diary?.image;
+      if (coverFile) {
+        coverUrl = await diaryService.uploadDiaryImage(coverFile);
+      }
 
       // 2. Chuẩn bị payload
       const payload: CreateDiaryPayload = {
@@ -179,7 +214,7 @@ export function WanderCreateDiary() {
       };
 
       // 3. Gọi API lưu vào Supabase
-      await diaryService.createDiary(payload, coverUrl);
+      await diaryService.updateDiary(id!, payload, coverFile ? coverUrl : undefined);
 
       // 4. Update local state (cho UI mượt)
       addDiary({
@@ -198,8 +233,8 @@ export function WanderCreateDiary() {
       queryClient.invalidateQueries({ queryKey: ['myDiaries'] });
       queryClient.invalidateQueries({ queryKey: ['exploreDiaries'] });
 
-      toast.success(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
-      navigate("/profile");
+      toast.success(language === 'vi' ? "Cập nhật nhật ký thành công!" : "Travel journal updated successfully!");
+      navigate(`/diary/${id}`);
     } catch (err: any) {
       console.error(err);
       const errMsg = err.message || JSON.stringify(err);

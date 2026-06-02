@@ -9,6 +9,7 @@ import { interactionService } from "@/api/interactionService";
 interface JournalPostCardProps {
   id: string;
   author: {
+    id?: string;
     name: string;
     avatar: string;
   };
@@ -92,19 +93,19 @@ export function JournalPostCard({
 
   return (
     <>
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+      <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition-all">
         {/* Author Header */}
-        <div className="p-4 flex items-center gap-3 border-b border-gray-100">
+        <div className="p-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
           <ImageWithFallback
             src={author.avatar}
             alt={author.name}
             className="w-10 h-10 rounded-full object-cover"
           />
           <div className="flex-1 min-w-0">
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-gray-900 dark:text-white">
               {author.name}
             </span>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <MapPin size={12} />
               <span className="truncate">{location}</span>
             </div>
@@ -116,7 +117,7 @@ export function JournalPostCard({
           onClick={() => setIsModalOpen(true)}
           className="block relative group w-full"
         >
-          <div className="aspect-[4/3] overflow-hidden bg-gray-100">
+          <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-900">
             <ImageWithFallback
               src={image}
               alt={caption}
@@ -125,20 +126,20 @@ export function JournalPostCard({
           </div>
           
           {/* Tape effect on top corners */}
-          <div className="absolute top-3 left-3 w-16 h-6 bg-white/70 backdrop-blur-sm rotate-[-5deg] shadow-sm border border-gray-200"></div>
-          <div className="absolute top-3 right-3 w-16 h-6 bg-white/70 backdrop-blur-sm rotate-[5deg] shadow-sm border border-gray-200"></div>
+          <div className="absolute top-3 left-3 w-16 h-6 bg-white dark:bg-[#030213]/70 backdrop-blur-sm rotate-[-5deg] shadow-sm border border-gray-200 dark:border-gray-700"></div>
+          <div className="absolute top-3 right-3 w-16 h-6 bg-white dark:bg-[#030213]/70 backdrop-blur-sm rotate-[5deg] shadow-sm border border-gray-200 dark:border-gray-700"></div>
         </button>
 
         {/* Caption & Date - Journal style */}
         <div className="p-5 space-y-3">
           {/* Date tag - handwritten style */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Calendar size={14} />
               <span>{date}</span>
             </div>
             {groupSize && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-500">
+              <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                 <Users size={14} />
                 <span>{groupSize}</span>
               </div>
@@ -150,19 +151,19 @@ export function JournalPostCard({
             onClick={() => setIsModalOpen(true)}
             className="block text-left w-full"
           >
-            <p className="text-gray-800 leading-relaxed line-clamp-3 hover:text-gray-900">
+            <p className="text-gray-800 dark:text-gray-200 leading-relaxed line-clamp-3 hover:text-gray-900 dark:text-white">
               {caption}
             </p>
           </button>
 
           {/* Social Actions */}
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-4">
               {/* Like */}
               <button
                 onClick={handleLike}
                 className={`flex items-center gap-1.5 transition-colors ${
-                  isLiked ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
+                  isLiked ? "text-[#ff3131]" : "text-gray-500 dark:text-gray-400 hover:text-[#ff3131]"
                 }`}
               >
                 <Heart
@@ -175,7 +176,7 @@ export function JournalPostCard({
               {/* Comment */}
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-1.5 text-gray-500 hover:text-[#ff3131] transition-colors"
+                className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-[#ff3131] transition-colors"
               >
                 <MessageCircle size={20} />
                 <span className="text-sm font-medium">{comments}</span>
@@ -186,7 +187,7 @@ export function JournalPostCard({
             <button
               onClick={handleSave}
               className={`transition-colors ${
-                isSaved ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
+                isSaved ? "text-[#ff3131]" : "text-gray-500 dark:text-gray-400 hover:text-[#ff3131]"
               }`}
             >
               <Bookmark

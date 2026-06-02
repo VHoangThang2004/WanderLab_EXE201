@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router";
+import { useAuthStore } from "@/stores";
 import { WanderLogo } from "../../components/wander/WanderLogo";
 import {
   CheckCircle2, Lock, ChevronLeft, CreditCard, Smartphone,
@@ -74,26 +75,26 @@ function SuccessScreen({ plan }: { plan: PlanDef }) {
         </div>
 
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Thanh toán thành công! 🎉</h1>
-          <p className="text-gray-500">Chào mừng bạn đến với WanderLab {plan.name}</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Thanh toán thành công! 🎉</h1>
+          <p className="text-gray-500 dark:text-gray-400">Chào mừng bạn đến với WanderLab {plan.name}</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 text-left space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-dashed border-gray-200">
-            <span className="font-bold text-gray-900">{plan.name} Plan</span>
+        <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-lg border border-gray-100 dark:border-gray-800 p-6 text-left space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-dashed border-gray-200 dark:border-gray-800">
+            <span className="font-bold text-gray-900 dark:text-white">{plan.name} Plan</span>
             <span className="font-extrabold text-[#ff3131]">{plan.price}/{plan.period}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>Mã đơn hàng</span>
-            <span className="font-mono font-semibold text-gray-800">WL-{Date.now().toString().slice(-8)}</span>
+            <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">WL-{Date.now().toString().slice(-8)}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>Ngày kích hoạt</span>
-            <span className="font-semibold text-gray-800">{new Date().toLocaleDateString("vi-VN")}</span>
+            <span className="font-semibold text-gray-800 dark:text-gray-200">{new Date().toLocaleDateString("vi-VN")}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>Gia hạn tiếp theo</span>
-            <span className="font-semibold text-gray-800">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">
               {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("vi-VN")}
             </span>
           </div>
@@ -104,14 +105,14 @@ function SuccessScreen({ plan }: { plan: PlanDef }) {
 
         <div className="flex flex-col gap-3">
           <Link
-            to="/dashboard"
+            to="/profile"
             className="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-2xl font-bold hover:shadow-xl transition-all"
           >
-            <Sparkles size={18} /> Đến Dashboard của bạn
+            <Sparkles size={18} /> Đến Profile của bạn
           </Link>
           <Link
             to="/partner"
-            className="flex items-center justify-center gap-2 w-full py-3 border-2 border-gray-200 text-gray-700 rounded-2xl font-semibold hover:border-[#ff3131] transition-all text-sm"
+            className="flex items-center justify-center gap-2 w-full py-3 border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold hover:border-[#ff3131] transition-all text-sm"
           >
             <ChevronLeft size={16} /> Quay lại trang gói
           </Link>
@@ -126,6 +127,7 @@ export function CheckoutPage() {
   const [params] = useSearchParams();
   const planKey = params.get("plan") ?? "starter";
   const plan = PLANS[planKey] ?? PLANS.starter;
+  const { updateProfile } = useAuthStore();
 
   const [payMethod, setPayMethod] = useState("card");
   const [cardNum, setCardNum] = useState("");
@@ -152,13 +154,25 @@ export function CheckoutPage() {
     return e;
   };
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    setTimeout(() => { setLoading(false); setDone(true); }, 2000);
+    
+    // Simulate payment processing
+    await new Promise(r => setTimeout(r, 1500));
+    
+    try {
+      await updateProfile({ plan: planKey });
+      setDone(true);
+    } catch (err) {
+      console.error(err);
+      alert("Đã có lỗi xảy ra khi cập nhật gói của bạn.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tax = Math.round(plan.priceNum * 0.1);
@@ -171,15 +185,15 @@ export function CheckoutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFF5F3]">
+    <div className="min-h-screen bg-[#FFF5F3] dark:bg-gray-900">
       {/* Top bar */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
+      <header className="bg-white dark:bg-[#030213] border-b border-gray-100 dark:border-gray-800 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/partner" className="flex items-center gap-2 text-gray-500 hover:text-[#ff3131] transition-colors text-sm font-medium">
+          <Link to="/partner" className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-[#ff3131] transition-colors text-sm font-medium">
             <ChevronLeft size={18} /> Quay lại
           </Link>
           <WanderLogo size="sm" />
-          <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+          <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
             <Lock size={14} className="text-green-500" />
             <span>Thanh toán an toàn</span>
           </div>
@@ -188,8 +202,8 @@ export function CheckoutPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">Hoàn tất đăng ký</h1>
-          <p className="text-gray-500 mt-1">Chỉ còn một bước nữa để bắt đầu hành trình với WanderLab</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Hoàn tất đăng ký</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Chỉ còn một bước nữa để bắt đầu hành trình với WanderLab</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -198,19 +212,19 @@ export function CheckoutPage() {
           <div className="lg:col-span-3 space-y-5">
 
             {/* Email */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full text-white text-xs flex items-center justify-center font-bold">1</span>
                 Thông tin liên hệ
               </h2>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Địa chỉ email</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Địa chỉ email</label>
                 <input
                   type="email"
                   placeholder="ban@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm transition-all ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm transition-all ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200 dark:border-gray-800"}`}
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 <p className="text-xs text-gray-400 mt-1.5">Hóa đơn và thông tin tài khoản sẽ được gửi đến email này</p>
@@ -218,8 +232,8 @@ export function CheckoutPage() {
             </div>
 
             {/* Payment method */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full text-white text-xs flex items-center justify-center font-bold">2</span>
                 Phương thức thanh toán
               </h2>
@@ -233,7 +247,7 @@ export function CheckoutPage() {
                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-xs font-semibold transition-all ${
                       payMethod === id
                         ? "border-[#ff3131] bg-red-50 text-[#ff3131]"
-                        : "border-gray-200 text-gray-600 hover:border-[#ff914d]"
+                        : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-[#ff914d]"
                     }`}
                   >
                     <Icon size={20} />
@@ -246,14 +260,14 @@ export function CheckoutPage() {
               {payMethod === "card" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Số thẻ</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Số thẻ</label>
                     <div className="relative">
                       <input
                         type="text"
                         placeholder="1234 5678 9012 3456"
                         value={cardNum}
                         onChange={(e) => setCardNum(formatCard(e.target.value))}
-                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono tracking-widest ${errors.cardNum ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono tracking-widest ${errors.cardNum ? "border-red-400 bg-red-50" : "border-gray-200 dark:border-gray-800"}`}
                       />
                       <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
                     </div>
@@ -261,38 +275,38 @@ export function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tên chủ thẻ</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Tên chủ thẻ</label>
                     <input
                       type="text"
                       placeholder="NGUYEN VAN A"
                       value={cardName}
                       onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm uppercase tracking-wide ${errors.cardName ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm uppercase tracking-wide ${errors.cardName ? "border-red-400 bg-red-50" : "border-gray-200 dark:border-gray-800"}`}
                     />
                     {errors.cardName && <p className="text-red-500 text-xs mt-1">{errors.cardName}</p>}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ngày hết hạn</label>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Ngày hết hạn</label>
                       <input
                         type="text"
                         placeholder="MM/YY"
                         value={expiry}
                         onChange={(e) => setExpiry(formatExpiry(e.target.value))}
                         maxLength={5}
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.expiry ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.expiry ? "border-red-400 bg-red-50" : "border-gray-200 dark:border-gray-800"}`}
                       />
                       {errors.expiry && <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">CVV</label>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">CVV</label>
                       <input
                         type="password"
                         placeholder="•••"
                         value={cvv}
                         onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.cvv ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.cvv ? "border-red-400 bg-red-50" : "border-gray-200 dark:border-gray-800"}`}
                       />
                       {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
                     </div>
@@ -302,12 +316,12 @@ export function CheckoutPage() {
                     <div
                       onClick={() => setSaveCard(!saveCard)}
                       className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all flex-shrink-0 ${
-                        saveCard ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] border-transparent" : "border-gray-300"
+                        saveCard ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] border-transparent" : "border-gray-300 dark:border-gray-700"
                       }`}
                     >
                       {saveCard && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
-                    <span className="text-sm text-gray-600">Lưu thẻ cho lần thanh toán tiếp theo</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Lưu thẻ cho lần thanh toán tiếp theo</span>
                   </label>
                 </div>
               )}
@@ -321,7 +335,7 @@ export function CheckoutPage() {
                       <p className="text-xs text-pink-600 font-semibold">QR MoMo</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">Mở ứng dụng MoMo → quét mã QR để thanh toán <span className="font-bold text-gray-900">{total.toLocaleString("vi-VN")}₫</span></p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Mở ứng dụng MoMo → quét mã QR để thanh toán <span className="font-bold text-gray-900 dark:text-white">{total.toLocaleString("vi-VN")}₫</span></p>
                   <div className="flex items-center gap-2 bg-pink-50 rounded-xl p-3 text-sm text-pink-700">
                     <Copy size={14} /> <span>Số tài khoản: <strong>0909 123 456</strong></span>
                   </div>
@@ -337,7 +351,7 @@ export function CheckoutPage() {
                       <p className="text-xs text-blue-600 font-semibold">QR VNPay</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">Mở ứng dụng ngân hàng → quét mã VNPay để thanh toán <span className="font-bold text-gray-900">{total.toLocaleString("vi-VN")}₫</span></p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Mở ứng dụng ngân hàng → quét mã VNPay để thanh toán <span className="font-bold text-gray-900 dark:text-white">{total.toLocaleString("vi-VN")}₫</span></p>
                   <div className="flex items-center gap-2 bg-blue-50 rounded-xl p-3 text-sm text-blue-700">
                     <Copy size={14} /> <span>Nội dung CK: <strong>WANDERLAB {planKey.toUpperCase()}</strong></span>
                   </div>
@@ -376,10 +390,10 @@ export function CheckoutPage() {
           {/* ─── Right: Order Summary ───────────────────────── */}
           <div className="lg:col-span-2 space-y-4 lg:sticky lg:top-8">
             {/* Plan card */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               <div className={`bg-gradient-to-r ${plan.color} p-6 text-white`}>
                 {plan.badge && (
-                  <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
+                  <div className="inline-flex items-center gap-1.5 bg-white/20 dark:bg-[#030213]/20 backdrop-blur-sm border border-white/30 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
                     <Sparkles size={11} /> {plan.badge}
                   </div>
                 )}
@@ -393,7 +407,7 @@ export function CheckoutPage() {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Bao gồm</p>
                 <ul className="space-y-2.5">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
                       <CheckCircle2 size={16} className="text-[#ff3131] flex-shrink-0 mt-0.5" />
                       {f}
                     </li>
@@ -403,35 +417,35 @@ export function CheckoutPage() {
             </div>
 
             {/* Price breakdown */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
-              <h3 className="font-bold text-gray-900">Tóm tắt đơn hàng</h3>
-              <div className="flex justify-between text-sm text-gray-600">
+            <div className="bg-white dark:bg-[#030213] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-3">
+              <h3 className="font-bold text-gray-900 dark:text-white">Tóm tắt đơn hàng</h3>
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>{plan.name} × 1 tháng</span>
-                <span className="font-semibold text-gray-900">{plan.price}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{plan.price}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>VAT (10%)</span>
-                <span className="font-semibold text-gray-900">{tax.toLocaleString("vi-VN")}₫</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{tax.toLocaleString("vi-VN")}₫</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>Ưu đãi</span>
                 <span className="font-semibold text-green-600">–0₫</span>
               </div>
-              <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between">
-                <span className="font-bold text-gray-900">Tổng cộng</span>
+              <div className="border-t border-dashed border-gray-200 dark:border-gray-800 pt-3 flex justify-between">
+                <span className="font-bold text-gray-900 dark:text-white">Tổng cộng</span>
                 <span className="font-extrabold text-[#ff3131] text-lg">{total.toLocaleString("vi-VN")}₫</span>
               </div>
             </div>
 
             {/* Trust badges */}
             <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-2xl border border-red-100 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-gray-600">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <Shield size={14} className="text-green-500" /> Thanh toán được mã hóa SSL 256-bit
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-600">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <CheckCircle2 size={14} className="text-green-500" /> Hoàn tiền 100% trong 7 ngày đầu
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-600">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <Lock size={14} className="text-green-500" /> Không lưu trữ thông tin thẻ của bạn
               </div>
             </div>

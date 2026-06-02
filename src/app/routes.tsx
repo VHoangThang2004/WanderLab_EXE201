@@ -5,10 +5,11 @@ import { WanderRegister } from "./pages/wander/Register";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
 import { ResetPassword } from "./pages/auth/ResetPassword";
 import { WanderGuide } from "./pages/wander/Guide";
-import { WanderDashboard } from "./pages/wander/Dashboard";
+import { WanderProfile } from "./pages/wander/Profile";
 import { WanderFriends } from "./pages/wander/Friends";
 import { WanderDiaryDetail } from "./pages/wander/DiaryDetail";
 import { WanderCreateDiary } from "./pages/wander/CreateDiary";
+import { WanderEditDiary } from "./pages/wander/EditDiary";
 import { WanderPartner } from "./pages/wander/Partner";
 import { ChatPage } from "./pages/wander/ChatPage";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
@@ -85,10 +86,10 @@ export const router = createBrowserRouter([
       },
       // Protected pages (require login)
       {
-        path: "/dashboard",
+        path: "/profile",
         element: (
           <ProtectedRoute>
-            <WanderDashboard />
+            <WanderProfile />
           </ProtectedRoute>
         ),
       },
@@ -105,6 +106,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <WanderCreateDiary />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/edit/:id",
+        element: (
+          <ProtectedRoute>
+            <WanderEditDiary />
           </ProtectedRoute>
         ),
       },
