@@ -271,7 +271,7 @@ export const diaryService = {
     const { data: diary, error: diaryError } = await supabase
       .from('diaries')
       .insert({
-        author_id: userData.user.id,
+        user_id: userData.user.id,
         title: payload.title,
         location: payload.location,
         country: payload.country,

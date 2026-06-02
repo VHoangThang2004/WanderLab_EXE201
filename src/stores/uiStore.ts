@@ -36,11 +36,27 @@ export const useUIStore = create<UIState>()((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
   // Theme
-  isDarkMode: false,
+  isDarkMode: (() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('wanderlab-theme');
+      if (saved) {
+        const isDark = saved === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        return isDark;
+      }
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', systemDark);
+      return systemDark;
+    }
+    return false;
+  })(),
   toggleDarkMode: () =>
     set((state) => {
       const newMode = !state.isDarkMode;
-      document.documentElement.classList.toggle('dark', newMode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wanderlab-theme', newMode ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', newMode);
+      }
       return { isDarkMode: newMode };
     }),
 
