@@ -1,4 +1,6 @@
 import { Link } from "react-router";
+import { useState } from "react";
+import { useLanguageStore } from "@/stores";
 
 import {
   CheckCircle,
@@ -135,6 +137,9 @@ const testimonials = [
 ];
 
 export function WanderPartner() {
+  const { t } = useLanguageStore();
+  const currentPlan = "free";
+
   const [formData, setFormData] = useState({
     businessName: "",
     contactName: "",
@@ -299,10 +304,10 @@ export function WanderPartner() {
                         }`}
                       disabled={isCurrent}
                     >
-                      {plan.isCurrent ? (
+                      {planDef.isCurrent ? (
                         "Đang Sử Dụng"
                       ) : (
-                        <Link to={`/checkout?plan=${plan.planKey}`}>Nâng Cấp</Link>
+                        <Link to={`/checkout?plan=${planDef.planKey}`}>Nâng Cấp</Link>
                       )}
                     </button>
                     <ul className="mt-8 space-y-4">
@@ -315,7 +320,8 @@ export function WanderPartner() {
                     </ul>
                   </div>
                 </div>
-              ))}
+              );
+            })}
           </div>
         </div>
       </section>

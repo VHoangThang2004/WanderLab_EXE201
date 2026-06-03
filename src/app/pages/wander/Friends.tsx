@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { useLanguageStore } from "@/stores";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
 import { Link } from "react-router";
 
@@ -121,8 +122,12 @@ const travelGroups = [
 ];
 
 export function WanderFriends() {
+  const { t } = useLanguageStore();
   const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("friends");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const filteredRequests = friendRequests;
+  const handleCreateGroup = () => alert("Sắp ra mắt");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

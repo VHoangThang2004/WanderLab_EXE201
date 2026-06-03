@@ -2,6 +2,19 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { MapPin, Check } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
+import { useAuthStore, useLanguageStore } from "@/stores";
+import { friendService } from "@/api/friendService";
+import { toast } from "sonner";
+
+const translateLocation = (loc: string, lang: string) => {
+  if (lang === 'vi') return loc;
+  const dict: Record<string, string> = {
+    "Hà Nội": "Hanoi",
+    "TP. Hồ Chí Minh": "Ho Chi Minh City",
+    "Đà Nẵng": "Da Nang",
+  };
+  return dict[loc] || loc;
+};
 
 interface UserCardProps {
   id?: string;
@@ -22,6 +35,8 @@ export function UserCard({
   followersCount,
   isFollowing: initialIsFollowing = false,
 }: UserCardProps) {
+  const { user } = useAuthStore();
+  const { language } = useLanguageStore();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followers, setFollowers] = useState(followersCount);
   const [isMutating, setIsMutating] = useState(false);
@@ -36,16 +51,16 @@ export function UserCard({
           await friendService.unfollowUser(user.id, id);
           setIsFollowing(false);
           setFollowers(prev => Math.max(prev - 1, 0));
-          addToast({ type: 'success', message: `Đã hủy theo dõi ${name}.` });
+          toast.success(`Đã hủy theo dõi ${name}.`);
         } else {
           await friendService.followUser(user.id, id);
           setIsFollowing(true);
           setFollowers(prev => prev + 1);
-          addToast({ type: 'success', message: `Đã theo dõi ${name}!` });
+          toast.success(`Đã theo dõi ${name}!`);
         }
       } catch (err: any) {
         console.error("Follow error:", err);
-        addToast({ type: 'error', message: 'Lỗi thực hiện theo dõi: ' + err.message });
+        toast.error('Lỗi thực hiện theo dõi: ' + err.message);
       } finally {
         setIsMutating(false);
       }
@@ -53,7 +68,7 @@ export function UserCard({
       // Local state fallback for mock mode
       setIsFollowing(!isFollowing);
       setFollowers(isFollowing ? followers - 1 : followers + 1);
-      addToast({ type: 'success', message: isFollowing ? `Đã hủy theo dõi (Mock Mode)` : `Đã theo dõi (Mock Mode)` });
+      toast.success(isFollowing ? `Đã hủy theo dõi (Mock Mode)` : `Đã theo dõi (Mock Mode)`);
     }
   };
 
