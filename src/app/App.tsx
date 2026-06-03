@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from './routes.tsx';
 import { AIChatbot } from './components/wander/AIChatbot';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { useAuthStore, useThemeStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 
@@ -22,11 +22,6 @@ export default function App() {
   const [isChatPage, setIsChatPage] = useState(
     typeof window !== "undefined" && window.location.pathname === "/chat"
   );
-
-  // Initialize theme store
-  useEffect(() => {
-    useThemeStore.persist.rehydrate();
-  }, []);
 
   // Initialize auth ONCE on mount
   useEffect(() => {

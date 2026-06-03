@@ -117,7 +117,7 @@ export interface CreateDiaryPayload {
   budget_breakdown: BudgetItem[];
   budget_notes: string[];
   tips: string[];
-  status: 'draft' | 'pending' | 'published';
+  status: 'draft' | 'pending';
 }
 
 export interface DiaryFilters {

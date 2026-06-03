@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface CommentItem {
   id: string;
   diary_id: string;
-  user_id: string;
+  author_id: string;
   content: string;
   likes_count: number;
   created_at: string;
@@ -17,49 +17,43 @@ export interface CommentItem {
 export const interactionService = {
   // === LIKES ===
   async checkUserLiked(diaryId: string, userId: string): Promise<boolean> {
-    const reaction = await this.getUserReaction(diaryId, userId);
-    return !!reaction;
-  },
-
-  async getUserReaction(diaryId: string, userId: string): Promise<string | null> {
     const { data, error } = await supabase
       .from('diary_likes')
-      .select('reaction_type')
+      .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
       .single();
     
-    if (error && error.code !== 'PGRST116') {
-      console.warn("Check reaction error:", error);
-      return null;
+    if (error && error.code !== 'PGRST116') { // PGRST116 is row not found
+      console.warn("Check like error:", error);
+      return false;
     }
-    return data ? data.reaction_type : null;
+    return !!data;
   },
 
   async toggleLikeDiary(diaryId: string, userId: string): Promise<{ isLiked: boolean }> {
-    const res = await this.setReactionDiary(diaryId, userId, 'like', true);
-    return { isLiked: !!res.currentReaction };
-  },
-
-  async setReactionDiary(diaryId: string, userId: string, reactionType: string, toggleOnSame: boolean = false): Promise<{ currentReaction: string | null }> {
-    const existingReaction = await this.getUserReaction(diaryId, userId);
+    const isCurrentlyLiked = await this.checkUserLiked(diaryId, userId);
     
-    if (existingReaction) {
-      if (existingReaction === reactionType && toggleOnSame) {
-        // Remove reaction (unlike)
-        await supabase.from('diary_likes').delete().eq('diary_id', diaryId).eq('user_id', userId);
-        await supabase.rpc('decrement_like', { row_id: diaryId });
-        return { currentReaction: null };
-      } else {
-        // Change reaction
-        await supabase.from('diary_likes').update({ reaction_type: reactionType }).eq('diary_id', diaryId).eq('user_id', userId);
-        return { currentReaction: reactionType };
-      }
+    if (isCurrentlyLiked) {
+      // Unlike
+      await supabase
+        .from('diary_likes')
+        .delete()
+        .eq('diary_id', diaryId)
+        .eq('user_id', userId);
+        
+      // Giam like_count trong diaries
+      await supabase.rpc('decrement_like', { row_id: diaryId });
+      return { isLiked: false };
     } else {
-      // New reaction
-      await supabase.from('diary_likes').insert({ diary_id: diaryId, user_id: userId, reaction_type: reactionType });
+      // Like
+      await supabase
+        .from('diary_likes')
+        .insert({ diary_id: diaryId, user_id: userId });
+        
+      // Tang like_count trong diaries
       await supabase.rpc('increment_like', { row_id: diaryId });
-      return { currentReaction: reactionType };
+      return { isLiked: true };
     }
   },
 
@@ -67,7 +61,7 @@ export const interactionService = {
   async checkUserBookmarked(diaryId: string, userId: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('diary_bookmarks')
-      .select('id')
+      .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
       .single();
@@ -104,7 +98,7 @@ export const interactionService = {
       .select(`
         id,
         diary_id,
-        user_id,
+        author_id,
         content,
         likes_count,
         created_at,
@@ -132,13 +126,13 @@ export const interactionService = {
       .from('comments')
       .insert({
         diary_id: diaryId,
-        user_id: userId,
+        author_id: userId,
         content: content,
       })
       .select(`
         id,
         diary_id,
-        user_id,
+        author_id,
         content,
         likes_count,
         created_at,

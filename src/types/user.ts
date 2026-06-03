@@ -11,7 +11,6 @@ export interface User {
   location: string | null;
   role: UserRole;
   status: UserStatus;
-  plan?: string;
   reputation_score: number;
   diaries_count: number;
   followers_count: number;
@@ -31,7 +30,6 @@ export interface UpdateProfilePayload {
   location?: string;
   avatar_url?: string;
   cover_image_url?: string;
-  plan?: string;
 }
 
 export interface AuthTokens {

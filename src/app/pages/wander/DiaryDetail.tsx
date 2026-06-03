@@ -2,7 +2,7 @@ import { WanderNav } from "../../components/wander/WanderNav";
 import { WanderFooter } from "../../components/wander/WanderFooter";
 import { Lightbox } from "../../components/wander/Lightbox";
 import { CommentsSection } from "../../components/wander/CommentsSection";
-import { Link, useParams, useNavigate } from "react-router";
+import { Link, useParams } from "react-router";
 import { useState, useCallback } from "react";
 import {
   MapPin,
@@ -36,7 +36,6 @@ export function WanderDiaryDetail() {
   const { id } = useParams();
   const { t, language } = useLanguageStore();
   const { user, isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"timeline" | "budget" | "tips">("timeline");
   const [heroIndex, setHeroIndex] = useState(0);
@@ -51,25 +50,25 @@ export function WanderDiaryDetail() {
   const { data: interactionState } = useQuery({
     queryKey: ['diaryInteraction', id, user?.id],
     queryFn: async () => {
-      if (!isAuthenticated || !user) return { reaction: null, isSaved: false };
-      const [reaction, isSaved] = await Promise.all([
-        interactionService.getUserReaction(id!, user.id),
+      if (!isAuthenticated || !user) return { isLiked: false, isSaved: false };
+      const [isLiked, isSaved] = await Promise.all([
+        interactionService.checkUserLiked(id!, user.id),
         interactionService.checkUserBookmarked(id!, user.id)
       ]);
-      return { reaction, isSaved };
+      return { isLiked, isSaved };
     },
     enabled: !!id && isAuthenticated
   });
 
-  const reaction = interactionState?.reaction || null;
-  const isLiked = !!reaction;
+  const isLiked = interactionState?.isLiked || false;
+  const isSaved = interactionState?.isSaved || false;
 
   const likeMutation = useMutation({
-    mutationFn: (type: string = 'like') => {
+    mutationFn: () => {
       if (!isAuthenticated || !user) {
         throw new Error(language === 'vi' ? "Vui lòng đăng nhập để thích" : "Please log in to like");
       }
-      return interactionService.setReactionDiary(id!, user.id, type, true);
+      return interactionService.toggleLikeDiary(id!, user.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['diaryInteraction', id, user?.id] });
@@ -107,10 +106,10 @@ export function WanderDiaryDetail() {
 
   if (isLoading || !diary) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#030213] flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <WanderNav />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">{t("loading")}</p>
+          <p className="text-gray-500">{t("loading")}</p>
         </div>
         <WanderFooter />
       </div>
@@ -120,7 +119,7 @@ export function WanderDiaryDetail() {
   const heroImages = [diary.image, ...(diary.gallery || [])];
 
   const activeTabClass = "text-[#ff3131] border-b-2 border-[#ff3131]";
-  const inactiveTabClass = "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300";
+  const inactiveTabClass = "text-gray-500 hover:text-gray-700";
 
   // Hero slideshow
   const prevHero = () => setHeroIndex((i) => (i === 0 ? heroImages.length - 1 : i - 1));
@@ -143,7 +142,7 @@ export function WanderDiaryDetail() {
 
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#030213]">
+    <div className="min-h-screen bg-white">
       <WanderNav />
 
       {/* ── Lightbox ── */}
@@ -205,7 +204,7 @@ export function WanderDiaryDetail() {
             <button
               key={i}
               onClick={() => setHeroIndex(i)}
-              className={`h-2 rounded-full transition-all ${i === heroIndex ? "w-6 bg-white dark:bg-[#030213]" : "w-2 bg-white dark:bg-[#030213]/50"}`}
+              className={`h-2 rounded-full transition-all ${i === heroIndex ? "w-6 bg-white" : "w-2 bg-white/50"}`}
             />
           ))}
         </div>
@@ -237,11 +236,11 @@ export function WanderDiaryDetail() {
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="bg-white dark:bg-[#030213]/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
+              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
                 <Shield className="text-white" size={16} />
                 <span className="font-semibold text-sm">{t("trustScore", "diaryDetail")} {diary.trustScore}%</span>
               </div>
-              <div className="bg-white dark:bg-[#030213]/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
+              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
                 <TrendingUp className="text-white" size={16} />
                 <span className="font-semibold text-sm">{t("verified", "diaryDetail")}</span>
               </div>
@@ -270,8 +269,8 @@ export function WanderDiaryDetail() {
               <Camera className="text-white" size={18} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t("travelerPhotos", "diaryDetail")}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{diary.reviewPhotos.length} {t("photosDesc", "diaryDetail")}</p>
+              <h2 className="text-xl font-bold text-gray-900">{t("travelerPhotos", "diaryDetail")}</h2>
+              <p className="text-sm text-gray-500">{diary.reviewPhotos.length} {t("photosDesc", "diaryDetail")}</p>
             </div>
           </div>
 
@@ -293,9 +292,9 @@ export function WanderDiaryDetail() {
                 <Expand size={16} />
               </div>
               {/* Reviewer badge */}
-              <div className="absolute top-4 left-4 bg-white dark:bg-[#030213]/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5">
+              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5">
                 <img src={diary.reviewPhotos[0].avatar} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-                <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{diary.reviewPhotos[0].reviewer}</span>
+                <span className="text-xs font-semibold text-gray-800">{diary.reviewPhotos[0].reviewer}</span>
                 <div className="flex gap-0.5 ml-1">
                   {Array.from({ length: diary.reviewPhotos[0].rating }).map((_, i) => (
                     <Star key={i} size={10} className="text-yellow-400 fill-yellow-400" />
@@ -329,9 +328,9 @@ export function WanderDiaryDetail() {
                   <div className="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                     <Expand size={14} />
                   </div>
-                  <div className="absolute top-3 left-3 bg-white dark:bg-[#030213]/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5">
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5">
                     <img src={photo.avatar} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                    <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{photo.reviewer}</span>
+                    <span className="text-xs font-semibold text-gray-800">{photo.reviewer}</span>
                     <div className="flex gap-0.5 ml-0.5">
                       {Array.from({ length: photo.rating }).map((_, i) => (
                         <Star key={i} size={9} className="text-yellow-400 fill-yellow-400" />
@@ -358,9 +357,9 @@ export function WanderDiaryDetail() {
               >
                 <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute top-3 left-3 bg-white dark:bg-[#030213]/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5">
+                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1.5">
                   <img src={photo.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
-                  <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{photo.reviewer}</span>
+                  <span className="text-xs font-semibold text-gray-800">{photo.reviewer}</span>
                   <div className="flex gap-0.5 ml-0.5">
                     {Array.from({ length: photo.rating }).map((_, i) => (
                       <Star key={i} size={9} className="text-yellow-400 fill-yellow-400" />
@@ -382,28 +381,18 @@ export function WanderDiaryDetail() {
           <div className="lg:col-span-2 space-y-8">
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
-              <div className="relative group">
-                <button
-                  onClick={() => likeMutation.mutate(reaction || 'like')}
-                  disabled={likeMutation.isPending}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
-                    isLiked
-                      ? "bg-[#FFE8E0] dark:bg-gray-800 text-[#ff3131]"
-                      : "bg-[#FFF5F3] dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:bg-gray-800"
-                  }`}
-                >
-                  {reaction === 'love' ? '❤️' : reaction === 'haha' ? '😆' : reaction === 'wow' ? '😮' : reaction === 'sad' ? '😢' : reaction === 'angry' ? '😡' : <ThumbsUp size={20} className={isLiked ? "text-[#ff3131] fill-[#ff3131]" : ""} />}
-                  {diary.likesCount || 0}
-                </button>
-                {/* Emoji picker on hover */}
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex bg-white dark:bg-gray-800 shadow-xl rounded-full px-3 py-2 gap-2 border border-gray-100 dark:border-gray-700 z-20">
-                  {['like', 'love', 'haha', 'wow', 'sad', 'angry'].map(type => (
-                    <button key={type} onClick={() => likeMutation.mutate(type)} className="text-xl hover:scale-125 transition-transform" title={type}>
-                      {type === 'like' ? '👍' : type === 'love' ? '❤️' : type === 'haha' ? '😆' : type === 'wow' ? '😮' : type === 'sad' ? '😢' : '😡'}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <button
+                onClick={() => likeMutation.mutate()}
+                disabled={likeMutation.isPending}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                  isLiked
+                    ? "bg-[#FFE8E0] text-[#ff3131]"
+                    : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
+                }`}
+              >
+                <Heart size={20} className={isLiked ? "fill-current" : ""} />
+                {diary.likesCount || 0}
+              </button>
               
               <button
                 onClick={() => bookmarkMutation.mutate()}
@@ -411,7 +400,7 @@ export function WanderDiaryDetail() {
                 className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
                   isSaved
                     ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-lg"
-                    : "bg-[#FFF5F3] dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-[#FFE8E0] dark:bg-gray-800"
+                    : "bg-[#FFF5F3] text-gray-700 hover:bg-[#FFE8E0]"
                 }`}
               >
                 <Bookmark size={20} fill={isSaved ? "currentColor" : "none"} />
@@ -419,42 +408,25 @@ export function WanderDiaryDetail() {
               </button>
               <Link
                 to="/create"
-                className="flex items-center gap-2 px-6 py-3 bg-[#FFE8E0] dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-semibold hover:bg-[#FFD5C8] transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-[#FFE8E0] text-gray-900 rounded-full font-semibold hover:bg-[#FFD5C8] transition-all"
               >
                 <Copy size={20} />
                 {t("copyItinerary", "diaryDetail")}
               </Link>
-              <button className="flex items-center gap-2 px-6 py-3 bg-[#FFF5F3] dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-full font-semibold hover:bg-[#FFE8E0] dark:bg-gray-800 transition-all">
+              <button className="flex items-center gap-2 px-6 py-3 bg-[#FFF5F3] text-gray-700 rounded-full font-semibold hover:bg-[#FFE8E0] transition-all">
                 <Share2 size={20} />
                 {t("share", "diaryDetail")}
               </button>
-              
-              {/* Author Actions (Edit/Delete) */}
-              {user?.id === diary.author.id && (
-                <div className="flex items-center gap-2 ml-auto">
-                  <button onClick={() => navigate(`/edit/${id}`)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                    Sửa
-                  </button>
-                  <button onClick={async () => {
-                    if (confirm('Bạn có chắc chắn muốn xóa nhật ký này?')) {
-                      await diaryService.deleteDiary(id!);
-                      window.location.href = '/explore';
-                    }
-                  }} className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
-                    Xóa
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Description */}
-            <div className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t("aboutTrip", "diaryDetail")}</h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{diary.description}</p>
+            <div className="bg-[#FFF5F3] rounded-2xl p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("aboutTrip", "diaryDetail")}</h2>
+              <p className="text-gray-700 leading-relaxed">{diary.description}</p>
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-800">
+            <div className="border-b border-gray-200">
               <div className="flex gap-1 sm:gap-4 overflow-x-auto">
                 {(["timeline", "budget", "tips"] as const).map((tab) => (
                   <button
@@ -472,22 +444,22 @@ export function WanderDiaryDetail() {
             {activeTab === "timeline" && (
               <div className="space-y-6">
                 {diary.timeline.map((day) => (
-                  <div key={day.day} className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 hover:shadow-md transition-shadow">
+                  <div key={day.day} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="inline-block bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white px-4 py-1 rounded-full font-semibold mb-2 text-sm">
                           {language === 'vi' ? 'Ngày' : 'Day'} {day.day}
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{day.title}</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{day.title}</h3>
                       </div>
                       <div className="text-right flex-shrink-0 ml-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{language === 'vi' ? 'Ngân Sách' : 'Budget'}</p>
+                        <p className="text-sm text-gray-500">{language === 'vi' ? 'Ngân Sách' : 'Budget'}</p>
                         <p className="text-lg font-bold text-[#ff3131]">{day.budget}</p>
                       </div>
                     </div>
                     <ul className="space-y-2">
                       {day.activities.map((activity, index) => (
-                        <li key={index} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                        <li key={index} className="flex items-start gap-3 text-gray-700">
                           <span className="text-[#ff3131] mt-1 flex-shrink-0">•</span>
                           <span>{activity}</span>
                         </li>
@@ -501,15 +473,15 @@ export function WanderDiaryDetail() {
             {/* Budget */}
             {activeTab === "budget" && (
               <div className="space-y-6">
-                <div className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">
                     {language === 'vi' ? 'Tổng Chi Phí:' : 'Total Cost:'} <span className="text-[#ff3131]">{diary.totalBudget}</span>
                   </h3>
                   <div className="space-y-5">
                     {diary.budgetBreakdown.map((item) => (
                       <div key={item.category}>
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-semibold text-gray-900 dark:text-white">{item.category}</span>
+                          <span className="font-semibold text-gray-900">{item.category}</span>
                           <span className="font-bold text-[#ff3131]">{item.amount}</span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
@@ -518,14 +490,14 @@ export function WanderDiaryDetail() {
                             style={{ width: `${item.percentage}%` }}
                           />
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.percentage}% {t("budgetPct", "diaryDetail")}</p>
+                        <p className="text-sm text-gray-500 mt-1">{item.percentage}% {t("budgetPct", "diaryDetail")}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-6">
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-4">{t("budgetNotes", "diaryDetail")}</h4>
-                  <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                <div className="bg-[#FFF5F3] rounded-2xl p-6">
+                  <h4 className="font-bold text-gray-900 mb-4">{t("budgetNotes", "diaryDetail")}</h4>
+                  <ul className="space-y-2 text-gray-700">
                     {diary.budgetNotes.map((note, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-[#ff3131] mt-1 flex-shrink-0">•</span>
@@ -540,22 +512,22 @@ export function WanderDiaryDetail() {
             {/* Tips */}
             {activeTab === "tips" && (
               <div className="space-y-6">
-                <div className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t("tipsExperience", "diaryDetail")}</h3>
+                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">{t("tipsExperience", "diaryDetail")}</h3>
                   <ul className="space-y-4">
                     {diary.tips.map((tip, index) => (
                       <li key={index} className="flex items-start gap-4">
                         <div className="w-8 h-8 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
                           {index + 1}
                         </div>
-                        <p className="text-gray-700 dark:text-gray-300 pt-1">{tip}</p>
+                        <p className="text-gray-700 pt-1">{tip}</p>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-6">
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-3">{t("interactiveMap", "diaryDetail")}</h4>
-                  <div className="bg-white dark:bg-[#030213] rounded-xl p-12 text-center text-gray-500 dark:text-gray-400">
+                <div className="bg-[#FFF5F3] rounded-2xl p-6">
+                  <h4 className="font-bold text-gray-900 mb-3">{t("interactiveMap", "diaryDetail")}</h4>
+                  <div className="bg-white rounded-xl p-12 text-center text-gray-500">
                     <MapPin className="mx-auto mb-3 text-[#ff914d]" size={40} />
                     <p className="font-medium">{t("mapComingSoon", "diaryDetail")}</p>
                   </div>
@@ -564,27 +536,27 @@ export function WanderDiaryDetail() {
             )}
 
             {/* Reviews */}
-            <div className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">
                 {t("communityReviews", "diaryDetail")}
-                <span className="ml-3 text-base font-normal text-gray-500 dark:text-gray-400">({diary.reviews.length} {t("reviewsUnit", "diaryDetail")})</span>
+                <span className="ml-3 text-base font-normal text-gray-500">({diary.reviews.length} {t("reviewsUnit", "diaryDetail")})</span>
               </h3>
               <div className="space-y-5">
                 {diary.reviews.map((review, index) => (
-                  <div key={index} className="pb-5 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
+                  <div key={index} className="pb-5 border-b border-gray-100 last:border-0 last:pb-0">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{review.author}</p>
+                        <p className="font-semibold text-gray-900">{review.author}</p>
                         <div className="flex items-center gap-1 mt-1">
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star key={i} size={14} className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 fill-gray-300"} />
                           ))}
                         </div>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-4">{review.date}</span>
+                      <span className="text-sm text-gray-500 flex-shrink-0 ml-4">{review.date}</span>
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300 mt-2">{review.text}</p>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-gray-700 mt-2">{review.text}</p>
+                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
                       <button className="flex items-center gap-1 hover:text-[#ff3131] transition-colors">
                         <ThumbsUp size={15} /><span>{language === 'vi' ? 'Hữu Ích' : 'Helpful'}</span>
                       </button>
@@ -599,9 +571,9 @@ export function WanderDiaryDetail() {
 
             {/* Comments Section */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 px-1">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6 px-1">
                 {t("commentsTitle", "diaryDetail")}
-                <span className="ml-3 text-base font-normal text-gray-500 dark:text-gray-400">({diary.commentsCount || 0} {t("commentsUnit", "diaryDetail")})</span>
+                <span className="ml-3 text-base font-normal text-gray-500">({diary.commentsCount || 0} {t("commentsUnit", "diaryDetail")})</span>
               </h3>
               <CommentsSection diaryId={id!} />
             </div>
@@ -610,22 +582,22 @@ export function WanderDiaryDetail() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Author */}
-            <div className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-center gap-4 mb-4">
                 <ImageWithFallback src={diary.author.avatar} alt={diary.author.name} className="w-16 h-16 rounded-full object-cover" />
                 <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white">{diary.author.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t("creator", "diaryDetail")}</p>
+                  <h3 className="font-bold text-gray-900">{diary.author.name}</h3>
+                  <p className="text-sm text-gray-600">{t("creator", "diaryDetail")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="text-center bg-[#FFF5F3] dark:bg-gray-900 rounded-xl p-3">
+                <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
                   <p className="font-bold text-[#ff3131] text-lg">{diary.author.diariesCount}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{t("myJournals", "common")}</p>
+                  <p className="text-xs text-gray-600">{t("myJournals", "common")}</p>
                 </div>
-                <div className="text-center bg-[#FFF5F3] dark:bg-gray-900 rounded-xl p-3">
+                <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
                   <p className="font-bold text-[#ff3131] text-lg">{diary.author.followersCount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{language === 'vi' ? 'Người Theo Dõi' : 'Followers'}</p>
+                  <p className="text-xs text-gray-600">{language === 'vi' ? 'Người Theo Dõi' : 'Followers'}</p>
                 </div>
               </div>
               <button className="w-full py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all">
@@ -634,8 +606,8 @@ export function WanderDiaryDetail() {
             </div>
 
             {/* Quick Info */}
-            <div className="bg-[#FFF5F3] dark:bg-gray-900 rounded-2xl p-6 space-y-4">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">{t("tripInfo", "diaryDetail")}</h3>
+            <div className="bg-[#FFF5F3] rounded-2xl p-6 space-y-4">
+              <h3 className="font-bold text-gray-900 mb-2">{t("tripInfo", "diaryDetail")}</h3>
               {[
                 { icon: Calendar, label: language === 'vi' ? "Thời Gian" : "Duration", value: language === 'vi' ? diary.duration : diary.duration.replace("ngày", "days") },
                 { icon: Wallet, label: language === 'vi' ? "Tổng Ngân Sách" : "Total Budget", value: diary.totalBudget },
@@ -644,20 +616,20 @@ export function WanderDiaryDetail() {
                 { icon: MapPin, label: language === 'vi' ? "Điểm Đến" : "Destination", value: diary.location },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-white dark:bg-[#030213] rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
                     <Icon className="text-[#ff3131]" size={18} />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-                    <p className="font-semibold text-gray-900 dark:text-white text-sm">{value}</p>
+                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="font-semibold text-gray-900 text-sm">{value}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Related */}
-            <div className="bg-white dark:bg-[#030213] border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-4">{t("similarTrips", "diaryDetail")}</h3>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h3 className="font-bold text-gray-900 mb-4">{t("similarTrips", "diaryDetail")}</h3>
               <div className="space-y-4">
                 {diary.related.map((rel) => (
                   <Link key={rel.id} to={`/diary/${rel.id}`} className="block group">
@@ -666,8 +638,8 @@ export function WanderDiaryDetail() {
                         <ImageWithFallback src={rel.image} alt={rel.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm leading-snug group-hover:text-[#ff3131] transition-colors">{rel.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{language === 'vi' ? rel.duration : rel.duration.replace("ngày", "days")} • {rel.budget}</p>
+                        <p className="font-semibold text-gray-900 text-sm leading-snug group-hover:text-[#ff3131] transition-colors">{rel.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{language === 'vi' ? rel.duration : rel.duration.replace("ngày", "days")} • {rel.budget}</p>
                         <div className="flex items-center gap-1 mt-1">
                           <Shield className="text-[#ff3131]" size={12} />
                           <p className="text-xs text-[#ff3131] font-semibold">{rel.trustScore}% {language === 'vi' ? 'Tin Cậy' : 'Trust'}</p>
@@ -677,7 +649,7 @@ export function WanderDiaryDetail() {
                   </Link>
                 ))}
               </div>
-              <Link to="/explore" className="mt-4 w-full py-3 border-2 border-[#ff3131] text-[#ff3131] rounded-xl font-semibold hover:bg-[#FFF5F3] dark:bg-gray-900 transition-all text-center block text-sm">
+              <Link to="/explore" className="mt-4 w-full py-3 border-2 border-[#ff3131] text-[#ff3131] rounded-xl font-semibold hover:bg-[#FFF5F3] transition-all text-center block text-sm">
                 {t("viewAllDiaries", "diaryDetail")}
               </Link>
             </div>

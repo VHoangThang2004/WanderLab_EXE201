@@ -73,7 +73,7 @@ export function UserCard({
   };
 
   return (
-    <div className="bg-white dark:bg-[#030213] rounded-2xl border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition-all">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all">
       <div className="flex items-start gap-3">
         <Link to={`/profile/${id || name}`}>
           <ImageWithFallback
@@ -85,19 +85,19 @@ export function UserCard({
 
         <div className="flex-1 min-w-0">
           <Link
-            to={`/profile/${name}`}
+            to={`/profile/${id || name}`}
             className="font-bold text-gray-900 hover:text-[#ff3131] transition-colors block truncate"
           >
             {name}
           </Link>
-          <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
             <MapPin size={12} />
             <span className="truncate">{translateLocation(location, language)}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-600">
-            <span><strong className="text-gray-900">{diariesCount}</strong> nhật ký</span>
+            <span><strong className="text-gray-900">{diariesCount}</strong> {language === 'vi' ? 'nhật ký' : 'journals'}</span>
             <span>•</span>
-            <span><strong className="text-gray-900">{followers.toLocaleString("vi-VN")}</strong> người theo dõi</span>
+            <span><strong className="text-gray-900">{followers.toLocaleString(language === 'vi' ? "vi-VN" : "en-US")}</strong> {language === 'vi' ? 'người theo dõi' : 'followers'}</span>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export function UserCard({
           onClick={handleFollow}
           disabled={isMutating}
           className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50 ${isFollowing
-              ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-700"
+              ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
               : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-md"
             }`}
         >

@@ -8,7 +8,6 @@ import {
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
-import { toast } from "sonner";
 
 const translateItineraryItem = (text: string, lang: string) => {
   if (lang === 'vi') return text;
@@ -220,7 +219,7 @@ export function CreateItinerary() {
   const gradientBtn = "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg transition-all";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* ── Hero banner ── */}
       <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white py-10 px-4">
         <div className="max-w-3xl mx-auto text-center">
@@ -247,9 +246,9 @@ export function CreateItinerary() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
                     step > n
-                      ? "bg-white dark:bg-[#030213] text-[#ff3131] border-white"
+                      ? "bg-white text-[#ff3131] border-white"
                       : step === n
-                      ? "bg-white/30 dark:bg-[#030213]/30 text-white border-white"
+                      ? "bg-white/30 text-white border-white"
                       : "bg-transparent text-white/50 border-white/30"
                   }`}
                 >
@@ -260,7 +259,7 @@ export function CreateItinerary() {
                 </span>
               </div>
               {i < 3 && (
-                <div className={`flex-1 h-0.5 mx-1 mb-4 sm:mb-0 ${step > n ? "bg-white dark:bg-[#030213]" : "bg-white/30 dark:bg-[#030213]/30"}`} />
+                <div className={`flex-1 h-0.5 mx-1 mb-4 sm:mb-0 ${step > n ? "bg-white" : "bg-white/30"}`} />
               )}
             </div>
           ))}
@@ -273,8 +272,8 @@ export function CreateItinerary() {
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t("question1", "createItinerary")}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t("selectDestDesc", "createItinerary")}</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("question1", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("selectDestDesc", "createItinerary")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {DESTINATIONS.map((dest) => (
@@ -306,7 +305,7 @@ export function CreateItinerary() {
 
             {/* Duration picker */}
             <div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Clock size={16} className="text-[#ff3131]" /> {t("tripDuration", "createItinerary")}
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -317,7 +316,7 @@ export function CreateItinerary() {
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                       duration === d
                         ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm"
-                        : "bg-white dark:bg-[#030213] text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-[#ff3131]"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-[#ff3131]"
                     }`}
                   >
                     {translateCategory(d, language)}
@@ -339,12 +338,12 @@ export function CreateItinerary() {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t("step2", "createItinerary")}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t("optimizeDesc", "createItinerary")}</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("step2", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("optimizeDesc", "createItinerary")}</p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Users size={16} className="text-[#ff3131]" /> {t("question2", "createItinerary")}
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -355,7 +354,7 @@ export function CreateItinerary() {
                     className={`py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
                       groupSize === g
                         ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent"
-                        : "bg-white dark:bg-[#030213] text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800 hover:border-[#ff3131]"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-[#ff3131]"
                     }`}
                   >
                     {translateCategory(g, language)}
@@ -365,7 +364,7 @@ export function CreateItinerary() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Wallet size={16} className="text-[#ff3131]" /> {t("question3", "createItinerary")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -375,15 +374,15 @@ export function CreateItinerary() {
                     onClick={() => setBudget(b.label)}
                     className={`p-4 rounded-2xl text-left border-2 transition-all ${
                       budget === b.label
-                        ? "border-[#ff3131] bg-red-50 dark:bg-[#ff3131]/10"
-                        : "border-gray-200 dark:border-gray-800 bg-white dark:bg-[#030213] hover:border-[#ff914d]"
+                        ? "border-[#ff3131] bg-red-50"
+                        : "border-gray-200 bg-white hover:border-[#ff914d]"
                     }`}
                   >
                     <div className="text-2xl mb-1">{b.icon}</div>
-                    <p className={`font-semibold text-sm ${budget === b.label ? "text-[#ff3131]" : "text-gray-800 dark:text-gray-200"}`}>
+                    <p className={`font-semibold text-sm ${budget === b.label ? "text-[#ff3131]" : "text-gray-800"}`}>
                       {translateCategory(b.label, language)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{translateCategory(b.range, language)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{translateCategory(b.range, language)}</p>
                   </button>
                 ))}
               </div>
@@ -392,7 +391,7 @@ export function CreateItinerary() {
             <div className="flex gap-3">
               <button
                 onClick={() => setStep(1)}
-                className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
+                className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 text-gray-700 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
                 <ChevronLeft size={18} /> {t("backBtn", "createItinerary")}
               </button>
@@ -410,8 +409,8 @@ export function CreateItinerary() {
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t("question4", "createItinerary")}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t("activitiesDesc", "createItinerary")}</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">{t("question4", "createItinerary")}</h2>
+              <p className="text-sm text-gray-500">{t("activitiesDesc", "createItinerary")}</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -421,8 +420,8 @@ export function CreateItinerary() {
                   onClick={() => toggleInterest(label)}
                   className={`flex items-center gap-2.5 p-4 rounded-2xl border-2 text-left transition-all ${
                     interests.includes(label)
-                      ? "border-[#ff3131] bg-red-50 dark:bg-[#ff3131]/10 text-[#ff3131]"
-                      : "border-gray-200 dark:border-gray-800 bg-white dark:bg-[#030213] text-gray-700 dark:text-gray-300 hover:border-[#ff914d]"
+                      ? "border-[#ff3131] bg-red-50 text-[#ff3131]"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-[#ff914d]"
                   }`}
                 >
                   <span className={interests.includes(label) ? "text-[#ff3131]" : "text-gray-400"}>{icon}</span>
@@ -435,20 +434,20 @@ export function CreateItinerary() {
             </div>
 
             {/* Summary card */}
-            <div className="bg-gradient-to-br from-[#FFF5F3] dark:bg-gray-900 to-white dark:to-gray-900 rounded-2xl p-4 border border-red-100 dark:border-gray-800">
+            <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-2xl p-4 border border-red-100">
               <p className="text-xs font-semibold text-[#ff3131] uppercase tracking-wide mb-3">{t("itinerarySummary", "createItinerary")}</p>
               <div className="grid grid-cols-2 gap-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400"><MapPin size={14} className="text-[#ff3131]" /> {selectedDest.name}</div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400"><Clock size={14} className="text-[#ff3131]" /> {translateCategory(duration, language)}</div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400"><Users size={14} className="text-[#ff3131]" /> {translateCategory(groupSize, language)}</div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400"><Wallet size={14} className="text-[#ff3131]" /> {translateCategory(budget, language)}</div>
+                <div className="flex items-center gap-2 text-gray-600"><MapPin size={14} className="text-[#ff3131]" /> {selectedDest.name}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Clock size={14} className="text-[#ff3131]" /> {translateCategory(duration, language)}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Users size={14} className="text-[#ff3131]" /> {translateCategory(groupSize, language)}</div>
+                <div className="flex items-center gap-2 text-gray-600"><Wallet size={14} className="text-[#ff3131]" /> {translateCategory(budget, language)}</div>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setStep(2)}
-                className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
+                className="flex-1 py-3.5 rounded-2xl font-bold border-2 border-gray-200 text-gray-700 flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
                 <ChevronLeft size={18} /> {t("backBtn", "createItinerary")}
               </button>
@@ -493,26 +492,26 @@ export function CreateItinerary() {
 
             {/* Day-by-day */}
             <div className="space-y-4">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Calendar size={16} className="text-[#ff3131]" /> {t("dailyItinerary", "createItinerary")}
               </h3>
               {(isPhúQuoc ? itinerary : itinerary).map((day) => (
-                <div key={day.day} className="bg-white dark:bg-[#030213] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                <div key={day.day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="bg-gradient-to-r from-[#ff3131]/10 to-[#ff914d]/10 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{day.emoji}</span>
                       <div>
                         <span className="text-xs font-semibold text-[#ff3131] uppercase">{t("dayLabel", "createItinerary")} {day.day}</span>
-                        <p className="font-bold text-gray-900 dark:text-white text-sm">{translateItineraryItem(day.title, language)}</p>
+                        <p className="font-bold text-gray-900 text-sm">{translateItineraryItem(day.title, language)}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-[#ff3131] bg-white dark:bg-[#030213] px-2 py-1 rounded-lg">
+                    <span className="text-sm font-semibold text-[#ff3131] bg-white px-2 py-1 rounded-lg">
                       ~{day.budget}
                     </span>
                   </div>
                   <ul className="px-4 py-3 space-y-1.5">
                     {day.activities.map((act, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
                         <span className="w-1.5 h-1.5 bg-[#ff914d] rounded-full mt-1.5 flex-shrink-0" />
                         {translateItineraryItem(act, language)}
                       </li>
@@ -523,8 +522,8 @@ export function CreateItinerary() {
             </div>
 
             {/* Budget estimate */}
-            <div className="bg-white dark:bg-[#030213] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Wallet size={16} className="text-[#ff3131]" /> {t("costEstimate", "createItinerary")}
               </h3>
               <div className="space-y-2">
@@ -536,12 +535,12 @@ export function CreateItinerary() {
                   { label: "Di chuyển nội đảo", amount: "500.000₫" },
                 ].map(({ label, amount }) => (
                   <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">{translateItineraryItem(label, language)}</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{amount}</span>
+                    <span className="text-gray-600">{translateItineraryItem(label, language)}</span>
+                    <span className="font-semibold text-gray-900">{amount}</span>
                   </div>
                 ))}
-                <div className="border-t border-dashed border-gray-200 dark:border-gray-800 mt-2 pt-2 flex justify-between">
-                  <span className="font-bold text-gray-900 dark:text-white">{t("totalEstimate", "createItinerary")}</span>
+                <div className="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between">
+                  <span className="font-bold text-gray-900">{t("totalEstimate", "createItinerary")}</span>
                   <span className="font-bold text-[#ff3131] text-base">~11.400.000₫/{language === 'vi' ? 'người' : 'person'}</span>
                 </div>
               </div>
@@ -549,7 +548,7 @@ export function CreateItinerary() {
 
             {/* Related diaries from Explore */}
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Star size={16} className="text-[#ff3131]" /> {t("communityJournals", "createItinerary")}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -557,7 +556,7 @@ export function CreateItinerary() {
                   <Link
                     key={diary.id}
                     to={`/diary/${diary.id}`}
-                    className="group bg-white dark:bg-[#030213] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden hover:shadow-md transition-all"
+                    className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all"
                   >
                     <div className="relative h-32 overflow-hidden">
                       <ImageWithFallback
@@ -565,13 +564,13 @@ export function CreateItinerary() {
                         alt={diary.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-2 left-2 bg-white/90 dark:bg-[#030213]/90 backdrop-blur-sm text-[#ff3131] text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-[#ff3131] text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                         ✓ {t("trustScoreLabel", "createItinerary")} {diary.trustScore}%
                       </div>
                     </div>
                     <div className="p-3">
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{diary.title}</p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      <p className="font-semibold text-gray-900 text-sm mb-1">{diary.title}</p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
                         <span className="flex items-center gap-1"><Clock size={11} />{translateCategory(diary.duration, language)}</span>
                         <span className="flex items-center gap-1"><Wallet size={11} />{diary.budget}</span>
                       </div>
@@ -624,7 +623,6 @@ export function CreateItinerary() {
                     ],
                   });
                   setIsSaved(true);
-                  toast.success(language === 'vi' ? 'Đã lưu lịch trình thành công!' : 'Itinerary saved successfully!');
                 }}
                 className={`flex-1 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all border-2 ${
                   isSaved
@@ -645,7 +643,7 @@ export function CreateItinerary() {
 
             {isSaved && (
               <Link
-                to="/profile"
+                to="/dashboard"
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-semibold hover:shadow-lg transition-all"
               >
                 <BookmarkCheck size={18} /> {t("viewSavedDashboard", "createItinerary")}

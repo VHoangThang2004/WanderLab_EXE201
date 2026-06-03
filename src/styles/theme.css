@@ -117,6 +117,19 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --animate-scale-up: scale-up 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @keyframes scale-up {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 }
 
 @layer base {
@@ -179,3 +192,105 @@
     line-height: 1.5;
   }
 }
+
+/* Global Dark Mode Overrides */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Override background colors of containers */
+html.dark .bg-white,
+html.dark .bg-card,
+html.dark .bg-popover,
+html.dark [class*="bg-white"] {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+}
+
+/* Background overrides for warm light modes to dark mode */
+html.dark .bg-\[\#FFF5F3\],
+html.dark .bg-\[\#FFE8E0\],
+html.dark .bg-\[\#F9FAFB\],
+html.dark .bg-gray-50 {
+  background-color: var(--background) !important;
+}
+
+/* Warm gradient overrides */
+html.dark .bg-gradient-to-br.from-\[\#FFF5F3\].to-\[\#FFE8E0\],
+html.dark .bg-gradient-to-r.from-\[\#FFF5F3\].to-white {
+  background: linear-gradient(135deg, oklch(0.22 0.01 25), var(--background)) !important;
+}
+
+/* Muted light backgrounds to muted dark backgrounds */
+html.dark .bg-gray-100,
+html.dark .bg-gray-200,
+html.dark .bg-muted {
+  background-color: var(--muted) !important;
+}
+
+/* Text color overrides */
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-foreground {
+  color: var(--foreground) !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: oklch(0.8 0 0) !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+
+/* Border overrides */
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-border {
+  border-color: var(--border) !important;
+}
+
+/* Shadow overrides */
+html.dark .shadow-sm,
+html.dark .shadow,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Form elements */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--input-background) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--muted-foreground) !important;
+  opacity: 0.7;
+}
+
+/* Semi-transparent backgrounds */
+html.dark .bg-white\/90 {
+  background-color: rgba(26, 26, 26, 0.9) !important;
+}
+html.dark .bg-white\/80 {
+  background-color: rgba(26, 26, 26, 0.8) !important;
+}
+html.dark .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
