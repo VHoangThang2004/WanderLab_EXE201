@@ -212,6 +212,15 @@ export const useLanguageStore = create<LanguageState>((set, get) => ({
           tripInfo: "Thông Tin Chuyến Đi",
           similarTrips: "Chuyến Đi Tương Tự",
           viewAllDiaries: "Xem Tất Cả Nhật Ký →",
+        },
+        friends: {
+          title: "Bạn Bè",
+          subtitle: "Quản lý danh sách bạn bè và nhóm du lịch của bạn",
+          searchPlaceholder: "Tìm kiếm bạn bè, nhóm...",
+        },
+        partner: {
+          pricingTitle: "Bảng Giá Đối Tác",
+          currentPlan: "Gói hiện tại của bạn",
         }
       },
       en: {
@@ -408,6 +417,15 @@ export const useLanguageStore = create<LanguageState>((set, get) => ({
           tripInfo: "Trip Information",
           similarTrips: "Similar Trips",
           viewAllDiaries: "View All Journals →",
+        },
+        friends: {
+          title: "Friends",
+          subtitle: "Manage your friends list and travel groups",
+          searchPlaceholder: "Search friends, groups...",
+        },
+        partner: {
+          pricingTitle: "Partner Pricing",
+          currentPlan: "Your current plan",
         }
       }
     };

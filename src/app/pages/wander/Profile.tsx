@@ -35,7 +35,7 @@ export function WanderProfile() {
     bio: "",
   });
 
-  const { data: myDiaries, isLoading: isLoadingDiaries } = useQuery({
+  const { data: myDiaries, isLoading: isLoadingDiaries } = useQuery<any[]>({
     queryKey: ['myDiaries', user?.id],
     queryFn: diaryService.fetchMyDiaries,
     enabled: !!user?.id,
@@ -312,7 +312,7 @@ export function WanderProfile() {
                     {language === 'vi' ? 'Đang tải nhật ký...' : 'Loading journals...'}
                   </div>
                 ) : myDiaries && myDiaries.length > 0 ? (
-                  myDiaries.map((post) => (
+                  myDiaries.map((post: any) => (
                     <JournalPostCard key={post.id} {...post} />
                   ))
                 ) : (
@@ -344,7 +344,7 @@ export function WanderProfile() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {savedItineraries.map((itinerary) => (
+                    {savedItineraries.map((itinerary: any) => (
                       <div
                         key={itinerary.id}
                         className="bg-white dark:bg-[#030213] rounded-2xl p-4 flex gap-4 hover:shadow-md transition-all"

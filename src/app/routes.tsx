@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { WanderLanding } from "./pages/wander/Landing";
 import { WanderLogin } from "./pages/wander/Login";
 import { WanderRegister } from "./pages/wander/Register";
@@ -92,6 +92,10 @@ export const router = createBrowserRouter([
             <WanderProfile />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/dashboard",
+        element: <Navigate to="/profile" replace />,
       },
       {
         path: "/friends",
