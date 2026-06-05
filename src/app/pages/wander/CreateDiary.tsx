@@ -15,12 +15,15 @@ import {
   ChevronRight,
   ChevronLeft,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 
 import { useNavigate } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
 import { useLanguageStore } from "@/stores";
+import { aiService } from "@/api/aiService";
+import { toast } from "sonner";
 
 type PrivacySetting = "private" | "friends" | "public";
 
@@ -44,6 +47,137 @@ export function WanderCreateDiary() {
     description: "",
     style: "",
   });
+
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isAiAssistantEnabled, setIsAiAssistantEnabled] = useState(false);
+
+  const handleAiContinue = async () => {
+    if (!formData.description.trim()) {
+      toast.error(
+        language === 'vi'
+          ? "Vui lòng nhập trước vài câu ý tưởng để AI có thể viết tiếp!"
+          : "Please write a few words first so the AI can continue writing!"
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    setShowAiPanel(true);
+    setAiSuggestion("");
+
+    try {
+      const continuation = await aiService.continueWriting(formData.description, formData, language);
+      setAiSuggestion(continuation);
+      toast.success(
+        language === 'vi'
+          ? "Đã tạo gợi ý viết tiếp thành công!"
+          : "Successfully generated continuation suggestion!"
+      );
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        (language === 'vi' ? "Lỗi gọi AI: " : "AI Call Error: ") + error.message
+      );
+      setShowAiPanel(false);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiPolish = async () => {
+    setAiLoading(true);
+    setShowAiPanel(true);
+    setAiSuggestion("");
+
+    try {
+      const polished = await aiService.polishDescription(formData.description, formData, language);
+      setAiSuggestion(polished);
+      toast.success(
+        language === 'vi'
+          ? "Đã tạo mô tả hoàn thiện thành công!"
+          : "Successfully generated polished description!"
+      );
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        (language === 'vi' ? "Lỗi gọi AI: " : "AI Call Error: ") + error.message
+      );
+      setShowAiPanel(false);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleApplyAiSuggestion = () => {
+    setFormData(prev => ({ ...prev, description: aiSuggestion }));
+    setShowAiPanel(false);
+    toast.success(
+      language === 'vi'
+        ? "Đã áp dụng mô tả từ AI!"
+        : "Applied AI description!"
+    );
+  };
+
+  const handleAppendAiSuggestion = () => {
+    setFormData(prev => {
+      const separator = prev.description.endsWith(" ") || prev.description.length === 0 ? "" : " ";
+      return {
+        ...prev,
+        description: prev.description + separator + aiSuggestion
+      };
+    });
+    setShowAiPanel(false);
+    toast.success(
+      language === 'vi'
+        ? "Đã chèn tiếp gợi ý từ AI!"
+        : "Appended AI suggestion!"
+    );
+  };
+
+  const [budgetSuggestions, setBudgetSuggestions] = useState("");
+  const [budgetSuggestionsLoading, setBudgetSuggestionsLoading] = useState(false);
+
+  const handleBudgetAiSuggestions = async () => {
+    if (!formData.location) {
+      toast.error(
+        language === 'vi'
+          ? "Vui lòng chọn hoặc nhập Địa Điểm ở Bước 1 trước!"
+          : "Please select or input a Location in Step 1 first!"
+      );
+      return;
+    }
+
+    setBudgetSuggestionsLoading(true);
+    setBudgetSuggestions("");
+    try {
+      const response = await aiService.generateBudgetAndActivities(formData, language);
+      setBudgetSuggestions(response);
+      toast.success(
+        language === 'vi'
+          ? "Đã gợi ý ngân sách & hoạt động!"
+          : "Generated budget & activities suggestions!"
+      );
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Lỗi AI: " + error.message);
+    } finally {
+      setBudgetSuggestionsLoading(false);
+    }
+  };
+
+  const handleToggleAiAssistant = async () => {
+    if (isAiAssistantEnabled) {
+      setIsAiAssistantEnabled(false);
+      setBudgetSuggestions("");
+      setShowAiPanel(false);
+      setAiSuggestion("");
+    } else {
+      setIsAiAssistantEnabled(true);
+      await handleBudgetAiSuggestions();
+    }
+  };
 
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -224,10 +358,10 @@ export function WanderCreateDiary() {
             <div
               key={index}
               className={`h-2 rounded-full transition-all duration-300 ${index + 1 === currentStep
-                  ? "w-12 bg-gradient-to-r from-[#ff3131] to-[#ff914d]"
-                  : index + 1 < currentStep
-                    ? "w-8 bg-[#ff914d]/50"
-                    : "w-8 bg-gray-300"
+                ? "w-12 bg-gradient-to-r from-[#ff3131] to-[#ff914d]"
+                : index + 1 < currentStep
+                  ? "w-8 bg-[#ff914d]/50"
+                  : "w-8 bg-gray-300"
                 }`}
             />
           ))}
@@ -501,26 +635,130 @@ export function WanderCreateDiary() {
                         lineHeight: LINE_HEIGHT,
                       }}
                     />
+
+                    {/* AI Assistant Toolbar */}
+                    {isAiAssistantEnabled && (
+                      <div className="flex items-center justify-between mt-3 py-2 border-t border-dashed border-gray-200">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                          <Sparkles size={14} className="text-[#ff3131] animate-pulse" />
+                          <span>{language === 'vi' ? "Trợ lý Viết AI:" : "AI Writing Assistant:"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={aiLoading}
+                            onClick={handleAiContinue}
+                            className="px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-[#ff3131]/10 hover:text-[#ff3131] rounded-lg transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                            {language === 'vi' ? "Viết tiếp" : "Continue"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={aiLoading}
+                            onClick={handleAiPolish}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                            {language === 'vi' ? "Tối ưu / Hoàn thiện" : "Polish & Complete"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Suggestions Display Panel */}
+                    {isAiAssistantEnabled && showAiPanel && (
+                      <div className="mt-3 bg-gradient-to-br from-amber-50/90 to-orange-50/90 rounded-xl p-4 border border-orange-200 shadow-sm transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3 border-b border-orange-100 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="text-[#ff3131]" size={16} />
+                            <span className="font-bold text-sm text-gray-900">
+                              {language === 'vi' ? "Gợi ý từ Trợ lý AI" : "AI Recommendation"}
+                            </span>
+                          </div>
+                          {aiLoading && (
+                            <div className="flex items-center gap-1.5 text-xs text-orange-600 font-semibold animate-pulse">
+                              <Loader2 className="animate-spin" size={14} />
+                              <span>{language === 'vi' ? "AI đang suy nghĩ..." : "AI is writing..."}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {aiLoading ? (
+                          <div className="space-y-2 py-2">
+                            <div className="h-4 bg-orange-200/50 rounded animate-pulse w-full" />
+                            <div className="h-4 bg-orange-200/50 rounded animate-pulse w-[95%]" />
+                            <div className="h-4 bg-orange-200/50 rounded animate-pulse w-[80%]" />
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm text-gray-800 leading-relaxed italic whitespace-pre-wrap bg-white/60 p-3 rounded-lg border border-orange-100">
+                              {aiSuggestion}
+                            </p>
+                            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3">
+                              <button
+                                type="button"
+                                onClick={() => setShowAiPanel(false)}
+                                className="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Bỏ qua" : "Discard"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleAppendAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-orange-700 bg-orange-100 hover:bg-orange-200 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Chèn tiếp" : "Insert"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleApplyAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all cursor-pointer"
+                              >
+                                {language === 'vi' ? "Áp dụng" : "Apply"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-l-4 border-[#ff3131]">
                     <div className="flex items-start gap-3">
                       <Sparkles className={`${accentColor} flex-shrink-0 mt-1`} size={20} />
-                      <div>
+                      <div className="flex-1">
                         <p
-                          className="font-bold text-gray-900 mb-0"
+                          className="font-bold text-gray-900 mb-0 flex items-center justify-between"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
-                          {language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}
+                          <span>{language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}</span>
+                          {budgetSuggestionsLoading && (
+                            <Loader2 className="animate-spin text-[#ff3131]" size={14} />
+                          )}
                         </p>
                         <p
-                          className="text-sm text-gray-600"
+                          className="text-sm text-gray-600 mb-2"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
                           {language === 'vi' ? "Dựa trên địa điểm và ngày tháng của bạn, AI có thể gợi ý ngân sách hàng ngày và hoạt động tối ưu." : "Based on your location and dates, AI can suggest daily budget and optimal activities."}
                         </p>
-                        <button className={`text-sm ${accentColor} font-bold hover:underline`}>
-                          {language === 'vi' ? "Bật Trợ Lý AI →" : "Enable AI Assistant →"}
+
+                        {budgetSuggestions && (
+                          <div className="bg-white/80 p-3 rounded-lg border border-orange-100 text-sm text-gray-800 leading-relaxed mb-2 whitespace-pre-wrap italic">
+                            {budgetSuggestions}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          disabled={budgetSuggestionsLoading}
+                          onClick={handleToggleAiAssistant}
+                          className={`text-sm ${accentColor} font-bold hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50`}
+                        >
+                          {isAiAssistantEnabled
+                            ? (language === 'vi' ? "Tắt Trợ Lý AI ←" : "Disable AI Assistant ←")
+                            : (language === 'vi' ? "Bật Trợ Lý AI →" : "Enable AI Assistant →")}
                         </button>
                       </div>
                     </div>
@@ -721,8 +959,8 @@ export function WanderCreateDiary() {
                           key={value}
                           onClick={() => setPrivacySetting(value as PrivacySetting)}
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${privacySetting === value
-                              ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
-                              : "border-gray-300 hover:border-gray-400 bg-white"
+                            ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
+                            : "border-gray-300 hover:border-gray-400 bg-white"
                             }`}
                         >
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${privacySetting === value ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d]" : "bg-gray-100"

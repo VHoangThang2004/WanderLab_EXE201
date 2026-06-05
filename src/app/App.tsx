@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useAuthStore } from '@/stores';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useRef, useState } from 'react';
+import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +70,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster position="top-right" richColors />
         {!isChatPage && <AIChatbot />}
       </QueryClientProvider>
     </ErrorBoundary>
