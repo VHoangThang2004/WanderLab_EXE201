@@ -1,6 +1,6 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { Link } from "react-router";
-import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen } from "lucide-react";
+import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen, Wallet } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useState, useEffect } from "react";
@@ -72,7 +72,7 @@ export function WanderDashboard() {
   const { t, language } = useLanguageStore();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
-  const [activeTab, setActiveTab] = useState<"posts" | "saved" | "trips">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "saved_diaries" | "trips">("posts");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isUpdatingCover, setIsUpdatingCover] = useState(false);
@@ -324,14 +324,26 @@ export function WanderDashboard() {
               )}
             </button>
             <button
-              onClick={() => setActiveTab("saved")}
-              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved"
+              onClick={() => setActiveTab("saved_itineraries")}
+              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_itineraries"
+                ? "text-[#ff3131]"
+                : "text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              {t("savedItineraries")}
+              {activeTab === "saved_itineraries" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("saved_diaries")}
+              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_diaries"
                 ? "text-[#ff3131]"
                 : "text-gray-600 hover:text-gray-900"
                 }`}
             >
               {t("savedJournals")}
-              {activeTab === "saved" && (
+              {activeTab === "saved_diaries" && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
               )}
             </button>
@@ -411,36 +423,102 @@ export function WanderDashboard() {
               </div>
             )}
 
-            {activeTab === "saved" && (
+            {activeTab === "saved_itineraries" && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">{t("savedJournals")}</h2>
-                {isLoadingSaved ? (
-                  <div className="text-center py-10 text-gray-500">
-                    {language === 'vi' ? 'Đang tải...' : 'Loading...'}
-                  </div>
-                ) : savedDiaries.length === 0 ? (
-                  <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
-                    <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {language === 'vi' ? 'Chưa có nhật ký đã lưu' : 'No saved journals yet'}
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      {language === 'vi' ? 'Lưu những nhật ký yêu thích để xem lại sau' : 'Save your favorite journals to view them later'}
-                    </p>
-                    <Link
-                      to="/explore"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
-                    >
-                      {language === 'vi' ? 'Khám Phá Nhật Ký' : 'Explore Journals'}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {savedDiaries.map((post) => (
-                      <JournalPostCard key={post.id} {...post} />
-                    ))}
-                  </div>
-                )}
+                <div>
+                  {savedItineraries.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center mt-6">
+                      <Route className="mx-auto text-gray-300 mb-4" size={48} />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {language === 'vi' ? 'Bạn chưa lưu lịch trình nào' : 'No saved itineraries yet'}
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        {language === 'vi' ? 'Sử dụng AI để lên kế hoạch và lưu lại các lịch trình yêu thích của bạn.' : 'Use AI to plan and save your favorite itineraries.'}
+                      </p>
+                      <Link
+                        to="/create-itinerary"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                      >
+                        <Plus size={18} />
+                        {language === 'vi' ? 'Lập Kế Hoạch AI' : 'Create AI Itinerary'}
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      {savedItineraries.map((itinerary: any) => (
+                        <div key={itinerary.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
+                          <div className="h-40 relative cursor-pointer group" onClick={() => setOpenItinerary(itinerary)}>
+                            <ImageWithFallback src={itinerary.destinationImage} alt={itinerary.destination} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-[#ff3131] shadow-sm">
+                              {itinerary.duration}
+                            </div>
+                            <div className="absolute bottom-4 left-5 right-5">
+                              <h4 className="text-white font-bold text-xl mb-1">{itinerary.destination}</h4>
+                              <div className="flex flex-wrap gap-2 text-xs text-white/90">
+                                <span className="flex items-center gap-1"><Users size={12}/> {itinerary.groupSize}</span>
+                                <span className="flex items-center gap-1"><Wallet size={12}/> {itinerary.budget}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">{itinerary.savedAt}</span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setOpenItinerary(itinerary)}
+                                  className="px-4 py-2 text-sm font-semibold text-[#ff3131] bg-[#FFF5F3] hover:bg-red-100 rounded-xl transition-colors"
+                                >
+                                  {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
+                                </button>
+                                <button
+                                  onClick={() => removeItinerary(itinerary.id)}
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                >
+                                  <X size={20} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "saved_diaries" && (
+              <div className="space-y-6">
+                <div>
+                  {isLoadingSaved ? (
+                    <div className="text-center py-10 text-gray-500">
+                      {language === 'vi' ? 'Đang tải...' : 'Loading...'}
+                    </div>
+                  ) : savedDiaries.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center mt-6">
+                      <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {language === 'vi' ? 'Chưa có nhật ký đã lưu' : 'No saved journals yet'}
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        {language === 'vi' ? 'Lưu những nhật ký yêu thích để xem lại sau' : 'Save your favorite journals to view them later'}
+                      </p>
+                      <Link
+                        to="/explore"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                      >
+                        {language === 'vi' ? 'Khám Phá Nhật Ký' : 'Explore Journals'}
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 mt-6">
+                      {savedDiaries.map((post) => (
+                        <JournalPostCard key={post.id} {...post} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

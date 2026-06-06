@@ -22,9 +22,7 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles(id, full_name, avatar_url),
-          likes:diary_likes(user_id),
-          bookmarks:diary_bookmarks(user_id)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
@@ -34,7 +32,7 @@ export const diaryService = {
         console.warn('Supabase fetch error:', error);
       } else if (data && data.length > 0) {
         // Return real data mapped to FeedItem interface
-        return data.map((item: any) => ({
+        const supabaseDiaries = data.map((item: any) => ({
           id: item.id,
           author: {
             id: item.author?.id || 'unknown',
@@ -47,12 +45,35 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
-          is_saved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
-          isLiked: currentUser ? item.likes?.some((l: any) => l.user_id === currentUser.id) : false,
-          isSaved: currentUser ? item.bookmarks?.some((b: any) => b.user_id === currentUser.id) : false,
+          is_liked: false,
+          is_saved: false,
+          isLiked: false,
+          isSaved: false,
           group_size: item.group_size || '',
         }));
+        
+        // Merge with mock data for a richer UI
+        const mockDiaries = Object.values(DIARY_DATA).map(diary => ({
+          id: diary.id,
+          author: {
+            id: diary.author.name,
+            name: diary.author.name,
+            avatar: diary.author.avatar,
+          },
+          image: diary.image,
+          location: diary.location,
+          date: diary.dates,
+          caption: diary.description,
+          likes: diary.trustScore * 3, // mock likes
+          comments: 10,
+          is_liked: false,
+          is_saved: false,
+          isLiked: false,
+          isSaved: false,
+          group_size: diary.groupSize,
+        }));
+        
+        return [...supabaseDiaries, ...mockDiaries];
       }
     } catch (err) {
       console.warn("Failed to fetch from Supabase, falling back to mock data", err);
@@ -213,7 +234,7 @@ export const diaryService = {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        return data.map((d: any) => {
+        const supabaseExplore = data.map((d: any) => {
           // Parse budget to number (millions VNĐ) for filtering
           const budgetStr = d.total_budget || "0";
           const budgetVal = parseInt(budgetStr.replace(/\D/g, '')) || 0;
@@ -238,6 +259,25 @@ export const diaryService = {
             author: d.author?.full_name || 'Người dùng ẩn danh'
           };
         });
+        
+        const { VIETNAMESE_DESTINATIONS } = await import('@/app/data/destinations');
+        const mockExplore = VIETNAMESE_DESTINATIONS.map((dest) => ({
+          id: dest.id || dest.name,
+          title: dest.name,
+          location: dest.name,
+          country: "Việt Nam",
+          image: dest.image,
+          style: dest.style,
+          interests: dest.interests,
+          budget: dest.budget,
+          budgetNum: dest.budgetNum,
+          duration: dest.duration,
+          durationDays: dest.durationDays,
+          trustScore: Math.floor(Math.random() * 10) + 90,
+          author: dest.bestMonth ? "Nguyễn Thị Mai" : "Trần Văn Minh"
+        }));
+        
+        return [...supabaseExplore, ...mockExplore];
       }
     } catch(e) {
       console.warn("fetchExploreDiaries failed", e);
@@ -335,9 +375,7 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles(id, full_name, avatar_url),
-          likes:diary_likes(user_id),
-          bookmarks:diary_bookmarks(user_id)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -358,10 +396,10 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: item.likes?.some((l: any) => l.user_id === userId) || false,
-          is_saved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
-          isLiked: item.likes?.some((l: any) => l.user_id === userId) || false,
-          isSaved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
+          is_liked: false,
+          is_saved: false,
+          isLiked: false,
+          isSaved: false,
           group_size: item.group_size || '',
         }));
       }
@@ -388,9 +426,7 @@ export const diaryService = {
             group_size,
             likes_count,
             comments_count,
-            author:profiles(id, full_name, avatar_url),
-            likes:diary_likes(user_id),
-            bookmarks:diary_bookmarks(user_id)
+            author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
           )
         `)
         .eq('user_id', userId)
