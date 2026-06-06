@@ -136,46 +136,13 @@ export function WanderCreateDiary() {
     );
   };
 
-  const [budgetSuggestions, setBudgetSuggestions] = useState("");
-  const [budgetSuggestionsLoading, setBudgetSuggestionsLoading] = useState(false);
-
-  const handleBudgetAiSuggestions = async () => {
-    if (!formData.location) {
-      toast.error(
-        language === 'vi'
-          ? "Vui lòng chọn hoặc nhập Địa Điểm ở Bước 1 trước!"
-          : "Please select or input a Location in Step 1 first!"
-      );
-      return;
-    }
-
-    setBudgetSuggestionsLoading(true);
-    setBudgetSuggestions("");
-    try {
-      const response = await aiService.generateBudgetAndActivities(formData, language);
-      setBudgetSuggestions(response);
-      toast.success(
-        language === 'vi'
-          ? "Đã gợi ý ngân sách & hoạt động!"
-          : "Generated budget & activities suggestions!"
-      );
-    } catch (error: any) {
-      console.error(error);
-      toast.error("Lỗi AI: " + error.message);
-    } finally {
-      setBudgetSuggestionsLoading(false);
-    }
-  };
-
-  const handleToggleAiAssistant = async () => {
+  const handleToggleAiAssistant = () => {
     if (isAiAssistantEnabled) {
       setIsAiAssistantEnabled(false);
-      setBudgetSuggestions("");
       setShowAiPanel(false);
       setAiSuggestion("");
     } else {
       setIsAiAssistantEnabled(true);
-      await handleBudgetAiSuggestions();
     }
   };
 
@@ -733,28 +700,18 @@ export function WanderCreateDiary() {
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
                           <span>{language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}</span>
-                          {budgetSuggestionsLoading && (
-                            <Loader2 className="animate-spin text-[#ff3131]" size={14} />
-                          )}
                         </p>
                         <p
                           className="text-sm text-gray-600 mb-2"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
-                          {language === 'vi' ? "Dựa trên địa điểm và ngày tháng của bạn, AI có thể gợi ý ngân sách hàng ngày và hoạt động tối ưu." : "Based on your location and dates, AI can suggest daily budget and optimal activities."}
+                          {language === 'vi' ? "Dựa trên địa điểm và ngày tháng của bạn, AI có thể gợi ý viết mô tả chuyến đi một cách tự nhiên và sinh động hơn." : "Based on your location and dates, AI can suggest writing a more natural and vivid trip description."}
                         </p>
-
-                        {budgetSuggestions && (
-                          <div className="bg-white/80 p-3 rounded-lg border border-orange-100 text-sm text-gray-800 leading-relaxed mb-2 whitespace-pre-wrap italic">
-                            {budgetSuggestions}
-                          </div>
-                        )}
 
                         <button
                           type="button"
-                          disabled={budgetSuggestionsLoading}
                           onClick={handleToggleAiAssistant}
-                          className={`text-sm ${accentColor} font-bold hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50`}
+                          className={`text-sm ${accentColor} font-bold hover:underline flex items-center gap-1 cursor-pointer`}
                         >
                           {isAiAssistantEnabled
                             ? (language === 'vi' ? "Tắt Trợ Lý AI ←" : "Disable AI Assistant ←")

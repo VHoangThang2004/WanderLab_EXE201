@@ -29,9 +29,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Not authenticated → redirect to login
-  // if (!isAuthenticated && !user) {
-  //   return <Navigate to="/login" state={{ from: location }} replace />;
-  // }
+  if (!isAuthenticated && !user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   // Role check (e.g., admin-only pages)
   if (requiredRole && user?.role !== requiredRole) {
