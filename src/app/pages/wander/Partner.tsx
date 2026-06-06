@@ -274,9 +274,8 @@ export function WanderPartner() {
             {pricingPlans.map((plan, index) => (
               <div
                 key={index}
-                className={`bg-white rounded-3xl shadow-lg overflow-hidden ${
-                  plan.popular ? "ring-4 ring-[#ff3131]" : ""
-                }`}
+                className={`bg-white rounded-3xl shadow-lg overflow-hidden ${plan.popular ? "ring-4 ring-[#ff3131]" : ""
+                  }`}
               >
                 {plan.popular && (
                   <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-center py-2 text-sm font-semibold">
@@ -291,13 +290,12 @@ export function WanderPartner() {
                     {plan.period && <span className="text-gray-600">{plan.period}</span>}
                   </div>
                   <button
-                    className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                      plan.popular
+                    className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.popular
                         ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg"
                         : plan.isCurrent
-                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                        : "bg-[#FFE8E0] text-gray-900 hover:bg-[#FFF5F3]"
-                    }`}
+                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : "bg-[#FFE8E0] text-gray-900 hover:bg-[#FFF5F3]"
+                      }`}
                     disabled={plan.isCurrent}
                   >
                     {plan.isCurrent ? (

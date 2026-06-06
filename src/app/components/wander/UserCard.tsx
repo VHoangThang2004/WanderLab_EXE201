@@ -2,8 +2,9 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { MapPin, Check } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
-import { useLanguageStore, useAuthStore, useUIStore } from "@/stores";
+import { useAuthStore, useLanguageStore } from "@/stores";
 import { friendService } from "@/api/friendService";
+import { toast } from "sonner";
 
 const translateLocation = (loc: string, lang: string) => {
   if (lang === 'vi') return loc;
@@ -34,10 +35,8 @@ export function UserCard({
   followersCount,
   isFollowing: initialIsFollowing = false,
 }: UserCardProps) {
-  const { language } = useLanguageStore();
   const { user } = useAuthStore();
-  const { addToast } = useUIStore();
-  
+  const { language } = useLanguageStore();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [followers, setFollowers] = useState(followersCount);
   const [isMutating, setIsMutating] = useState(false);
@@ -52,16 +51,16 @@ export function UserCard({
           await friendService.unfollowUser(user.id, id);
           setIsFollowing(false);
           setFollowers(prev => Math.max(prev - 1, 0));
-          addToast({ type: 'success', message: `Đã hủy theo dõi ${name}.` });
+          toast.success(`Đã hủy theo dõi ${name}.`);
         } else {
           await friendService.followUser(user.id, id);
           setIsFollowing(true);
           setFollowers(prev => prev + 1);
-          addToast({ type: 'success', message: `Đã theo dõi ${name}!` });
+          toast.success(`Đã theo dõi ${name}!`);
         }
       } catch (err: any) {
         console.error("Follow error:", err);
-        addToast({ type: 'error', message: 'Lỗi thực hiện theo dõi: ' + err.message });
+        toast.error('Lỗi thực hiện theo dõi: ' + err.message);
       } finally {
         setIsMutating(false);
       }
@@ -69,7 +68,7 @@ export function UserCard({
       // Local state fallback for mock mode
       setIsFollowing(!isFollowing);
       setFollowers(isFollowing ? followers - 1 : followers + 1);
-      addToast({ type: 'success', message: isFollowing ? `Đã hủy theo dõi (Mock Mode)` : `Đã theo dõi (Mock Mode)` });
+      toast.success(isFollowing ? `Đã hủy theo dõi (Mock Mode)` : `Đã theo dõi (Mock Mode)`);
     }
   };
 
@@ -83,7 +82,7 @@ export function UserCard({
             className="w-14 h-14 rounded-full object-cover"
           />
         </Link>
-        
+
         <div className="flex-1 min-w-0">
           <Link
             to={`/profile/${id || name}`}
@@ -105,11 +104,10 @@ export function UserCard({
         <button
           onClick={handleFollow}
           disabled={isMutating}
-          className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50 ${
-            isFollowing
+          className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50 ${isFollowing
               ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
               : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-md"
-          }`}
+            }`}
         >
           {isFollowing ? (
             <>

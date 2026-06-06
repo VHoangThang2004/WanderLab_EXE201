@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { useLanguageStore } from "@/stores";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
 import { Link } from "react-router";
 import { useAuthStore, useUIStore } from "@/stores";
@@ -26,26 +27,26 @@ export function WanderFriends() {
   });
 
   const hasRealData = !!(user?.id && data && !isLoading);
-  
+
   const displayRequests = hasRealData
     ? data.requests.map((r: any) => ({
-        id: r.id,
-        name: r.full_name,
-        avatar: r.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200",
-        mutualFriends: 0,
-        location: r.location || "Chưa cập nhật",
-      }))
+      id: r.id,
+      name: r.full_name,
+      avatar: r.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200",
+      mutualFriends: 0,
+      location: r.location || "Chưa cập nhật",
+    }))
     : [];
 
   const displayFriends = hasRealData
     ? data.friends.map((f: any) => ({
-        id: f.id,
-        name: f.full_name,
-        avatar: f.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200",
-        location: f.location || "Chưa cập nhật",
-        diariesCount: f.diaries_count || 0,
-        isOnline: true,
-      }))
+      id: f.id,
+      name: f.full_name,
+      avatar: f.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200",
+      location: f.location || "Chưa cập nhật",
+      diariesCount: f.diaries_count || 0,
+      isOnline: true,
+    }))
     : [];
 
   // Mutations
@@ -181,11 +182,10 @@ export function WanderFriends() {
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
           onClick={() => setActiveTab("requests")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "requests"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "requests"
               ? "text-[#ff3131]"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Lời mời kết bạn
           {filteredRequests.length > 0 && (
@@ -199,11 +199,10 @@ export function WanderFriends() {
         </button>
         <button
           onClick={() => setActiveTab("friends")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "friends"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "friends"
               ? "text-[#ff3131]"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Bạn bè ({filteredFriends.length})
           {activeTab === "friends" && (
@@ -212,11 +211,10 @@ export function WanderFriends() {
         </button>
         <button
           onClick={() => setActiveTab("groups")}
-          className={`px-6 py-3 font-semibold transition-all relative ${
-            activeTab === "groups"
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "groups"
               ? "text-[#ff3131]"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Nhóm du lịch ({filteredGroups.length})
           {activeTab === "groups" && (
@@ -254,7 +252,7 @@ export function WanderFriends() {
                     {request.mutualFriends > 0 && (
                       <p className="text-xs text-gray-400 mb-4">{request.mutualFriends} bạn chung</p>
                     )}
-                    
+
                     <div className="flex gap-2 w-full mt-2">
                       <button
                         onClick={() => handleAccept(request.id)}
@@ -426,11 +424,10 @@ export function WanderFriends() {
 
                       <button
                         onClick={() => handleToggleGroup(group.id, group.name)}
-                        className={`w-full px-4 py-2.5 rounded-full font-semibold transition-all ${
-                          isJoined
+                        className={`w-full px-4 py-2.5 rounded-full font-semibold transition-all ${isJoined
                             ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                             : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-md"
-                        }`}
+                          }`}
                       >
                         {isJoined ? "Rời nhóm" : "Tham gia nhóm"}
                       </button>
