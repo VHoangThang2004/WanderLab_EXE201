@@ -148,7 +148,7 @@ export function WanderCreateDiary() {
         title: formData.title,
         location: formData.location,
         country: "Việt Nam",
-        duration: "Nhiều ngày",
+        duration: `${timeline.length} ngày`,
         dates: `${formData.startDate} - ${formData.endDate}`,
         total_budget: formData.budget ? `${(parseInt(formData.budget) / 1000000).toFixed(1)} triệu ₫` : "0đ",
         group_size: `${formData.groupSize} người`,
@@ -426,7 +426,7 @@ export function WanderCreateDiary() {
               {/* Step 2: Budget & Group */}
               {currentStep === 2 && (
                 <div className="space-y-0">
-                  <div style={{ marginBottom: LINE_HEIGHT }}>
+                  <div style={{ marginBottom: "3rem" }}>
                     <label
                       className="block font-bold text-gray-900 mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
@@ -439,9 +439,16 @@ export function WanderCreateDiary() {
                         size={20}
                       />
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={formData.budget}
-                        onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || /^[0-9]+$/.test(val)) {
+                            setFormData({ ...formData, budget: val });
+                          }
+                        }}
                         placeholder={language === 'vi' ? "VD: 5000000" : "E.g. 5000000"}
                         className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
                         style={{
@@ -450,8 +457,34 @@ export function WanderCreateDiary() {
                         }}
                       />
                     </div>
+                    {/* Budget Suggestions */}
+                    <div className="flex flex-wrap gap-2 mt-2 pt-1">
+                      {[
+                        { value: "3000000", label: "3.000.000đ" },
+                        { value: "5000000", label: "5.000.000đ" },
+                        { value: "10000000", label: "10.000.000đ" },
+                        { value: "15000000", label: "15.000.000đ" },
+                        { value: "20000000", label: "20.000.000đ" }
+                      ].map((sug) => {
+                        const isActive = formData.budget === sug.value;
+                        return (
+                          <button
+                            key={sug.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, budget: sug.value })}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                              isActive
+                                ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm scale-105"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 border border-gray-200"
+                            }`}
+                          >
+                            {sug.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <p
-                      className="text-sm text-gray-600"
+                      className="text-sm text-gray-600 mt-1"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "Bao gồm tất cả chi phí (lưu trú, ăn uống, di chuyển, tham quan)" : "Includes all expenses (accommodation, dining, transport, sightseeing)"}

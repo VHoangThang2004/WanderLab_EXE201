@@ -369,6 +369,8 @@ export const diaryService = {
         .select(`
           id,
           location,
+          country,
+          duration,
           cover_image_url,
           created_at,
           description,
@@ -392,6 +394,8 @@ export const diaryService = {
           },
           image: item.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
           location: item.location,
+          country: item.country || 'Việt Nam',
+          duration: item.duration || '1 ngày',
           date: new Date(item.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
           caption: item.description,
           likes: item.likes_count || 0,

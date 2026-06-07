@@ -3,10 +3,12 @@ import { Link } from "react-router";
 import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen, Wallet } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
+import { VietnamMap } from "../../components/wander/VietnamMap";
 import { useState, useEffect } from "react";
 import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailModal";
 import { useAuthStore, useLanguageStore } from "@/stores";
 import { diaryService } from "@/api/diaryService";
+import { VIETNAM_PROVINCES, normalizeSearchString } from "@/utils/vietnamProvinces";
 
 // User's travel journal posts
 const myJournalPosts = [
@@ -60,12 +62,21 @@ const myJournalPosts = [
   },
 ];
 
-// Travel stats
-const travelStats = [
-  { label: "Tỉnh thành", value: "15" },
-  { label: "Quốc gia", value: "3" },
-  { label: "Tổng ngày", value: "48" },
-];
+// Helper: extract visited provinces from user diaries
+const getVisitedProvinces = (diaries: any[]) => {
+  const visited = new Set<string>();
+  diaries.forEach(diary => {
+    if (!diary.location) return;
+    const normalizedLoc = normalizeSearchString(diary.location);
+    for (const province of VIETNAM_PROVINCES) {
+      const normalizedProv = normalizeSearchString(province);
+      if (normalizedLoc.includes(normalizedProv)) {
+        visited.add(province);
+      }
+    }
+  });
+  return Array.from(visited);
+};
 
 export function WanderDashboard() {
   const { user, updateProfile, uploadAvatar, uploadCover } = useAuthStore();
@@ -175,6 +186,39 @@ export function WanderDashboard() {
       alert("Không thể cập nhật thông tin cá nhân. Vui lòng thử lại!");
     }
   };
+
+  const visitedProvinces = getVisitedProvinces(userDiaries);
+  const provincesCount = visitedProvinces.length;
+
+  const visitedCountries = new Set<string>();
+  userDiaries.forEach(diary => {
+    if (diary.country) {
+      visitedCountries.add(diary.country.trim());
+    } else {
+      visitedCountries.add("Việt Nam");
+    }
+  });
+  const countriesCount = visitedCountries.size;
+
+  let totalDays = 0;
+  userDiaries.forEach(diary => {
+    if (diary.duration) {
+      const match = diary.duration.match(/(\d+)/);
+      if (match) {
+        totalDays += parseInt(match[1]);
+      } else {
+        totalDays += 1;
+      }
+    } else {
+      totalDays += 1;
+    }
+  });
+
+  const dynamicTravelStats = [
+    { label: "Tỉnh thành", value: provincesCount.toString() },
+    { label: "Quốc gia", value: countriesCount.toString() },
+    { label: "Tổng ngày", value: totalDays.toString() },
+  ];
 
   // Build profile from real auth data
   const userProfile = {
@@ -528,7 +572,7 @@ export function WanderDashboard() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-3 gap-4">
-                  {travelStats.map((stat) => (
+                  {dynamicTravelStats.map((stat) => (
                     <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
                       <p className="text-3xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-2">
                         {stat.value}
@@ -544,17 +588,8 @@ export function WanderDashboard() {
                   ))}
                 </div>
 
-                {/* Travel Map Placeholder */}
-                <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center">
-                  <div className="w-full h-64 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-2xl flex items-center justify-center">
-                    <div>
-                      <MapPin className="mx-auto text-[#ff3131] mb-3" size={48} />
-                      <p className="text-gray-600">
-                        {language === 'vi' ? 'Bản đồ hành trình của bạn' : 'Your travel journey map'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                {/* Travel Map (Animated & Interactive) */}
+                <VietnamMap visitedProvinces={visitedProvinces} />
               </div>
             )}
           </div>
