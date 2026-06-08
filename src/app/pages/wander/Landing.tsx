@@ -9,97 +9,10 @@ import { diaryService } from "@/api/diaryService";
 import { storyService } from "@/api/storyService";
 import { useState, useEffect, useRef } from "react";
 
-// Suggested travelers to follow
-const suggestedTravelers = [
-  {
-    name: "Nguyễn Thị Mai",
-    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "Hà Nội",
-    diariesCount: 15,
-    followersCount: 3200,
-    isFollowing: false,
-  },
-  {
-    name: "Lê Văn Tuấn",
-    avatar: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    location: "TP. Hồ Chí Minh",
-    diariesCount: 22,
-    followersCount: 5100,
-    isFollowing: false,
-  },
-];
-
-// Trending destinations
-const trendingDestinations = [
-  { name: "Vịnh Hạ Long", count: "1,234 nhật ký" },
-  { name: "Phú Quốc", count: "987 nhật ký" },
-  { name: "Sa Pa", count: "856 nhật ký" },
-  { name: "Hội An", count: "723 nhật ký" },
-  { name: "Đà Lạt", count: "654 nhật ký" },
-];
-
-const mockStories = [
-  {
-    id: "mock-1",
-    author: {
-      name: "Phan Văn Minh",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1547024842-7c86b2226ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Cảnh hoàng hôn tuyệt đẹp trên Vịnh Hạ Long! 🌅 Boong tàu mát rượi.",
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: "mock-2",
-    author: {
-      name: "Hương Trần",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Check-in Phú Quốc nắng vàng biển xanh! 🏖️",
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: "mock-3",
-    author: {
-      name: "Nam Nguyễn",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1694152362587-99d77d21793b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Ruộng bậc thang chín vàng ở Sa Pa. Đẹp ngỡ ngàng luôn! 🌾⛰️",
-    created_at: new Date(Date.now() - 10800000).toISOString(),
-  },
-  {
-    id: "mock-4",
-    author: {
-      name: "Linh Phạm",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1643030080539-b411caf44c37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Hội An lung linh sắc màu lồng đèn. 🏮✨",
-    created_at: new Date(Date.now() - 14400000).toISOString(),
-  },
-  {
-    id: "mock-5",
-    author: {
-      name: "Tuấn Lê",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Đà Lạt mù sương sáng sớm lạnh buốt sương mù. ☁️☕",
-    created_at: new Date(Date.now() - 18000000).toISOString(),
-  },
-  {
-    id: "mock-6",
-    author: {
-      name: "Mai Vũ",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image_url: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    caption: "Biển Nha Trang xanh mát ngày hè. 🌊",
-    created_at: new Date(Date.now() - 21600000).toISOString(),
-  }
-];
+// Dữ liệu sẽ được fetch từ API trong tương lai
+const suggestedTravelers: any[] = [];
+const trendingDestinations: any[] = [];
+const mockStories: any[] = [];
 
 export function WanderLanding() {
   const { isAuthenticated, user } = useAuthStore();
@@ -139,7 +52,6 @@ export function WanderLanding() {
 
   const combinedStories = [
     ...(dbStories || []),
-    ...mockStories
   ];
 
   const handleNextStory = () => {

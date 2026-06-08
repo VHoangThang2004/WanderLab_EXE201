@@ -51,14 +51,14 @@ export const friendService = {
       .select('id')
       .eq('follower_id', followerId)
       .eq('following_id', followingId)
-      .single();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is row not found
+    if (error) {
       console.warn("Check following error:", error);
       return false;
     }
 
-    return !!data;
+    return !!data && data.length > 0;
   },
 
   /**

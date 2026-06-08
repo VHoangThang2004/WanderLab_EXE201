@@ -101,11 +101,9 @@
      supabase secrets set VNPAY_HASH_SECRET=<secret>
 
   Thẻ test:
-    Ngân hàng : NCB
-    Số thẻ    : 9704198526191432198
-    Tên       : NGUYEN VAN A
-    Ngày      : 07/15
-    OTP       : 123456
+    Ngân hàng : Agribank
+    Số thẻ    : 7202205289474
+    Tên       : VO HOANG THANG
 
 ================================================================================
 5. CẤU HÌNH BIẾN MÔI TRƯỜNG

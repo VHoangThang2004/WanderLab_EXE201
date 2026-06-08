@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
 import type { DiaryFeedItem, CreateDiaryPayload } from '@/types/diary';
-import { DIARY_DATA } from '@/app/data/diaries';
 
 export const diaryService = {
   /**
@@ -22,7 +21,9 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+          likes:diary_likes(user_id),
+          bookmarks:diary_bookmarks(user_id)
         `)
         .eq('status', 'published')
         .order('created_at', { ascending: false })
@@ -45,58 +46,20 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: false,
-          is_saved: false,
-          isLiked: false,
-          isSaved: false,
+          is_liked: item.likes?.some((l: any) => l.user_id === currentUser?.id) || false,
+          is_saved: item.bookmarks?.some((b: any) => b.user_id === currentUser?.id) || false,
+          isLiked: item.likes?.some((l: any) => l.user_id === currentUser?.id) || false,
+          isSaved: item.bookmarks?.some((b: any) => b.user_id === currentUser?.id) || false,
           group_size: item.group_size || '',
         }));
         
-        // Merge with mock data for a richer UI
-        const mockDiaries = Object.values(DIARY_DATA).map(diary => ({
-          id: diary.id,
-          author: {
-            id: diary.author.name,
-            name: diary.author.name,
-            avatar: diary.author.avatar,
-          },
-          image: diary.image,
-          location: diary.location,
-          date: diary.dates,
-          caption: diary.description,
-          likes: diary.trustScore * 3, // mock likes
-          comments: 10,
-          is_liked: false,
-          is_saved: false,
-          isLiked: false,
-          isSaved: false,
-          group_size: diary.groupSize,
-        }));
-        
-        return [...supabaseDiaries, ...mockDiaries];
+        return supabaseDiaries;
       }
     } catch (err) {
-      console.warn("Failed to fetch from Supabase, falling back to mock data", err);
+      console.warn("Failed to fetch from Supabase", err);
     }
     
-    // FALLBACK TO MOCK DATA (nếu DB chưa có dữ liệu)
-    return Object.values(DIARY_DATA).map(diary => ({
-      id: diary.id,
-      author: {
-        id: diary.author.name,
-        name: diary.author.name,
-        avatar: diary.author.avatar,
-      },
-      image: diary.image,
-      location: diary.location,
-      date: diary.dates,
-      caption: diary.description,
-      likes: diary.trustScore * 3, // mock likes
-      comments: 10,
-      is_liked: false,
-      is_saved: false,
-      group_size: diary.groupSize,
-    }));
+    return [];
   },
 
   /**
@@ -142,38 +105,10 @@ export const diaryService = {
           location: data.location,
           country: data.country,
           image: data.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
-          gallery: [
-            "https://images.unsplash.com/photo-1506461883276-594a12b11cf3",
-            "https://images.unsplash.com/photo-1528127269322-539801943592",
-            "https://images.unsplash.com/photo-1559827260-dc66d52bef19"
-          ], 
-          reviewPhotos: [
-            {
-              url: "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86",
-              caption: "Cảnh biển buổi sáng thật sự tuyệt vời!",
-              reviewer: "Tuấn Lê",
-              avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-              rating: 5,
-              date: "12/05/2026"
-            },
-            {
-              url: "https://images.unsplash.com/photo-1534430480872-3498386e7856",
-              caption: "Món ăn địa phương rất ngon.",
-              reviewer: "Mai Vũ",
-              avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80",
-              rating: 4,
-              date: "10/05/2026"
-            },
-            {
-              url: "https://images.unsplash.com/photo-1528659101185-3e2849e89d87",
-              caption: "Không gian yên tĩnh và trong lành.",
-              reviewer: "Hoàng Tuấn",
-              avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
-              rating: 5,
-              date: "05/05/2026"
-            }
-          ],
+          gallery: [], 
+          reviewPhotos: [],
           author: {
+            id: data.author?.id,
             name: data.author?.full_name || 'Người dùng ẩn danh',
             avatar: data.author?.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
             diariesCount: data.author?.diaries_count || 0,
@@ -200,21 +135,16 @@ export const diaryService = {
           })) || [],
           budgetNotes: data.budget_notes || [],
           tips: data.tips || [],
-          reviews: [
-            {
-              author: "Phạm Minh",
-              rating: 5,
-              date: "1 ngày trước",
-              text: "Lịch trình này rất chi tiết, tôi đã đi theo và có một chuyến đi tuyệt vời!"
-            }
-          ], 
+          reviews: [], 
           related: []
         };
+      } else {
+        throw new Error('Diary not found');
       }
     } catch(e) {
       console.warn("fetchDiaryById failed", e);
+      throw e;
     }
-    return DIARY_DATA[id] || Object.values(DIARY_DATA)[0];
   },
 
   /**
@@ -260,46 +190,13 @@ export const diaryService = {
           };
         });
         
-        const { VIETNAMESE_DESTINATIONS } = await import('@/app/data/destinations');
-        const mockExplore = VIETNAMESE_DESTINATIONS.map((dest) => ({
-          id: dest.id || dest.name,
-          title: dest.name,
-          location: dest.name,
-          country: "Việt Nam",
-          image: dest.image,
-          style: dest.style,
-          interests: dest.interests,
-          budget: dest.budget,
-          budgetNum: dest.budgetNum,
-          duration: dest.duration,
-          durationDays: dest.durationDays,
-          trustScore: Math.floor(Math.random() * 10) + 90,
-          author: dest.bestMonth ? "Nguyễn Thị Mai" : "Trần Văn Minh"
-        }));
-        
-        return [...supabaseExplore, ...mockExplore];
+        return supabaseExplore;
       }
     } catch(e) {
       console.warn("fetchExploreDiaries failed", e);
     }
     
-    // Fallback to mock logic
-    const { VIETNAMESE_DESTINATIONS } = await import('@/app/data/destinations');
-    return VIETNAMESE_DESTINATIONS.map((dest) => ({
-      id: dest.id || dest.name,
-      title: dest.name,
-      location: dest.name,
-      country: "Việt Nam",
-      image: dest.image,
-      style: dest.style,
-      interests: dest.interests,
-      budget: dest.budget,
-      budgetNum: dest.budgetNum,
-      duration: dest.duration,
-      durationDays: dest.durationDays,
-      trustScore: Math.floor(Math.random() * 10) + 90,
-      author: dest.bestMonth ? "Nguyễn Thị Mai" : "Trần Văn Minh"
-    }));
+    return [];
   },
 
   /**
@@ -377,7 +274,9 @@ export const diaryService = {
           group_size,
           likes_count,
           comments_count,
-          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+          likes:diary_likes(user_id),
+          bookmarks:diary_bookmarks(user_id)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -400,10 +299,11 @@ export const diaryService = {
           caption: item.description,
           likes: item.likes_count || 0,
           comments: item.comments_count || 0,
-          is_liked: false,
-          is_saved: false,
-          isLiked: false,
-          isSaved: false,
+          is_liked: item.likes?.some((l: any) => l.user_id === userId) || false,
+          is_saved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
+          isLiked: item.likes?.some((l: any) => l.user_id === userId) || false,
+          isSaved: item.bookmarks?.some((b: any) => b.user_id === userId) || false,
+          bookmarksCount: item.bookmarks?.length || 0,
           group_size: item.group_size || '',
         }));
       }
@@ -430,7 +330,8 @@ export const diaryService = {
             group_size,
             likes_count,
             comments_count,
-            author:profiles!diaries_user_id_fkey(id, full_name, avatar_url)
+            author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+            likes:diary_likes(user_id)
           )
         `)
         .eq('user_id', userId)
@@ -466,5 +367,87 @@ export const diaryService = {
       console.warn("Failed to fetch saved diaries from Supabase", err);
     }
     return [];
+  },
+
+  /**
+   * Cập nhật nhật ký
+   */
+  async updateDiary(id: string, payload: Partial<CreateDiaryPayload>, coverImageUrl?: string): Promise<void> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('User not authenticated');
+
+    const updateData: any = {
+      title: payload.title,
+      location: payload.location,
+      country: payload.country,
+      duration: payload.duration,
+      dates: payload.dates,
+      total_budget: payload.total_budget,
+      group_size: payload.group_size,
+      description: payload.description,
+      status: payload.status,
+      tips: payload.tips,
+      budget_notes: payload.budget_notes,
+    };
+    
+    // Only update cover image if a new one is provided
+    if (coverImageUrl) {
+      updateData.cover_image_url = coverImageUrl;
+    }
+
+    // Remove undefined fields
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    const { error } = await supabase
+      .from('diaries')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', userData.user.id);
+
+    if (error) throw error;
+
+    // Handle timeline and budget breakdown updates if provided
+    if (payload.timeline) {
+      await supabase.from('diary_days').delete().eq('diary_id', id);
+      if (payload.timeline.length > 0) {
+        const daysToInsert = payload.timeline.map((day) => ({
+          diary_id: id,
+          day_number: day.day,
+          title: day.title,
+          activities: day.activities,
+          budget: day.budget,
+        }));
+        await supabase.from('diary_days').insert(daysToInsert);
+      }
+    }
+
+    if (payload.budget_breakdown) {
+      await supabase.from('diary_budget_breakdown').delete().eq('diary_id', id);
+      if (payload.budget_breakdown.length > 0) {
+        const budgetToInsert = payload.budget_breakdown.map((item) => ({
+          diary_id: id,
+          category: item.category,
+          amount: item.amount,
+          percentage: item.percentage,
+        }));
+        await supabase.from('diary_budget_breakdown').insert(budgetToInsert);
+      }
+    }
+  },
+
+  /**
+   * Xóa nhật ký
+   */
+  async deleteDiary(id: string): Promise<void> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('diaries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userData.user.id);
+
+    if (error) throw error;
   }
 };

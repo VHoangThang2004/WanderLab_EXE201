@@ -17,14 +17,15 @@ import {
   BookOpen,
 } from "lucide-react";
 
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
 import { useLanguageStore } from "@/stores";
 
 type PrivacySetting = "private" | "friends" | "public";
 
-export function WanderCreateDiary() {
+export function WanderEditDiary() {
+  const { id } = useParams<{ id: string }>();
   const { t, language } = useLanguageStore();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -71,6 +72,34 @@ export function WanderCreateDiary() {
   ]);
 
   const totalSteps = 5;
+
+  useEffect(() => {
+    if (id) {
+      diaryService.fetchDiaryById(id).then(diary => {
+        setFormData({
+          title: diary.title || "",
+          location: diary.location || "",
+          startDate: diary.dates?.split(' - ')[0] || "",
+          endDate: diary.dates?.split(' - ')[1] || "",
+          budget: diary.totalBudget ? String(parseInt(diary.totalBudget.replace(/[^0-9]/g, '')) * 1000000) : "",
+          groupSize: diary.groupSize?.replace(/[^0-9]/g, '') || "1",
+          description: diary.description || "",
+          style: diary.style || "",
+        });
+        setCoverPreview(diary.image || "");
+        if (diary.timeline && diary.timeline.length > 0) {
+          setTimeline(diary.timeline.map((day: any) => ({
+            day: day.day,
+            title: day.title || "",
+            activities: day.activities?.length ? day.activities : [""],
+            budget: day.budget || ""
+          })));
+        }
+      }).catch(err => {
+        console.error("Lỗi khi tải nhật ký", err);
+      });
+    }
+  }, [id]);
 
   const addTimelineDay = () => {
     setTimeline([
@@ -132,19 +161,22 @@ export function WanderCreateDiary() {
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.location || !coverFile) {
-      alert("Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!");
+    if (!formData.title || !formData.location || (!coverFile && !coverPreview)) {
+      alert("Vui lòng điền tiêu đề, địa điểm và có ảnh bìa!");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // 1. Upload ảnh
-      const coverUrl = await diaryService.uploadDiaryImage(coverFile);
+      // 1. Upload ảnh (if new file selected)
+      let coverUrl = undefined;
+      if (coverFile) {
+        coverUrl = await diaryService.uploadDiaryImage(coverFile);
+      }
 
       // 2. Chuẩn bị payload
-      const payload: CreateDiaryPayload = {
+      const payload: Partial<CreateDiaryPayload> = {
         title: formData.title,
         location: formData.location,
         country: "Việt Nam",
@@ -169,14 +201,15 @@ export function WanderCreateDiary() {
         ]
       };
 
-      // 3. Create diary
-      await diaryService.createDiary(payload, coverUrl);
-
-      alert(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
-      navigate(`/dashboard`);
+      // 3. Update diary
+      if (id) {
+        await diaryService.updateDiary(id, payload, coverUrl);
+        alert(language === 'vi' ? "Cập nhật nhật ký thành công!" : "Travel journal updated successfully!");
+        navigate(`/diary/${id}`);
+      }
     } catch (err: any) {
       console.error(err);
-      alert(`${language === 'vi' ? 'Đăng nhật ký thất bại' : 'Failed to publish travel journal'}: ${err.message}`);
+      alert(`${language === 'vi' ? 'Cập nhật thất bại' : 'Update failed'}: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -211,7 +244,7 @@ export function WanderCreateDiary() {
             </span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {t("title", "createDiary")}
+            {language === 'vi' ? 'Chỉnh Sửa Nhật Ký' : 'Edit Journal'}
           </h1>
           <p className="text-gray-600">
             {language === 'vi' ? "Ghi lại từng khoảnh khắc đáng nhớ của hành trình" : "Record every memorable moment of your journey"}

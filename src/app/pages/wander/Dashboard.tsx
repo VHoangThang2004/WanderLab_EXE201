@@ -10,58 +10,6 @@ import { useAuthStore, useLanguageStore } from "@/stores";
 import { diaryService } from "@/api/diaryService";
 import { VIETNAM_PROVINCES, normalizeSearchString } from "@/utils/vietnamProvinces";
 
-// User's travel journal posts
-const myJournalPosts = [
-  {
-    id: "1",
-    author: {
-      name: "Phan Văn Minh",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1547024842-7c86b2226ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Vịnh Hạ Long, Quảng Ninh",
-    date: "20 tháng 6, 2026",
-    caption: "5 ngày trên vịnh Hạ Long thật không thể quên! Sáng sớm nhìn mặt trời mọc từ boong tàu, không khí trong lành và cảnh đẹp như tranh vẽ. Chèo kayak qua những hang động nhỏ, tắm biển ở đảo Ti Tốp, và ngắm hoàng hôn lãng mạn. 🌅⛵",
-    likes: 324,
-    comments: 47,
-    isLiked: false,
-    isSaved: false,
-    groupSize: "2 người",
-  },
-  {
-    id: "3",
-    author: {
-      name: "Phan Văn Minh",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1694152362587-99d77d21793b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Sa Pa, Lào Cai",
-    date: "18 tháng 9, 2026",
-    caption: "Tháng 9 đến Sa Pa chính là thời điểm vàng! Ruộng bậc thang chuyển màu vàng óng tuyệt đẹp như tranh. Trek qua các bản làng H'Mông, gặp những nụ cười thật thà và chân thành. Chinh phc Fansipan 3143m - cảm giác đứng trên nóc nhà Đông Dương thật tuyệt vời! 🌾⛰️",
-    likes: 412,
-    comments: 62,
-    isLiked: false,
-    isSaved: false,
-    groupSize: "3 người",
-  },
-  {
-    id: "4",
-    author: {
-      name: "Phan Văn Minh",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    },
-    image: "https://images.unsplash.com/photo-1643030080539-b411caf44c37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    location: "Hội An, Quảng Nam",
-    date: "14 tháng 4, 2026",
-    caption: "Đêm rằm Hội An lung linh huyền ảo với hàng ngàn chiếc đèn lồng! Dạo phố cổ, học làm cao lầu và mì Quảng, thả hoa đăng trên sông Hoài. Cảm giác như lạc vào thế giới cổ tích. 🏮✨",
-    likes: 389,
-    comments: 51,
-    isLiked: true,
-    isSaved: false,
-    groupSize: "2 người",
-  },
-];
-
 // Helper: extract visited provinces from user diaries
 const getVisitedProvinces = (diaries: any[]) => {
   const visited = new Set<string>();
@@ -83,7 +31,7 @@ export function WanderDashboard() {
   const { t, language } = useLanguageStore();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
-  const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "saved_diaries" | "trips">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "trips">("posts");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isUpdatingCover, setIsUpdatingCover] = useState(false);
@@ -213,6 +161,11 @@ export function WanderDashboard() {
       totalDays += 1;
     }
   });
+
+  // Calculate dynamic stats for Activity Summary
+  const totalLikes = userDiaries.reduce((sum, d) => sum + (d.likes || 0), 0);
+  const totalComments = userDiaries.reduce((sum, d) => sum + (d.comments || 0), 0);
+  const totalBookmarks = userDiaries.reduce((sum, d) => sum + (d.bookmarksCount || 0), 0);
 
   const dynamicTravelStats = [
     { label: "Tỉnh thành", value: provincesCount.toString() },
@@ -379,18 +332,7 @@ export function WanderDashboard() {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("saved_diaries")}
-              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_diaries"
-                ? "text-[#ff3131]"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {t("savedJournals")}
-              {activeTab === "saved_diaries" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
-              )}
-            </button>
+
             <button
               onClick={() => setActiveTab("trips")}
               className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "trips"
@@ -532,39 +474,7 @@ export function WanderDashboard() {
               </div>
             )}
 
-            {activeTab === "saved_diaries" && (
-              <div className="space-y-6">
-                <div>
-                  {isLoadingSaved ? (
-                    <div className="text-center py-10 text-gray-500">
-                      {language === 'vi' ? 'Đang tải...' : 'Loading...'}
-                    </div>
-                  ) : savedDiaries.length === 0 ? (
-                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center mt-6">
-                      <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {language === 'vi' ? 'Chưa có nhật ký đã lưu' : 'No saved journals yet'}
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        {language === 'vi' ? 'Lưu những nhật ký yêu thích để xem lại sau' : 'Save your favorite journals to view them later'}
-                      </p>
-                      <Link
-                        to="/explore"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
-                      >
-                        {language === 'vi' ? 'Khám Phá Nhật Ký' : 'Explore Journals'}
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 mt-6">
-                      {savedDiaries.map((post) => (
-                        <JournalPostCard key={post.id} {...post} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+
 
             {activeTab === "trips" && (
               <div className="space-y-6">
@@ -629,21 +539,21 @@ export function WanderDashboard() {
                     <Heart size={14} className="text-[#ff3131]" />
                     <span>{t("totalLikes")}</span>
                   </div>
-                  <span className="font-bold text-gray-900">1,125</span>
+                  <span className="font-bold text-gray-900">{totalLikes.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <MessageCircle size={14} className="text-[#ff3131]" />
                     <span>{t("comments")}</span>
                   </div>
-                  <span className="font-bold text-gray-900">160</span>
+                  <span className="font-bold text-gray-900">{totalComments.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Bookmark size={14} className="text-[#ff3131]" />
                     <span>{t("bookmarks")}</span>
                   </div>
-                  <span className="font-bold text-gray-900">89</span>
+                  <span className="font-bold text-gray-900">{totalBookmarks.toLocaleString()}</span>
                 </div>
               </div>
             </div>
