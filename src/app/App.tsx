@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from './routes.tsx';
 import { AIChatbot } from './components/wander/AIChatbot';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { Toaster } from './components/ui/sonner';
 import { useAuthStore } from '@/stores';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useRef, useState } from 'react';
@@ -70,6 +71,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         {!isChatPage && <AIChatbot />}
+        <Toaster position="top-right" />
       </QueryClientProvider>
     </ErrorBoundary>
   );

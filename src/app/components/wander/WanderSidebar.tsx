@@ -12,20 +12,21 @@ import {
   LogIn,
   LogOut,
   Compass,
-  Settings
+  Settings,
+  Bell
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
-import { useAuthStore, useLanguageStore, useUIStore } from "@/stores";
+import { useAuthStore, useLanguageStore, useUIStore, useNotificationStore } from "@/stores";
 
 export function WanderSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { language, setLanguage, t } = useLanguageStore();
-  const { isDarkMode, toggleDarkMode } = useUIStore();
+  const { language, t } = useLanguageStore();
+  const { notifications } = useNotificationStore();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const navItems = [
     { icon: Home, label: t("home"), path: "/", public: true },
@@ -33,8 +34,8 @@ export function WanderSidebar() {
     { icon: Users, label: t("friends"), path: "/friends", public: false },
     { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
     { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
+    { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
     { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
-    { icon: User, label: t("dashboard"), path: "/dashboard", public: false },
     ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),
   ];
 
@@ -99,7 +100,7 @@ export function WanderSidebar() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  className={`relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-medium ${
                     active
                       ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
                       : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-[#ff3131]"
@@ -107,6 +108,11 @@ export function WanderSidebar() {
                 >
                   <Icon size={22} />
                   <span>{item.label}</span>
+                  {item.path === "/notifications" && unreadCount > 0 && (
+                    <div className={`absolute right-4 px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-white text-[#ff3131]' : 'bg-[#ff3131] text-white'}`}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -138,14 +144,40 @@ export function WanderSidebar() {
                     <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
                   </div>
                 </Link>
-                {/* Settings button */}
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
-                >
-                  <Settings size={18} />
-                  <span>{language === 'vi' ? 'Cài đặt' : 'Settings'}</span>
-                </button>
+                
+                {/* 3 Action Icons Row */}
+                <div className="flex items-center justify-around pt-3 border-t border-sidebar-border mt-2">
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2.5 text-sidebar-foreground/70 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
+                    title={language === 'vi' ? 'Cài đặt' : 'Settings'}
+                  >
+                    <Settings size={22} />
+                  </Link>
+
+                  <Link
+                    to="/notifications"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="relative p-2.5 text-sidebar-foreground/70 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
+                    title={language === 'vi' ? 'Thông báo' : 'Notifications'}
+                  >
+                    <Bell size={22} />
+                    {unreadCount > 0 && (
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#ff3131] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-sidebar">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </div>
+                    )}
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="p-2.5 text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                    title={language === 'vi' ? 'Đăng xuất' : 'Logout'}
+                  >
+                    <LogOut size={22} />
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -164,122 +196,20 @@ export function WanderSidebar() {
                 >
                   {t("register")}
                 </Link>
-                {/* Guest Settings button */}
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
+                <Link
+                  to="/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs text-sidebar-foreground/60 hover:text-[#ff3131] transition-all"
                 >
                   <Settings size={14} />
                   <span>{language === 'vi' ? 'Cài đặt hệ thống' : 'System Settings'}</span>
-                </button>
+                </Link>
               </div>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setIsSettingsOpen(false)}
-        >
-          <div 
-            className="bg-card border border-border text-card-foreground rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-6 relative animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Title */}
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                ⚙️ {language === 'vi' ? 'Cài đặt hệ thống' : 'System Settings'}
-              </h3>
-              <button 
-                onClick={() => setIsSettingsOpen(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Options */}
-            <div className="space-y-4">
-              {/* Theme Switcher */}
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {language === 'vi' ? 'Giao diện tối' : 'Dark Mode'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {language === 'vi' ? 'Chuyển đổi giao diện sáng/tối' : 'Toggle light/dark theme'}
-                  </p>
-                </div>
-                <button
-                  onClick={toggleDarkMode}
-                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${
-                    isDarkMode ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]' : 'bg-muted'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-card shadow-md transform transition-transform duration-200 ${
-                      isDarkMode ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Language Switcher */}
-              <div className="flex items-center justify-between py-2 border-t border-border">
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {language === 'vi' ? 'Ngôn ngữ' : 'Language'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {language === 'vi' ? 'Chọn ngôn ngữ hiển thị' : 'Choose display language'}
-                  </p>
-                </div>
-                <div className="flex bg-muted rounded-lg p-0.5 border border-border/40">
-                  <button
-                    onClick={() => setLanguage('vi')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                      language === 'vi'
-                        ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    VI
-                  </button>
-                  <button
-                    onClick={() => setLanguage('en')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                      language === 'en'
-                        ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Logout Area */}
-            {isAuthenticated && (
-              <div className="border-t border-border pt-4">
-                <button
-                  onClick={() => {
-                    setIsSettingsOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-destructive/10 text-destructive rounded-2xl font-semibold hover:bg-destructive/20 transition-all text-sm"
-                >
-                  <LogOut size={18} />
-                  {language === 'vi' ? 'Đăng xuất tài khoản' : 'Log Out Account'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }

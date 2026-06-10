@@ -16,6 +16,10 @@ import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
 import { WanderExplore } from "./pages/wander/Explore";
+import { WanderUserProfile } from "./pages/wander/UserProfile";
+import { GroupDetail } from "./pages/wander/GroupDetail";
+import { Notifications } from "./pages/wander/Notifications";
+import { Settings } from "./pages/wander/Settings";
 import { WanderMainLayout } from "./components/wander/WanderMainLayout";
 import { ProtectedRoute, GuestRoute } from "./components/auth/ProtectedRoute";
 
@@ -142,6 +146,38 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile/:username",
+        element: (
+          <ProtectedRoute>
+            <WanderUserProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/groups/:id",
+        element: (
+          <ProtectedRoute>
+            <GroupDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/settings",
+        element: (
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         ),
       },
