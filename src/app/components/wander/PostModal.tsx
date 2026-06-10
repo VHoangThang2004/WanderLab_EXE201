@@ -1,7 +1,7 @@
 import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { useState, useEffect } from "react";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService, CommentItem } from "@/api/interactionService";
 
 interface PostModalProps {
@@ -32,6 +32,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   const [commentText, setCommentText] = useState("");
 
   const { user } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
@@ -66,6 +67,16 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
 
     try {
       await interactionService.toggleLikeDiary(post.id, user.id);
+      
+      if (!isLiked) {
+        addNotification({
+          type: "like",
+          title: "Lượt thích mới",
+          message: `Bạn vừa thích bài viết của ${post.author.name}.`,
+          linkTo: window.location.pathname,
+          avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+        });
+      }
     } catch (error) {
       // Revert on error
       setIsLiked(previousState);
@@ -100,6 +111,14 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
     try {
       const newComment = await interactionService.addComment(post.id, user.id, content);
       setComments(prev => [newComment, ...prev]);
+
+      addNotification({
+        type: "comment",
+        title: "Bình luận mới",
+        message: `Bạn vừa bình luận: '${content}'`,
+        linkTo: window.location.pathname,
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
     } catch (error: any) {
       console.error("Failed to post comment:", error);
       setCommentText(content); // Revert text

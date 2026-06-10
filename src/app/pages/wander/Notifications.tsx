@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-import { Bell, Check, MessageSquare, ThumbsUp, Send } from "lucide-react";
+import { Bell, Check, MessageSquare, ThumbsUp, Send, Trash2, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useNotificationStore } from "@/stores";
+import { useNotificationStore, useAuthStore } from "@/stores";
 import { toast } from "sonner";
 
 export function Notifications() {
-  const { notifications, addNotification, markAsRead, markAllAsRead } = useNotificationStore();
+  const { notifications, addNotification, removeNotification, markAsRead, markAllAsRead, clearAll } = useNotificationStore();
+  const { user } = useAuthStore();
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const filteredNotifications = filter === "unread"
@@ -20,19 +21,20 @@ export function Notifications() {
     let title = "";
     let message = "";
     let linkTo = "";
-    let avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400";
+    let avatar = user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400";
+    let userName = user?.full_name || "Bạn";
 
     if (type === "post") {
       title = "Đăng bài thành công";
-      message = "Bài viết về chuyến đi Đà Lạt của bạn đã được đăng.";
+      message = `Bài viết về chuyến đi của ${userName} đã được đăng.`;
       linkTo = "/explore";
     } else if (type === "comment") {
       title = "Bình luận mới";
-      message = "Hoàng Thắng đã bình luận: 'Cảnh đẹp quá bạn ơi!'";
+      message = `${userName} đã bình luận: 'Cảnh đẹp quá bạn ơi!'`;
       linkTo = "/diaries";
     } else if (type === "like") {
       title = "Lượt thích mới";
-      message = "Nguyễn Văn A và 5 người khác đã thích bài viết của bạn.";
+      message = `${userName} và 5 người khác đã thích bài viết của bạn.`;
       linkTo = "/profile";
     }
 
@@ -100,6 +102,15 @@ export function Notifications() {
               Đánh dấu đã đọc tất cả
             </button>
           )}
+          {notifications.length > 0 && (
+            <button
+              onClick={clearAll}
+              className={`${unreadCount > 0 ? "ml-2" : "ml-auto"} px-6 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-full font-semibold hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all flex items-center`}
+            >
+              <Trash2 size={18} className="inline mr-2" />
+              Xóa tất cả
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -148,11 +159,12 @@ export function Notifications() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
+              className="relative group"
             >
               <Link
                 to={notification.linkTo}
                 onClick={() => markAsRead(notification.id)}
-                className={`block bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all ${
+                className={`block bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all pr-12 ${
                   !notification.isRead ? "border-l-4 border-l-[#ff3131]" : ""
                 }`}
               >
@@ -176,6 +188,17 @@ export function Notifications() {
                   </div>
                 </div>
               </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  removeNotification(notification.id);
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+                title="Xóa thông báo này"
+              >
+                <X size={20} />
+              </button>
             </motion.div>
           ))
         )}

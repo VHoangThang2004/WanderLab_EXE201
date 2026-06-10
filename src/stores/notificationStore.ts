@@ -17,6 +17,7 @@ export interface AppNotification {
 interface NotificationState {
   notifications: AppNotification[];
   addNotification: (notification: Omit<AppNotification, "id" | "timestamp" | "isRead">) => void;
+  removeNotification: (id: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
@@ -59,6 +60,12 @@ export const useNotificationStore = create<NotificationState>()(
           notifications: state.notifications.map((n) =>
             n.id === id ? { ...n, isRead: true } : n
           ),
+        }));
+      },
+
+      removeNotification: (id) => {
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
         }));
       },
 

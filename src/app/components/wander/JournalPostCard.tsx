@@ -3,7 +3,7 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { PostModal } from "./PostModal";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService } from "@/api/interactionService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
@@ -45,6 +45,7 @@ export function JournalPostCard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -73,6 +74,17 @@ export function JournalPostCard({
     
     try {
       await interactionService.toggleLikeDiary(id, user.id);
+      
+      // Notify only when liking, not unliking
+      if (!isLiked) {
+        addNotification({
+          type: "like",
+          title: "Lượt thích mới",
+          message: `Bạn vừa thích bài viết của ${author.name}.`,
+          linkTo: window.location.pathname,
+          avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+        });
+      }
     } catch (err: any) {
       // Revert if failed
       setIsLiked(isLiked);

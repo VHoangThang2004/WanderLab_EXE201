@@ -20,12 +20,14 @@ import {
 import { useNavigate } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
-import { useLanguageStore } from "@/stores";
+import { useLanguageStore, useNotificationStore, useAuthStore } from "@/stores";
 
 type PrivacySetting = "private" | "friends" | "public";
 
 export function WanderCreateDiary() {
   const { t, language } = useLanguageStore();
+  const { addNotification } = useNotificationStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
@@ -171,6 +173,15 @@ export function WanderCreateDiary() {
 
       // 3. Create diary
       await diaryService.createDiary(payload, coverUrl);
+
+      // Create notification
+      addNotification({
+        type: "post",
+        title: language === 'vi' ? "Đăng bài thành công" : "Post published successfully",
+        message: language === 'vi' ? `Bài viết "${formData.title}" của bạn đã được đăng.` : `Your post "${formData.title}" has been published.`,
+        linkTo: "/dashboard",
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
 
       alert(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
       navigate(`/dashboard`);
