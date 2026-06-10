@@ -105,7 +105,7 @@ export function ChatPage() {
           <h1 className="font-bold text-base leading-tight">AI Travel Assistant</h1>
           <p className="text-xs text-white/80 flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse" />
-            Trực tuyến • Powered by vRouter
+            Trực tuyến • Luôn sẵn sàng hỗ trợ
           </p>
         </div>
         <button
@@ -254,7 +254,7 @@ export function ChatPage() {
           </button>
         </form>
         <p className="text-center text-xs text-gray-400 mt-2">
-          WanderLab AI • Powered by vRouter
+          WanderLab AI • Gợi ý dựa trên dữ liệu du lịch thực tế
         </p>
       </div>
     </div>
