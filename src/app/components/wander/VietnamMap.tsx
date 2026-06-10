@@ -111,9 +111,9 @@ export function VietnamMap({ visitedProvinces = [] }: VietnamMapProps) {
         className="w-full h-auto max-h-[480px] md:max-h-[580px] mx-auto filter drop-shadow-md dark:drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Base Map Provinces */}
+        {/* Base Map Provinces (excluding islands) */}
         <g id="vietnam-provinces">
-          {(vietnamPaths as ProvincePath[]).map((province, idx) => {
+          {(vietnamPaths as ProvincePath[]).filter((p) => p.id !== "hoangsa" && p.id !== "truongsa").map((province, idx) => {
             // Helper to normalize strings for comparison (removes accents, lowercase, removes non-alphabetic chars)
             const normalizeForMapMatch = (str: string): string => {
               if (!str) return "";
@@ -151,29 +151,96 @@ export function VietnamMap({ visitedProvinces = [] }: VietnamMapProps) {
               fill = "url(#hover-gradient)"; // Glow gradient on hover
             }
 
-            // Dark mode overrides
-            const darkFill = isHovered
-              ? "url(#hover-gradient-dark)"
-              : isVisited
-                ? "#BF3B2B" // Vibrant dark red-orange highlight for visited
-                : "#2E2423"; // Subtle dark tone for unvisited
-
-            const isIsland = province.id === "hoangsa" || province.id === "truongsa";
-            const transform = isIsland
-              ? `translate(${province.centerX}, ${province.centerY}) scale(3.5) translate(${-province.centerX}, ${-province.centerY})`
-              : undefined;
-
             return (
               <path
                 key={province.id}
                 d={province.d}
                 style={pathStyle}
-                transform={transform}
-                className="province-path cursor-pointer stroke-[#FFF5F3] dark:stroke-[#2A1D1A] stroke-[0.8] hover:stroke-white dark:hover:stroke-[#ff914d] hover:stroke-[1.5]"
-                fill={document.documentElement.classList.contains("dark") ? darkFill : fill}
+                className="province-path cursor-pointer stroke-[#FFF5F3] stroke-[0.8] hover:stroke-white hover:stroke-[1.5]"
+                fill={fill}
                 onMouseEnter={() => setHoveredProvince(province)}
                 onMouseLeave={() => setHoveredProvince(null)}
               />
+            );
+          })}
+
+          {/* Hoang Sa Islands (simplified to 5 visible points and enlarged with irregular jagged shapes) */}
+          {(vietnamPaths as ProvincePath[]).filter((p) => p.id === "hoangsa").map((island) => {
+            const isHovered = hoveredProvince?.id === "hoangsa";
+            const islandShapes = [
+              "M -4,-2 L -2,-4 L 1,-2 L 3,-4 L 4,-2 L 3,1 L 4,3 L 1,2 L -2,4 L -3,1 L -4,1 Z",
+              "M 0,-4 L 2,-2 L 4,-3 L 3,0 L 4,2 L 1,1 L 1,4 L -1,2 L -4,3 L -2,0 L -4,-2 L -1,-1 Z",
+              "M -3,-3 L 0,-4 L 2,-2 L 4,-2 L 3,1 L 1,1 L 2,3 L -2,2 L -2,1 L -4,1 L -3,-1 Z"
+            ];
+            const points = [
+              { x: 535, y: 440, scale: 1.8, shapeIdx: 0 },
+              { x: 575, y: 410, scale: 2.0, shapeIdx: 1 },
+              { x: 590, y: 375, scale: 2.0, shapeIdx: 2 },
+              { x: 610, y: 425, scale: 2.0, shapeIdx: 0 },
+              { x: 618, y: 395, scale: 1.5, shapeIdx: 1 },
+            ];
+
+            return (
+              <g
+                key={island.id}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredProvince(island)}
+                onMouseLeave={() => setHoveredProvince(null)}
+              >
+                {points.map((pt, idx) => (
+                  <path
+                    key={idx}
+                    d={islandShapes[pt.shapeIdx]}
+                    transform={`translate(${pt.x}, ${pt.y}) scale(${pt.scale})`}
+                    className="province-path"
+                    fill={isHovered ? "url(#hover-gradient)" : "#e2b699ff"}
+                    stroke={isHovered ? "#FFF" : "#FFF5F3"}
+                    strokeWidth={isHovered ? 0.6 : 0.4}
+                    style={{ opacity: isLoaded ? 1 : 0, transition: "opacity 0.8s ease, fill 0.3s ease" }}
+                  />
+                ))}
+              </g>
+            );
+          })}
+
+          {/* Truong Sa Islands (simplified to 7 visible points and enlarged with irregular jagged shapes) */}
+          {(vietnamPaths as ProvincePath[]).filter((p) => p.id === "truongsa").map((island) => {
+            const isHovered = hoveredProvince?.id === "truongsa";
+            const islandShapes = [
+              "M -4,-2 L -2,-4 L 1,-2 L 3,-4 L 4,-2 L 3,1 L 4,3 L 1,2 L -2,4 L -3,1 L -4,1 Z",
+              "M 0,-4 L 2,-2 L 4,-3 L 3,0 L 4,2 L 1,1 L 1,4 L -1,2 L -4,3 L -2,0 L -4,-2 L -1,-1 Z",
+              "M -3,-3 L 0,-4 L 2,-2 L 4,-2 L 3,1 L 1,1 L 2,3 L -2,2 L -2,1 L -4,1 L -3,-1 Z"
+            ];
+            const points = [
+              { x: 660, y: 680, scale: 2.0, shapeIdx: 1 },
+              { x: 690, y: 730, scale: 1.8, shapeIdx: 2 },
+              { x: 740, y: 710, scale: 2.2, shapeIdx: 0 },
+              { x: 780, y: 770, scale: 2.0, shapeIdx: 1 },
+              { x: 710, y: 800, scale: 1.8, shapeIdx: 2 },
+              { x: 800, y: 720, scale: 1.6, shapeIdx: 0 },
+              { x: 670, y: 770, scale: 1.5, shapeIdx: 1 },
+            ];
+
+            return (
+              <g
+                key={island.id}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredProvince(island)}
+                onMouseLeave={() => setHoveredProvince(null)}
+              >
+                {points.map((pt, idx) => (
+                  <path
+                    key={idx}
+                    d={islandShapes[pt.shapeIdx]}
+                    transform={`translate(${pt.x}, ${pt.y}) scale(${pt.scale})`}
+                    className="province-path"
+                    fill={isHovered ? "url(#hover-gradient)" : "#e2b699ff"}
+                    stroke={isHovered ? "#FFF" : "#FFF5F3"}
+                    strokeWidth={isHovered ? 0.6 : 0.4}
+                    style={{ opacity: isLoaded ? 1 : 0, transition: "opacity 0.8s ease, fill 0.3s ease" }}
+                  />
+                ))}
+              </g>
             );
           })}
         </g>
@@ -191,10 +258,6 @@ export function VietnamMap({ visitedProvinces = [] }: VietnamMapProps) {
             <stop offset="100%" stopColor="#ff7733" />
           </linearGradient>
         </defs>
-
-
-
-
       </svg>
 
       {/* Floating Interactive Tooltip */}
