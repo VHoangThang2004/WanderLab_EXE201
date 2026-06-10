@@ -60,6 +60,8 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
+  --input-background: oklch(0.205 0 0);
+  --switch-background: oklch(0.35 0 0);
   --ring: oklch(0.439 0 0);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
@@ -222,7 +224,8 @@ html.dark .bg-gray-50 {
 
 /* Warm gradient overrides */
 html.dark .bg-gradient-to-br.from-\[\#FFF5F3\].to-\[\#FFE8E0\],
-html.dark .bg-gradient-to-r.from-\[\#FFF5F3\].to-white {
+html.dark .bg-gradient-to-r.from-\[\#FFF5F3\].to-white,
+html.dark .bg-gradient-to-br.from-\[\#FFF5F3\].to-white {
   background: linear-gradient(135deg, oklch(0.22 0.01 25), var(--background)) !important;
 }
 
