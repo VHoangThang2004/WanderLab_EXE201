@@ -405,19 +405,19 @@ export function WanderCreateDiary() {
                     <select
                       value={formData.style}
                       onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                       style={{
                         lineHeight: LINE_HEIGHT,
                         height: LINE_HEIGHT,
                       }}
                     >
-                      <option value="">{language === 'vi' ? "Chọn phong cách" : "Select style"}</option>
-                      <option value="Trekking">{language === 'vi' ? "Trekking & Leo Núi" : "Trekking & Climbing"}</option>
-                      <option value="Food">{language === 'vi' ? "Ẩm Thực" : "Culinary"}</option>
-                      <option value="Cultural">{language === 'vi' ? "Văn Hoá & Di Sản" : "Culture & Heritage"}</option>
-                      <option value="Luxury">{language === 'vi' ? "Cao Cấp" : "Luxury"}</option>
-                      <option value="Budget">{language === 'vi' ? "Tiết Kiệm" : "Budget"}</option>
-                      <option value="Beach">{language === 'vi' ? "Biển & Nghỉ Dưỡng" : "Beach & Resort"}</option>
+                      <option value="" className="bg-white text-gray-500">{language === 'vi' ? "Chọn phong cách" : "Select style"}</option>
+                      <option value="Trekking" className="bg-white text-gray-900">{language === 'vi' ? "Trekking & Leo Núi" : "Trekking & Climbing"}</option>
+                      <option value="Food" className="bg-white text-gray-900">{language === 'vi' ? "Ẩm Thực" : "Culinary"}</option>
+                      <option value="Cultural" className="bg-white text-gray-900">{language === 'vi' ? "Văn Hoá & Di Sản" : "Culture & Heritage"}</option>
+                      <option value="Luxury" className="bg-white text-gray-900">{language === 'vi' ? "Cao Cấp" : "Luxury"}</option>
+                      <option value="Budget" className="bg-white text-gray-900">{language === 'vi' ? "Tiết Kiệm" : "Budget"}</option>
+                      <option value="Beach" className="bg-white text-gray-900">{language === 'vi' ? "Biển & Nghỉ Dưỡng" : "Beach & Resort"}</option>
                     </select>
                   </div>
                 </div>
