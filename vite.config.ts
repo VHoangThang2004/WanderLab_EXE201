@@ -25,6 +25,7 @@ function figmaAssetResolver() {
 function aiProxyPlugin(): Plugin {
   let apiKey = ''
   let apiEndpoint = ''
+  let apiModel = ''
 
   return {
     name: 'ai-proxy',
@@ -33,6 +34,7 @@ function aiProxyPlugin(): Plugin {
       const env = loadEnv(config.mode, config.root, '')
       apiKey = env.API_LLM_AI || ''
       apiEndpoint = env.API_LLM_ENDPOINT || ''
+      apiModel = env.API_LLM_MODEL || 'claudible/claude-haiku-4-5'
     },
     configureServer(server) {
       server.middlewares.use('/api/ai/chat', async (req, res) => {
@@ -63,7 +65,7 @@ function aiProxyPlugin(): Plugin {
               'Authorization': `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: body.model || 'claudible/claude-haiku-4-5',
+              model: body.model || apiModel,
               messages: body.messages,
               stream: body.stream ?? true,
             }),
