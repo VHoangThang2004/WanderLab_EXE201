@@ -281,7 +281,7 @@ export function WanderCreateDiary() {
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder={language === 'vi' ? "VD: Khám Phá Vịnh Hạ Long 5 Ngày" : "E.g. Explore Ha Long Bay 5 Days"}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                       style={{
                         lineHeight: LINE_HEIGHT,
                         height: LINE_HEIGHT,
@@ -310,7 +310,7 @@ export function WanderCreateDiary() {
                         }}
                         onFocus={() => setIsLocationDropdownOpen(true)}
                         placeholder={language === 'vi' ? "VD: Hội An, Quảng Nam" : "E.g. Hoi An, Quang Nam"}
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
@@ -360,7 +360,7 @@ export function WanderCreateDiary() {
                           type="date"
                           value={formData.startDate}
                           onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                           style={{
                             lineHeight: LINE_HEIGHT,
                             height: LINE_HEIGHT,
@@ -385,7 +385,7 @@ export function WanderCreateDiary() {
                           type="date"
                           value={formData.endDate}
                           onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                           style={{
                             lineHeight: LINE_HEIGHT,
                             height: LINE_HEIGHT,
@@ -450,7 +450,7 @@ export function WanderCreateDiary() {
                           }
                         }}
                         placeholder={language === 'vi' ? "VD: 5000000" : "E.g. 5000000"}
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
@@ -508,7 +508,7 @@ export function WanderCreateDiary() {
                         value={formData.groupSize}
                         onChange={(e) => setFormData({ ...formData, groupSize: e.target.value })}
                         min="1"
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
@@ -529,7 +529,7 @@ export function WanderCreateDiary() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder={language === 'vi' ? "Chia sẻ điều đặc biệt nhất của chuyến đi. Bao gồm điểm nổi bật, trải nghiệm đáng nhớ và đối tượng phù hợp..." : "Share the most special aspects of your trip. Include highlights, memorable experiences and target audience..."}
                       rows={6}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent focus:outline-none focus:border-[#ff3131] resize-none"
+                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] resize-none"
                       style={{
                         lineHeight: LINE_HEIGHT,
                       }}

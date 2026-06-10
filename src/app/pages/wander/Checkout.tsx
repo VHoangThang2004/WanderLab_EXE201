@@ -210,7 +210,7 @@ export function CheckoutPage() {
                   placeholder="ban@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm transition-all ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm transition-all bg-white text-gray-900 placeholder-gray-400 ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 <p className="text-xs text-gray-400 mt-1.5">Hóa đơn và thông tin tài khoản sẽ được gửi đến email này</p>
@@ -253,7 +253,7 @@ export function CheckoutPage() {
                         placeholder="1234 5678 9012 3456"
                         value={cardNum}
                         onChange={(e) => setCardNum(formatCard(e.target.value))}
-                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono tracking-widest ${errors.cardNum ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono tracking-widest bg-white text-gray-900 placeholder-gray-400 ${errors.cardNum ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                       />
                       <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
                     </div>
@@ -267,7 +267,7 @@ export function CheckoutPage() {
                       placeholder="NGUYEN VAN A"
                       value={cardName}
                       onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm uppercase tracking-wide ${errors.cardName ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm uppercase tracking-wide bg-white text-gray-900 placeholder-gray-400 ${errors.cardName ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                     />
                     {errors.cardName && <p className="text-red-500 text-xs mt-1">{errors.cardName}</p>}
                   </div>
@@ -281,7 +281,7 @@ export function CheckoutPage() {
                         value={expiry}
                         onChange={(e) => setExpiry(formatExpiry(e.target.value))}
                         maxLength={5}
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.expiry ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono bg-white text-gray-900 placeholder-gray-400 ${errors.expiry ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                       />
                       {errors.expiry && <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>}
                     </div>
@@ -292,7 +292,7 @@ export function CheckoutPage() {
                         placeholder="•••"
                         value={cvv}
                         onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono ${errors.cvv ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm font-mono bg-white text-gray-900 placeholder-gray-400 ${errors.cvv ? "border-red-400 bg-red-50" : "border-gray-200"}`}
                       />
                       {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
                     </div>
