@@ -13,7 +13,9 @@ import {
   LogOut,
   Compass,
   Settings,
-  Bell
+  Bell,
+  MessageCircle,
+  Bot
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
@@ -34,6 +36,8 @@ export function WanderSidebar() {
     { icon: Users, label: t("friends"), path: "/friends", public: false },
     { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
     { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
+    { icon: MessageCircle, label: language === 'vi' ? "Nhắn Tin" : "Messages", path: "/messages", public: false },
+    { icon: Bot, label: language === 'vi' ? "AI Trợ Lý" : "AI Assistant", path: "/chat", public: false },
     { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
     { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
     ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),

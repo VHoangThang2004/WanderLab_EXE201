@@ -12,6 +12,7 @@ import { WanderCreateDiary } from "./pages/wander/CreateDiary";
 import { WanderEditDiary } from "./pages/wander/EditDiary";
 import { WanderPartner } from "./pages/wander/Partner";
 import { ChatPage } from "./pages/wander/ChatPage";
+import { MessagesPage } from "./pages/wander/Messages";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
@@ -106,6 +107,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <WanderFriends />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/messages",
+        element: (
+          <ProtectedRoute>
+            <MessagesPage />
           </ProtectedRoute>
         ),
       },
