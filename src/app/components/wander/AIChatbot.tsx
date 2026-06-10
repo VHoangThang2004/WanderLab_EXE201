@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Sparkles, Minimize2, Maximize2, ExternalLink } from "lucide-react";
 import { sendAIChat, type ChatMessage } from "@/api/aiService";
+import { MarkdownContent } from "@/app/components/wander/MarkdownContent";
 
 type Action = { label: string; href: string; emoji?: string };
 type UIMessage = { role: "user" | "assistant"; content: string; actions?: Action[] };
@@ -212,7 +213,11 @@ export function AIChatbot() {
                         : "bg-white text-gray-800 shadow-sm rounded-bl-sm"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                    {message.role === "assistant" ? (
+                      <MarkdownContent content={message.content} />
+                    ) : (
+                      <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                    )}
                   </div>
 
                   {message.actions && message.actions.length > 0 && (
@@ -239,7 +244,7 @@ export function AIChatbot() {
               {isTyping && streamingContent && (
                 <div className="flex flex-col items-start">
                   <div className="max-w-[88%] bg-white text-gray-800 shadow-sm rounded-2xl rounded-bl-sm px-3 py-2.5">
-                    <p className="text-sm whitespace-pre-line leading-relaxed">{streamingContent}</p>
+                    <MarkdownContent content={streamingContent} />
                   </div>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, ArrowLeft, RotateCcw, MapPin, Wallet, Compass } from "lucide-react";
 import { sendAIChat, type ChatMessage } from "@/api/aiService";
+import { MarkdownContent } from "@/app/components/wander/MarkdownContent";
 
 type Action = { label: string; href: string };
 type UIMessage = { role: "user" | "assistant"; content: string; actions?: Action[] };
@@ -151,7 +152,11 @@ export function ChatPage() {
                     : "bg-white text-gray-800 rounded-bl-sm"
                 }`}
               >
-                <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                {msg.role === "assistant" ? (
+                  <MarkdownContent content={msg.content} />
+                ) : (
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                )}
               </div>
             </div>
 
@@ -183,7 +188,7 @@ export function ChatPage() {
               <Sparkles size={14} className="text-white" />
             </div>
             <div className="max-w-[82%] sm:max-w-[70%] bg-white text-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-              <p className="text-sm whitespace-pre-line leading-relaxed">{streamingContent}</p>
+              <MarkdownContent content={streamingContent} />
             </div>
           </div>
         )}
