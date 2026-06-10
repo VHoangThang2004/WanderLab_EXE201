@@ -110,6 +110,105 @@ function aiProxyPlugin(): Plugin {
           res.end(JSON.stringify({ error: 'Failed to reach AI backend', detail: err.message }))
         }
       })
+
+      // ── /api/ai/itinerary — AI tự động tạo lịch trình (non-streaming) ──
+      server.middlewares.use('/api/ai/itinerary', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.writeHead(405, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Method not allowed' }))
+          return
+        }
+
+        if (!apiKey || !apiEndpoint) {
+          res.writeHead(503, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'AI service not configured. Set API_LLM_AI and API_LLM_ENDPOINT in .env' }))
+          return
+        }
+
+        const chunks: Buffer[] = []
+        for await (const chunk of req) {
+          chunks.push(Buffer.from(chunk))
+        }
+        const body = JSON.parse(Buffer.concat(chunks).toString())
+
+        // Build structured prompt for itinerary generation
+        const systemPrompt = `Bạn là AI chuyên tạo lịch trình du lịch Việt Nam cho WanderLab.
+Khi nhận yêu cầu tạo lịch trình, bạn PHẢI trả về JSON hợp lệ (KHÔNG markdown, KHÔNG giải thích thêm).
+
+Format JSON bắt buộc:
+{
+  "destination": "tên điểm đến",
+  "duration_days": số ngày,
+  "ai_notes": "ghi chú ngắn về lịch trình",
+  "days": [
+    {
+      "day": 1,
+      "title": "tiêu đề ngày",
+      "emoji": "emoji phù hợp",
+      "activities": ["hoạt động 1", "hoạt động 2", "hoạt động 3", "hoạt động 4"],
+      "budget": "chi phí ước tính ngày đó (VNĐ)"
+    }
+  ],
+  "budget_breakdown": [
+    { "label": "hạng mục", "amount": "số tiền VNĐ" }
+  ],
+  "total_estimate": "tổng chi phí ước tính/người",
+  "tips": ["mẹo 1", "mẹo 2"]
+}`
+
+        const userPrompt = `Tạo lịch trình du lịch với thông tin sau:
+- Điểm đến: ${body.destination}
+- Số ngày: ${body.duration_days}
+- Ngân sách: ${body.budget_level}
+- Số người: ${body.group_size}
+- Sở thích: ${(body.interests || []).join(', ')}
+
+Trả về JSON theo format đã quy định. Chỉ trả JSON, không thêm gì khác.`
+
+        try {
+          const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: apiModel,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+              ],
+              stream: false,
+            }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            res.writeHead(response.status, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: `vRouter error: ${response.status}`, detail: errorText }))
+            return
+          }
+
+          const data = await response.json()
+          const content = data.choices?.[0]?.message?.content || ''
+
+          // Parse AI response JSON
+          try {
+            // Loại bỏ markdown code block nếu AI vẫn wrap
+            const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+            const itinerary = JSON.parse(cleaned)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ itinerary, ai_notes: itinerary.ai_notes || '' }))
+          } catch {
+            // Nếu parse fail, trả raw content để client fallback
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ itinerary: null, raw: content, error: 'AI response was not valid JSON' }))
+          }
+        } catch (err: any) {
+          res.writeHead(502, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Failed to reach AI backend', detail: err.message }))
+        }
+      })
     },
   }
 }
