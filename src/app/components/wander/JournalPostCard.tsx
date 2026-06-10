@@ -126,7 +126,7 @@ export function JournalPostCard({
 
   return (
     <>
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all relative">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative group/card">
         {/* Author Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-3">
@@ -232,13 +232,13 @@ export function JournalPostCard({
               {/* Like */}
               <button
                 onClick={handleLike}
-                className={`flex items-center gap-1.5 transition-colors ${
+                className={`flex items-center gap-1.5 transition-all duration-300 hover:scale-110 ${
                   isLiked ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
                 }`}
               >
                 <Heart
                   size={20}
-                  className={isLiked ? "fill-current" : ""}
+                  className={isLiked ? "fill-current drop-shadow-md" : ""}
                 />
                 <span className="text-sm font-medium">{likes}</span>
               </button>
@@ -246,7 +246,7 @@ export function JournalPostCard({
               {/* Comment */}
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-1.5 text-gray-500 hover:text-[#ff3131] transition-colors"
+                className="flex items-center gap-1.5 text-gray-500 hover:text-[#ff3131] transition-all duration-300 hover:scale-110"
               >
                 <MessageCircle size={20} />
                 <span className="text-sm font-medium">{comments}</span>
@@ -256,13 +256,13 @@ export function JournalPostCard({
             {/* Save */}
             <button
               onClick={handleSave}
-              className={`transition-colors ${
+              className={`transition-all duration-300 hover:scale-110 ${
                 isSaved ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
               }`}
             >
               <Bookmark
                 size={20}
-                className={isSaved ? "fill-current" : ""}
+                className={isSaved ? "fill-current drop-shadow-md" : ""}
               />
             </button>
           </div>

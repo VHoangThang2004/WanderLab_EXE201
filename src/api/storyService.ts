@@ -56,19 +56,7 @@ export const storyService = {
       const storedStories = JSON.parse(localStorage.getItem('wanderlab_stories') || '[]');
       
       if (storedStories.length === 0) {
-        return [
-          {
-            id: 'fake1',
-            user_id: 'fake-user-1',
-            image_url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-            caption: 'Cảnh đẹp quá!',
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-            author: { 
-              name: 'Hoàng Thắng', 
-              avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400' 
-            }
-          }
-        ];
+        return [];
       }
 
       // Sort by created_at desc

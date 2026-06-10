@@ -547,7 +547,7 @@ export function WanderCreateDiary() {
                     />
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-l-4 border-[#ff3131]">
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-xl p-4 border-l-4 border-[#ff3131]">
                     <div className="flex items-start gap-3">
                       <Sparkles className={`${accentColor} flex-shrink-0 mt-1`} size={20} />
                       <div>
@@ -591,7 +591,7 @@ export function WanderCreateDiary() {
 
                   <div className="space-y-4">
                     {timeline.map((day, dayIndex) => (
-                      <div key={day.day} className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-l-4 border-[#ff914d]">
+                      <div key={day.day} className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-xl p-5 border-l-4 border-[#ff914d]">
                         <div className="flex items-center justify-between mb-4">
                           <div className={`inline-flex items-center gap-2 ${primaryBg} text-white px-4 py-1.5 rounded-full font-bold text-sm`}>
                             <Calendar size={14} />
@@ -617,7 +617,7 @@ export function WanderCreateDiary() {
                               setTimeline(newTimeline);
                             }}
                             placeholder={language === 'vi' ? "Tiêu đề ngày (VD: Đến Hà Nội – Thăm Phố Cổ)" : "Day title (E.g. Arrive in Hanoi - Visit Old Quarter)"}
-                            className={`w-full px-4 py-2.5 border-b-2 border-gray-300 bg-white/60 focus:outline-none focus:border-[#ff3131] transition-colors rounded-t-lg font-semibold`}
+                            className={`w-full px-4 py-2.5 border-b-2 border-gray-300 dark:border-gray-600 bg-white/60 dark:bg-black/20 focus:outline-none focus:border-[#ff3131] transition-colors rounded-t-lg font-semibold`}
                           />
 
                           <div>
@@ -630,7 +630,7 @@ export function WanderCreateDiary() {
                                     value={activity}
                                     onChange={(e) => updateActivity(dayIndex, activityIndex, e.target.value)}
                                     placeholder={language === 'vi' ? `Hoạt động ${activityIndex + 1}` : `Activity ${activityIndex + 1}`}
-                                    className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
+                                    className={`flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-black/20 focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
                                   />
                                   {day.activities.length > 1 && (
                                     <button
@@ -664,7 +664,7 @@ export function WanderCreateDiary() {
                                   setTimeline(newTimeline);
                                 }}
                                 placeholder={language === 'vi' ? "Ngân sách ngày" : "Daily budget"}
-                                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
+                                className={`w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-black/20 focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
                               />
                             </div>
                           </div>
@@ -679,7 +679,7 @@ export function WanderCreateDiary() {
               {currentStep === 4 && (
                 <div className="space-y-0">
                   <div
-                    className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-2xl p-12 text-center transition-all cursor-pointer relative`}
+                    className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-400 dark:border-gray-600 hover:border-[#ff3131] hover:bg-amber-50/30 dark:hover:bg-amber-900/20'} rounded-2xl p-12 text-center transition-all cursor-pointer relative`}
                     style={{ marginBottom: `${GRID_HEIGHT}px` }}
                   >
                     <input
@@ -723,7 +723,7 @@ export function WanderCreateDiary() {
                     )}
                   </div>
 
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500" style={{ marginBottom: `${GRID_HEIGHT}px` }}>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-6 border-l-4 border-blue-500" style={{ marginBottom: `${GRID_HEIGHT}px` }}>
                     <h3
                       className="font-bold text-gray-900"
                       style={{ lineHeight: LINE_HEIGHT }}
@@ -765,11 +765,11 @@ export function WanderCreateDiary() {
                           key={value}
                           onClick={() => setPrivacySetting(value as PrivacySetting)}
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${privacySetting === value
-                              ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
-                              : "border-gray-300 hover:border-gray-400 bg-white"
+                              ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30"
+                              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-card"
                             }`}
                         >
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${privacySetting === value ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d]" : "bg-gray-100"
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${privacySetting === value ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d]" : "bg-gray-100 dark:bg-gray-800"
                             }`}>
                             <Icon className={privacySetting === value ? "text-white" : "text-gray-400"} size={24} />
                           </div>

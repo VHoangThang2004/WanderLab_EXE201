@@ -133,7 +133,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Side - Image */}
-        <div className="bg-black flex items-center justify-center relative max-h-[90vh] lg:max-h-none">
+        <div className="bg-black flex items-center justify-center relative max-h-[90vh]">
           <ImageWithFallback
             src={post.image}
             alt={post.location}
@@ -142,7 +142,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
         </div>
 
         {/* Right Side - Details & Comments */}
-        <div className="flex flex-col h-[90vh] lg:h-auto">
+        <div className="flex flex-col h-[90vh] lg:h-auto lg:max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">

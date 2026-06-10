@@ -58,7 +58,7 @@ export function WanderSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-sidebar border-b border-sidebar-border px-4 py-3 z-50 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 px-4 py-3 z-50 flex items-center justify-between">
         <WanderLogo size="sm" />
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -78,7 +78,7 @@ export function WanderSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-sidebar border-r border-sidebar-border text-sidebar-foreground z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white/80 dark:bg-black/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/10 text-gray-900 dark:text-gray-100 z-40 transform transition-transform duration-300 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -100,13 +100,13 @@ export function WanderSidebar() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${
                     active
-                      ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-[#ff3131]"
+                      ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-lg shadow-[#ff3131]/30 hover:shadow-xl hover:scale-105"
+                      : "hover:bg-[#FFF5F3]/50 dark:hover:bg-white/5 hover:text-[#ff3131] hover:scale-[1.02]"
                   }`}
                 >
-                  <Icon size={22} />
+                  <Icon size={22} className={active ? "text-white" : "text-gray-500 dark:text-gray-400 group-hover:text-[#ff3131]"} />
                   <span>{item.label}</span>
                   {item.path === "/notifications" && unreadCount > 0 && (
                     <div className={`absolute right-4 px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-white text-[#ff3131]' : 'bg-[#ff3131] text-white'}`}>
