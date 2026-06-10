@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Sparkles, Minimize2, Maximize2, ExternalLink } from "lucide-react";
+import { sendAIChat, type ChatMessage } from "@/api/aiService";
 
 type Action = { label: string; href: string; emoji?: string };
-type Message = { role: "user" | "assistant"; content: string; actions?: Action[] };
+type UIMessage = { role: "user" | "assistant"; content: string; actions?: Action[] };
 
 const quickSuggestions = [
   "🏝️ Bãi biển đẹp ở Việt Nam",
@@ -12,47 +13,11 @@ const quickSuggestions = [
   "📸 Địa điểm check-in hot",
 ];
 
-const PHU_QUOC_RESPONSE: Message = {
+const WELCOME_MESSAGE: UIMessage = {
   role: "assistant",
   content:
-    "🌴 **Phú Quốc – Đảo Ngọc của Việt Nam!**\n\nĐây là gợi ý lịch trình 5 ngày phổ biến:\n\n📅 **Ngày 1** – Đến đảo, khám phá Dương Đông & chợ đêm\n📅 **Ngày 2** – Tour lặn biển 3 đảo nam, ăn hải sản nổi\n📅 **Ngày 3** – Cáp treo Hòn Thơm + VinWonders\n📅 **Ngày 4** – Rừng quốc gia, làng nghề nước mắm\n📅 **Ngày 5** – Bãi Sao, mua quà, bay về\n\n✨ Có 2 nhật ký thực tế từ cộng đồng:\n• **\"Thiên Đường Phú Quốc\"** – Hương L. · 95% tin cậy\n• **\"Đảo Ngọc 4N3Đ\"** – Minh T. · 92% tin cậy\n\nBạn muốn tôi tạo lịch trình cá nhân hóa riêng cho bạn không? 👇",
-  actions: [
-    { label: "📋 Xem nhật ký", href: "/", emoji: "📋" },
-    { label: "✨ Cá nhân hóa lịch trình của tôi", href: "/create-itinerary", emoji: "✨" },
-  ],
+    "Xin chào! Tôi là trợ lý du lịch AI của WanderLab. Tôi có thể giúp bạn:\n\n• Tìm điểm đến phù hợp tại Việt Nam\n• Lập kế hoạch chuyến đi\n• Khám phá lộ trình phổ biến\n• Trả lời thắc mắc về WanderLab\n\nBạn muốn khám phá điều gì?",
 };
-
-const sampleResponses: Record<string, Message> = {
-  default: {
-    role: "assistant",
-    content:
-      "Xin chào! Tôi là trợ lý du lịch AI của WanderLab. Tôi có thể giúp bạn:\n\n• Tìm điểm đến phù hợp tại Việt Nam\n• Lập kế hoạch chuyến đi\n• Khám phá lộ trình phổ biến\n• Trả lời thắc mắc về WanderLab\n\nBạn muốn khám phá điều gì?",
-  },
-  beach: {
-    role: "assistant",
-    content:
-      "Việt Nam có nhiều bãi biển tuyệt đẹp!\n\n🏖️ **Phú Quốc** – Đảo Ngọc, cát trắng mịn\n🌊 **Nha Trang** – Lặn biển, thể thao nước\n🏝️ **Côn Đảo** – Hoang sơ, trong lành\n🌅 **Quy Nhơn** – Yên tĩnh, ít khách\n\nBạn muốn lộ trình chi tiết cho điểm nào?",
-  },
-  trekking: {
-    role: "assistant",
-    content:
-      "Các cung trekking đỉnh nhất Việt Nam:\n\n⛰️ **Sa Pa** – Ruộng bậc thang, bản làng\n🏔️ **Hà Giang Loop** – Địa hình đá tai mèo\n🌲 **Pù Luông** – Thung lũng ít khách\n🦅 **Fansipan** – Nóc nhà Đông Dương\n\nBạn ưa độ khó nào? Tôi gợi ý lộ trình phù hợp!",
-  },
-  food: {
-    role: "assistant",
-    content:
-      "Hành trình ẩm thực Việt Nam:\n\n🍜 **Hà Nội** – Phở, bún chả, cà phê trứng\n🥖 **Hội An** – Cao lầu, bánh mì Phượng\n🌮 **Sài Gòn** – Bánh xèo, cơm tấm, hủ tiếu\n🍲 **Huế** – Bún bò, bánh khoái đậm đà\n\nMuốn lịch trình ẩm thực cho thành phố nào?",
-  },
-};
-
-function getResponse(message: string): Message {
-  const lower = message.toLowerCase();
-  if (lower.includes("phú quốc") || lower.includes("phu quoc") || lower.includes("lịch trình")) return PHU_QUOC_RESPONSE;
-  if (lower.includes("beach") || lower.includes("biển")) return sampleResponses.beach;
-  if (lower.includes("trek") || lower.includes("leo núi")) return sampleResponses.trekking;
-  if (lower.includes("food") || lower.includes("ăn") || lower.includes("ẩm thực")) return sampleResponses.food;
-  return sampleResponses.default;
-}
 
 // ── Draggable hook ────────────────────────────────────────────
 function useDraggable(defaultPos: { x: number; y: number }) {
@@ -63,7 +28,6 @@ function useDraggable(defaultPos: { x: number; y: number }) {
   const hasMoved = useRef(false);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Only drag on the handle element itself (header / bubble)
     dragging.current = true;
     hasMoved.current = false;
     startMouse.current = { x: e.clientX, y: e.clientY };
@@ -92,32 +56,63 @@ function useDraggable(defaultPos: { x: number; y: number }) {
 export function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([{ ...sampleResponses.default }]);
+  const [messages, setMessages] = useState<UIMessage[]>([{ ...WELCOME_MESSAGE }]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Default position: bottom-right corner (negative = from bottom-right via transform)
   const { pos, hasMoved, onPointerDown, onPointerMove, onPointerUp } = useDraggable({ x: 0, y: 0 });
 
   useEffect(() => {
     if (isOpen && !isMinimized) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isTyping, isOpen, isMinimized]);
+  }, [messages, isTyping, streamingContent, isOpen, isMinimized]);
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = async (message: string) => {
     if (!message.trim() || isTyping) return;
-    setMessages((prev) => [...prev, { role: "user", content: message }]);
+
+    const userMessage: UIMessage = { role: "user", content: message };
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, getResponse(message)]);
-      setIsTyping(false);
-    }, 900);
+    setStreamingContent("");
+
+    // Build chat history
+    const chatHistory: ChatMessage[] = messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
+    chatHistory.push({ role: "user", content: message });
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const result = await sendAIChat({
+      messages: chatHistory,
+      stream: true,
+      onChunk: (text) => setStreamingContent(text),
+      signal: controller.signal,
+    });
+
+    abortRef.current = null;
+    setIsTyping(false);
+    setStreamingContent("");
+
+    if (result.error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `⚠️ ${result.error}` },
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: result.content },
+      ]);
+    }
   };
 
-  // The outer wrapper is positioned fixed bottom-right, then translated by drag offset
   const dragStyle = {
     transform: `translate(${pos.x}px, ${pos.y}px)`,
     cursor: "default",
@@ -240,7 +235,17 @@ export function AIChatbot() {
                 </div>
               ))}
 
-              {isTyping && (
+              {/* Streaming response */}
+              {isTyping && streamingContent && (
+                <div className="flex flex-col items-start">
+                  <div className="max-w-[88%] bg-white text-gray-800 shadow-sm rounded-2xl rounded-bl-sm px-3 py-2.5">
+                    <p className="text-sm whitespace-pre-line leading-relaxed">{streamingContent}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Typing indicator */}
+              {isTyping && !streamingContent && (
                 <div className="flex justify-start">
                   <div className="bg-white text-gray-800 shadow-sm rounded-2xl rounded-bl-sm px-3 py-2.5">
                     <div className="flex gap-1 items-center h-4">
