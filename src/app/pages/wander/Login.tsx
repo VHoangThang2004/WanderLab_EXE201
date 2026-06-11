@@ -7,10 +7,11 @@ import { useAuthStore, useLanguageStore } from "@/stores";
 export function WanderLogin() {
   const { t, language } = useLanguageStore();
   const navigate = useNavigate();
-  const { login, isLoading } = useAuthStore();
+  const { login, logout, isLoading } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loginType, setLoginType] = useState<"user" | "admin">("user");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,7 +24,25 @@ export function WanderLogin() {
 
     try {
       await login(formData.email, formData.password);
-      navigate("/dashboard");
+      
+      // Get fresh user from store state after successful login
+      const currentUser = useAuthStore.getState().user;
+      
+      if (loginType === 'admin') {
+        if (currentUser?.role === 'admin') {
+          navigate("/admin-dashboard");
+        } else {
+          await logout();
+          throw new Error("Bạn không có quyền quản trị viên (Admin)");
+        }
+      } else {
+        if (currentUser?.role === 'admin') {
+          // You can also restrict admins from logging in as user, or redirect them
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
       if (message.includes("Invalid login")) {
@@ -64,6 +83,21 @@ export function WanderLogin() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                {language === 'vi' ? 'Loại tài khoản' : 'Account Type'}
+              </label>
+              <select
+                value={loginType}
+                onChange={(e) => setLoginType(e.target.value as "user" | "admin")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent bg-gray-50 font-medium text-gray-800"
+                disabled={isLoading}
+              >
+                <option value="user">{language === 'vi' ? 'Người dùng (User)' : 'User'}</option>
+                <option value="admin">{language === 'vi' ? 'Quản trị viên (Admin)' : 'Administrator'}</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 {t("email", "auth")}

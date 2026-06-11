@@ -15,7 +15,10 @@ import {
   Settings,
   Bell,
   MessageCircle,
-  Bot
+  Bot,
+  Activity,
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
@@ -30,27 +33,41 @@ export function WanderSidebar() {
   const { notifications } = useNotificationStore();
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const navItems = [
-    { icon: Home, label: t("home"), path: "/", public: true },
-    { icon: Compass, label: t("explore"), path: "/explore", public: true },
-    { icon: Users, label: t("friends"), path: "/friends", public: false },
-    { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
-    { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
-    { icon: MessageCircle, label: language === 'vi' ? "Nhắn Tin" : "Messages", path: "/messages", public: false },
-    { icon: Bot, label: language === 'vi' ? "AI Trợ Lý" : "AI Assistant", path: "/chat", public: false },
-    { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
-    { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
-    ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),
-  ];
+  const isAdmin = user?.role === 'admin';
+
+  const navItems = isAdmin
+    ? [
+        { icon: Activity, label: "Tổng Quan", path: "/admin-dashboard", public: false },
+        { icon: Users, label: "Người Dùng", path: "/admin-dashboard?tab=users", public: false },
+        { icon: FileText, label: "Kiểm Duyệt Nội Dung", path: "/admin-dashboard?tab=content", public: false },
+        { icon: Sparkles, label: "AI & Dữ Liệu", path: "/admin-dashboard?tab=ai", public: false },
+      ]
+    : [
+        { icon: Home, label: t("home"), path: "/", public: true },
+        { icon: Compass, label: t("explore"), path: "/explore", public: true },
+        { icon: Users, label: t("friends"), path: "/friends", public: false },
+        { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
+        { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
+        { icon: MessageCircle, label: language === 'vi' ? "Nhắn Tin" : "Messages", path: "/messages", public: false },
+        { icon: Bot, label: language === 'vi' ? "AI Trợ Lý" : "AI Assistant", path: "/chat", public: false },
+        { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
+        { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
+      ];
 
   const isActive = (path: string) => {
-    if (path === "/") {
+    const [pathname, search] = path.split('?');
+    if (pathname === "/") {
       return location.pathname === "/";
+    }
+    if (pathname === "/admin-dashboard") {
+      const currentSearch = location.search.replace('?', '');
+      const targetSearch = search || '';
+      return location.pathname === pathname && currentSearch === targetSearch;
     }
     if (path === "/create" || path === "/create-itinerary") {
       return location.pathname === path;
     }
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(pathname);
   };
 
   const handleLogout = async () => {
