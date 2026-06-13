@@ -53,38 +53,6 @@ export function WanderCreateDiary() {
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [isAiAssistantEnabled, setIsAiAssistantEnabled] = useState(false);
 
-  const handleAiContinue = async () => {
-    if (!formData.description.trim()) {
-      toast.error(
-        language === 'vi'
-          ? "Vui lòng nhập trước vài câu ý tưởng để AI có thể viết tiếp!"
-          : "Please write a few words first so the AI can continue writing!"
-      );
-      return;
-    }
-
-    setAiLoading(true);
-    setShowAiPanel(true);
-    setAiSuggestion("");
-
-    try {
-      const continuation = await aiService.continueWriting(formData.description, formData, language);
-      setAiSuggestion(continuation);
-      toast.success(
-        language === 'vi'
-          ? "Đã tạo gợi ý viết tiếp thành công!"
-          : "Successfully generated continuation suggestion!"
-      );
-    } catch (error: any) {
-      console.error(error);
-      toast.error(
-        (language === 'vi' ? "Lỗi gọi AI: " : "AI Call Error: ") + error.message
-      );
-      setShowAiPanel(false);
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const handleAiPolish = async () => {
     setAiLoading(true);
@@ -611,15 +579,6 @@ export function WanderCreateDiary() {
                           <span>{language === 'vi' ? "Trợ lý Viết AI:" : "AI Writing Assistant:"}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled={aiLoading}
-                            onClick={handleAiContinue}
-                            className="px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-[#ff3131]/10 hover:text-[#ff3131] rounded-lg transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                            {language === 'vi' ? "Viết tiếp" : "Continue"}
-                          </button>
                           <button
                             type="button"
                             disabled={aiLoading}

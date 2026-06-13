@@ -50,57 +50,6 @@ export const aiService = {
     }
   },
 
-  /**
-   * Suggests continuation sentences based on what the user has written.
-   */
-  async continueWriting(currentText: string, context: any, language: string = "vi"): Promise<string> {
-    try {
-      const contextStr = getContextString(context, language);
-      const prompt =
-        language === "vi"
-          ? `Bạn là trợ lý ảo viết lách thông minh của WanderLab.
-Nhiệm vụ của bạn là VIẾT TIẾP mô tả chuyến đi dựa trên những gì người dùng đã viết dưới đây và ngữ cảnh chuyến đi.
-
-Thông tin chuyến đi (Ngữ cảnh):
-${contextStr}
-
-Nội dung người dùng đã viết:
-"${currentText}"
-
-Yêu cầu:
-1. Hãy viết tiếp một cách tự nhiên, kết nối chặt chẽ với câu/đoạn người dùng đã nhập.
-2. Viết ngắn gọn từ 1 đến 2 câu.
-3. Tập trung vào trải nghiệm thực tế, cảnh quan, ẩm thực hoặc hoạt động phù hợp.
-4. Chỉ trả về phần văn bản viết tiếp trực tiếp. Không chứa lời giải thích, không chứa tiêu đề, không chứa dấu ngoặc kép bọc quanh kết quả.`
-          : `You are the smart AI writing assistant of WanderLab.
-Your task is to CONTINUE writing the trip description based on what the user has written so far and the trip context.
-
-Trip Info (Context):
-${contextStr}
-
-What the user has written:
-"${currentText}"
-
-Requirements:
-1. Continue writing naturally, linking smoothly with the user's input.
-2. Keep it concise, about 1-2 sentences.
-3. Focus on real experiences, landscapes, food, or activities matching the style.
-4. Return ONLY the continuation text directly. No explanations, no headers, no quotation marks surrounding the output.`;
-
-      return await this.generateContent(prompt);
-    } catch (error: any) {
-      console.warn("Falling back to local mock continuation due to API error or invalid key:", error.message);
-      
-      toast.warning(
-        language === "vi"
-          ? "Đang chạy chế độ thử nghiệm (Mock Mode) do API Key chưa cấu hình hoặc không hợp lệ."
-          : "Running in Demo Mode due to missing/invalid Gemini API Key."
-      );
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return getMockContinuation(currentText, context, language);
-    }
-  },
 
   /**
    * Refines/polishes the user's draft description, or generates a complete one.
@@ -211,26 +160,6 @@ function getContextString(context: any, language: string): string {
 - Style: ${style || "Casual"}
 - Budget: ${budget ? budget + " VND" : "Unknown"}
 - Group Size: ${groupSize || 1} people`;
-  }
-}
-
-function getMockContinuation(currentText: string, context: any, language: string): string {
-  const location = context?.location || "địa điểm này";
-  const style = context?.style || "";
-
-  if (language === "vi") {
-    if (style.includes("Trekking") || style.includes("Leo")) {
-      return `Chuyến đi bộ leo núi tại ${location} hứa hẹn sẽ mang đến nhiều thử thách thú vị và cơ hội được hòa mình vào thiên nhiên hoang sơ. Hãy cùng chuẩn bị sức khỏe thật tốt để sẵn sàng chinh phục mọi cung đường hiểm trở.`;
-    }
-    if (style.includes("Food") || style.includes("Ẩm thực")) {
-      return `Bên cạnh đó, hành trình ẩm thực tại ${location} sẽ giúp chúng ta thưởng thức vô vàn những món ăn đặc sản địa phương độc đáo, mang hương vị đậm đà khó quên.`;
-    }
-    return `Đây sẽ là cơ hội tuyệt vời để khám phá những vẻ đẹp tiềm ẩn của ${location}, tận hưởng bầu không khí trong lành và ghi lại những kỷ niệm đáng nhớ cùng mọi người.`;
-  } else {
-    if (style.toLowerCase().includes("trekking") || style.toLowerCase().includes("climb")) {
-      return `This trekking adventure in ${location} promises challenging trails and amazing immersion in raw nature. Be sure to prepare well and get ready to conquer the summits.`;
-    }
-    return `It is also a perfect opportunity to explore the hidden gems of ${location}, enjoy the fresh air, and capture unforgettable moments.`;
   }
 }
 
