@@ -294,3 +294,27 @@ html.dark .bg-white\/20 {
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
+/* Notebook-specific styling & input overrides */
+.notebook-page input.notebook-input,
+.notebook-page textarea.notebook-input,
+.notebook-page select.notebook-input {
+  background-color: transparent !important;
+  border-top-width: 0px !important;
+  border-left-width: 0px !important;
+  border-right-width: 0px !important;
+  border-bottom-width: 2px !important;
+  border-radius: 0px !important;
+}
+
+html.dark .notebook-page input.notebook-input,
+html.dark .notebook-page textarea.notebook-input,
+html.dark .notebook-page select.notebook-input {
+  color: var(--foreground) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark .notebook-page input.notebook-input:focus,
+html.dark .notebook-page textarea.notebook-input:focus,
+html.dark .notebook-page select.notebook-input:focus {
+  border-color: #ff3131 !important;
+}
