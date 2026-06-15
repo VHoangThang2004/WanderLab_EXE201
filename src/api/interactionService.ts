@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface CommentItem {
   id: string;
   diary_id: string;
-  author_id: string;
+  user_id: string;
   content: string;
   likes_count: number;
   created_at: string;
@@ -22,13 +22,13 @@ export const interactionService = {
       .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
-      .single();
+      .limit(1);
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 is row not found
+    if (error) {
       console.warn("Check like error:", error);
       return false;
     }
-    return !!data;
+    return !!data && data.length > 0;
   },
 
   async toggleLikeDiary(diaryId: string, userId: string): Promise<{ isLiked: boolean }> {
@@ -36,20 +36,22 @@ export const interactionService = {
     
     if (isCurrentlyLiked) {
       // Unlike
-      await supabase
+      const { error } = await supabase
         .from('diary_likes')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
+      if (error) throw error;
         
       // Giam like_count trong diaries
       await supabase.rpc('decrement_like', { row_id: diaryId });
       return { isLiked: false };
     } else {
       // Like
-      await supabase
+      const { error } = await supabase
         .from('diary_likes')
         .insert({ diary_id: diaryId, user_id: userId });
+      if (error) throw error;
         
       // Tang like_count trong diaries
       await supabase.rpc('increment_like', { row_id: diaryId });
@@ -64,29 +66,31 @@ export const interactionService = {
       .select('diary_id')
       .eq('diary_id', diaryId)
       .eq('user_id', userId)
-      .single();
+      .limit(1);
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.warn("Check bookmark error:", error);
       return false;
     }
-    return !!data;
+    return !!data && data.length > 0;
   },
 
   async toggleBookmarkDiary(diaryId: string, userId: string): Promise<{ isBookmarked: boolean }> {
     const isCurrentlyBookmarked = await this.checkUserBookmarked(diaryId, userId);
     
     if (isCurrentlyBookmarked) {
-      await supabase
+      const { error } = await supabase
         .from('diary_bookmarks')
         .delete()
         .eq('diary_id', diaryId)
         .eq('user_id', userId);
+      if (error) throw error;
       return { isBookmarked: false };
     } else {
-      await supabase
+      const { error } = await supabase
         .from('diary_bookmarks')
         .insert({ diary_id: diaryId, user_id: userId });
+      if (error) throw error;
       return { isBookmarked: true };
     }
   },
@@ -98,11 +102,11 @@ export const interactionService = {
       .select(`
         id,
         diary_id,
-        author_id,
+        user_id,
         content,
         likes_count,
         created_at,
-        author:profiles (
+        profiles (
           id,
           full_name,
           avatar_url
@@ -117,7 +121,7 @@ export const interactionService = {
 
     return (data || []).map((c: any) => ({
       ...c,
-      author: Array.isArray(c.author) ? c.author[0] : c.author,
+      author: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles,
     }));
   },
 
@@ -126,17 +130,17 @@ export const interactionService = {
       .from('comments')
       .insert({
         diary_id: diaryId,
-        author_id: userId,
+        user_id: userId,
         content: content,
       })
       .select(`
         id,
         diary_id,
-        author_id,
+        user_id,
         content,
         likes_count,
         created_at,
-        author:profiles (
+        profiles (
           id,
           full_name,
           avatar_url
@@ -148,14 +152,59 @@ export const interactionService = {
       throw error;
     }
 
-    // Tang comment_count trong diaries (có thể dùng RPC hoặc Trigger, ở đây ta dùng RPC nếu có)
-    await supabase.rpc('increment_comment', { row_id: diaryId }).catch(() => {
-      // bỏ qua lỗi nếu chưa viết hàm RPC increment_comment
-    });
+    // Tang comment_count trong diaries
+    const { error: rpcError } = await supabase.rpc('increment_comment', { row_id: diaryId });
+    if (rpcError) {
+      console.warn("RPC increment_comment failed:", rpcError);
+    }
 
     return {
       ...data,
-      author: Array.isArray(data.author) ? data.author[0] : data.author,
+      author: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
     };
+  },
+
+  // === FOLLOWS ===
+  async checkIsFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.warn("Check follow error:", error);
+      return false;
+    }
+    return !!data;
+  },
+
+  async toggleFollowUser(followerId: string, followingId: string): Promise<{ isFollowing: boolean }> {
+    if (followerId === followingId) throw new Error("Không thể tự follow chính mình");
+
+    const isCurrentlyFollowing = await this.checkIsFollowing(followerId, followingId);
+    
+    if (isCurrentlyFollowing) {
+      await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId);
+        
+      await supabase.rpc('decrement_follower', { target_user_id: followingId }).catch(()=>null);
+      await supabase.rpc('decrement_following', { target_user_id: followerId }).catch(()=>null);
+
+      return { isFollowing: false };
+    } else {
+      await supabase
+        .from('follows')
+        .insert({ follower_id: followerId, following_id: followingId });
+        
+      await supabase.rpc('increment_follower', { target_user_id: followingId }).catch(()=>null);
+      await supabase.rpc('increment_following', { target_user_id: followerId }).catch(()=>null);
+
+      return { isFollowing: true };
+    }
   }
 };

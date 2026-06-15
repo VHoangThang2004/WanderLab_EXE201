@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -28,129 +28,16 @@ import {
   X,
   Sparkles,
   BarChart3,
-  Globe,
+  LogOut,
+  Route,
+  CreditCard,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores";
+import { useNavigate, useLocation } from "react-router";
 
-// Mock data
-const stats = [
-  {
-    title: "Nhật Ký Mới",
-    value: "1,247",
-    change: "+12.5%",
-    icon: FileText,
-    trend: "up",
-  },
-  {
-    title: "Người Dùng Hoạt Động",
-    value: "8,392",
-    change: "+8.2%",
-    icon: Users,
-    trend: "up",
-  },
-  {
-    title: "Tăng Trưởng",
-    value: "23.8%",
-    change: "+3.1%",
-    icon: TrendingUp,
-    trend: "up",
-  },
-  {
-    title: "Kết Nối Thành Công",
-    value: "456",
-    change: "+15.3%",
-    icon: Shield,
-    trend: "up",
-  },
-];
-
-const users = [
-  {
-    id: 1,
-    name: "Nguyễn Văn An",
-    email: "an.nguyen@email.com",
-    role: "Explorer",
-    status: "active",
-    reputation: 95,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Trần Thị Bình",
-    email: "binh.tran@email.com",
-    role: "Local Provider",
-    status: "pending",
-    reputation: 0,
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    joinDate: "2024-03-10",
-  },
-  {
-    id: 3,
-    name: "Lê Minh Châu",
-    email: "chau.le@email.com",
-    role: "Planner",
-    status: "active",
-    reputation: 87,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-    joinDate: "2024-02-20",
-  },
-  {
-    id: 4,
-    name: "Phạm Văn Đức",
-    email: "duc.pham@email.com",
-    role: "Local Provider",
-    status: "suspended",
-    reputation: 45,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    joinDate: "2023-11-05",
-  },
-];
-
-const pendingJournals = [
-  {
-    id: 1,
-    title: "Thiên Đường Phú Quốc 5N4Đ",
-    author: "Nguyễn Văn An",
-    location: "Phú Quốc, Kiên Giang",
-    budget: "12.5 triệu",
-    images: 24,
-    videos: 3,
-    authenticity: 92,
-    status: "pending",
-    reportCount: 0,
-    cover: "https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?w=400&h=300&fit=crop",
-    submittedAt: "2 giờ trước",
-  },
-  {
-    id: 2,
-    title: "Khám Phá Sa Pa Mùa Lúa Chín",
-    author: "Lê Minh Châu",
-    location: "Sa Pa, Lào Cai",
-    budget: "8.3 triệu",
-    images: 18,
-    videos: 5,
-    authenticity: 88,
-    status: "pending",
-    reportCount: 0,
-    cover: "https://images.unsplash.com/photo-1694152362587-99d77d21793b?w=400&h=300&fit=crop",
-    submittedAt: "5 giờ trước",
-  },
-  {
-    id: 3,
-    title: "Hội An - Phố Cổ Lung Linh",
-    author: "Trần Thị Mai",
-    location: "Hội An, Quảng Nam",
-    budget: "6.7 triệu",
-    images: 32,
-    videos: 2,
-    authenticity: 95,
-    status: "flagged",
-    reportCount: 2,
-    cover: "https://images.unsplash.com/photo-1643030080539-b411caf44c37?w=400&h=300&fit=crop",
-    submittedAt: "1 ngày trước",
-  },
-];
+const pendingJournals: any[] = [];
 
 const roleColors = {
   Explorer: "bg-blue-100 text-blue-700",
@@ -165,8 +52,132 @@ const statusColors = {
 };
 
 export function AdminDashboard() {
-  const [selectedTab, setSelectedTab] = useState<"overview" | "users" | "content" | "ai">("overview");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const selectedTab = (searchParams.get("tab") as "overview" | "users" | "content" | "ai") || "overview";
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [dbStats, setDbStats] = useState({ users: 0, reviews: 0 });
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [geoData, setGeoData] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [userGrowth, setUserGrowth] = useState<number[]>([0,0,0,0,0,0,0]);
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: rCount } = await supabase.from('comments').select('*', { count: 'exact', head: true });
+        
+        setDbStats({ 
+          users: uCount || 0, 
+          reviews: rCount || 0
+        });
+
+        const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (profiles) {
+          const mappedUsers = profiles.map(p => ({
+            id: p.id,
+            name: p.full_name,
+            email: `ID: ${p.id.substring(0,8)}`,
+            avatar: p.avatar_url,
+            role: p.role === 'explorer' ? 'Explorer' : p.role === 'planner' ? 'Planner' : p.role === 'local_provider' ? 'Local Provider' : 'Admin',
+            status: p.status,
+            reputation: p.reputation_score,
+            joinDate: p.created_at
+          }));
+          setUsersList(mappedUsers);
+
+          // User Growth
+          const monthsCount = Array(7).fill(0);
+          const now = new Date();
+          profiles.forEach(p => {
+            const date = new Date(p.created_at);
+            const diffMonths = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+            if (diffMonths >= 0 && diffMonths < 7) {
+              monthsCount[6 - diffMonths]++;
+            }
+          });
+          const maxGrowth = Math.max(...monthsCount, 1);
+          const growthPercents = monthsCount.map(c => Math.round((c / maxGrowth) * 100));
+          setUserGrowth(growthPercents);
+        }
+
+        // Geographic Data
+        const { data: diariesLoc } = await supabase.from('diaries').select('location');
+        if (diariesLoc) {
+          const locCounts: Record<string, number> = {};
+          diariesLoc.forEach(d => {
+            if (d.location) {
+              // Extract main city/province if possible, or just use the raw location
+              const loc = d.location.split(',')[0].trim();
+              locCounts[loc] = (locCounts[loc] || 0) + 1;
+            }
+          });
+          const sortedLocs = Object.entries(locCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          const maxCount = sortedLocs[0]?.[1] || 1;
+          const mappedGeo = sortedLocs.map(l => ({
+            location: l[0],
+            count: l[1],
+            percent: Math.round((l[1] / maxCount) * 100)
+          }));
+          setGeoData(mappedGeo.length > 0 ? mappedGeo : [
+            { location: "Chưa có dữ liệu", count: 0, percent: 0 }
+          ]);
+        }
+
+        // Recent Activity
+        const { data: recentProfiles } = await supabase.from('profiles').select('full_name, role, created_at').order('created_at', { ascending: false }).limit(3);
+        const { data: recentDiaries } = await supabase.from('diaries').select('title, created_at, profiles(full_name)').order('created_at', { ascending: false }).limit(3);
+        
+        const activities: any[] = [];
+        if (recentProfiles) {
+          recentProfiles.forEach(p => {
+            activities.push({
+              type: 'user',
+              user: p.full_name,
+              action: 'đã đăng ký tài khoản',
+              item: p.role,
+              time: new Date(p.created_at).toLocaleDateString(),
+              timestamp: new Date(p.created_at).getTime()
+            });
+          });
+        }
+        if (recentDiaries) {
+          recentDiaries.forEach(d => {
+            activities.push({
+              type: 'journal',
+              user: (d.profiles as any)?.full_name || 'Người dùng',
+              action: 'đã tạo nhật ký',
+              item: d.title,
+              time: new Date(d.created_at).toLocaleDateString(),
+              timestamp: new Date(d.created_at).getTime()
+            });
+          });
+        }
+        activities.sort((a,b) => b.timestamp - a.timestamp);
+        setRecentActivities(activities.slice(0, 5));
+
+      } catch (error) {
+        console.error("Error fetching stats", error);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const stats = [
+    { title: "Doanh Thu", value: "0 ₫", change: "0%", icon: DollarSign },
+    { title: "Số lượng User", value: dbStats.users.toString(), change: "+12.5%", icon: Users },
+    { title: "Số lượng Giao Dịch", value: "0", change: "0%", icon: CreditCard },
+    { title: "Số lượng Review", value: dbStats.reviews.toString(), change: "+15.4%", icon: MessageSquare },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
@@ -191,70 +202,27 @@ export function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell size={20} className="text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <button onClick={handleLogout} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Đăng xuất">
+              <LogOut size={20} className="text-gray-600" />
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop"
-                alt="Admin"
-                className="w-10 h-10 rounded-full object-cover"
-              />
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.full_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-lg">
+                  {user?.full_name?.charAt(0).toUpperCase() || 'A'}
+                </div>
+              )}
               <div className="text-sm">
-                <p className="font-semibold text-gray-900">Admin</p>
+                <p className="font-semibold text-gray-900">{user?.full_name || 'Admin'}</p>
                 <p className="text-xs text-gray-500">Quản trị viên</p>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex gap-1 px-6 border-t border-gray-100">
-          <button
-            onClick={() => setSelectedTab("overview")}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
-              selectedTab === "overview"
-                ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Activity size={16} className="inline mr-2" />
-            Tổng Quan
-          </button>
-          <button
-            onClick={() => setSelectedTab("users")}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
-              selectedTab === "users"
-                ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Users size={16} className="inline mr-2" />
-            Người Dùng & Đối Tác
-          </button>
-          <button
-            onClick={() => setSelectedTab("content")}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
-              selectedTab === "content"
-                ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <FileText size={16} className="inline mr-2" />
-            Kiểm Duyệt Nội Dung
-          </button>
-          <button
-            onClick={() => setSelectedTab("ai")}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
-              selectedTab === "ai"
-                ? "border-[#ff3131] text-[#ff3131]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Sparkles size={16} className="inline mr-2" />
-            AI & Dữ Liệu
-          </button>
         </div>
       </header>
 
@@ -331,7 +299,7 @@ export function AdminDashboard() {
                     </select>
                   </div>
                   <div className="h-64 flex items-end justify-between gap-2">
-                    {[40, 65, 55, 75, 85, 70, 90].map((height, i) => (
+                    {userGrowth.map((height, i) => (
                       <div key={i} className="flex-1 flex flex-col items-center gap-2">
                         <motion.div
                           initial={{ height: 0 }}
@@ -340,7 +308,7 @@ export function AdminDashboard() {
                           whileHover={{ scale: 1.05, opacity: 0.8 }}
                           className="w-full bg-gradient-to-t from-[#ff3131] to-[#ff914d] rounded-t-lg cursor-pointer"
                         ></motion.div>
-                        <span className="text-xs text-gray-500">T{i + 2}</span>
+                        <span className="text-xs text-gray-500">T{i + 1}</span>
                       </div>
                     ))}
                   </div>
@@ -355,13 +323,7 @@ export function AdminDashboard() {
                 >
                   <h3 className="text-lg font-bold text-gray-900 mb-6">Hoạt Động Theo Địa Lý</h3>
                   <div className="space-y-4">
-                    {[
-                      { location: "Phú Quốc", count: 342, percent: 85 },
-                      { location: "Hà Nội", count: 289, percent: 72 },
-                      { location: "Đà Nẵng", count: 256, percent: 64 },
-                      { location: "Hội An", count: 198, percent: 50 },
-                      { location: "Sa Pa", count: 167, percent: 42 },
-                    ].map((item, i) => (
+                    {geoData.map((item, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, x: -20 }}
@@ -393,12 +355,7 @@ export function AdminDashboard() {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt Động Gần Đây</h3>
                 <div className="space-y-4">
-                  {[
-                    { type: "journal", user: "Nguyễn Văn An", action: "đã tạo nhật ký mới", item: '"Thiên Đường Phú Quốc"', time: "2 phút trước" },
-                    { type: "report", user: "Hệ thống", action: "đã phát hiện báo cáo", item: "Nội dung vi phạm #1247", time: "15 phút trước" },
-                    { type: "user", user: "Trần Thị Bình", action: "đã đăng ký tài khoản", item: "Local Provider", time: "1 giờ trước" },
-                    { type: "verify", user: "Admin", action: "đã xác minh đối tác", item: "Sa Pa Adventures", time: "2 giờ trước" },
-                  ].map((activity, i) => (
+                  {recentActivities.map((activity, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                       <div className={`w-2 h-2 rounded-full mt-2 ${
                         activity.type === "report" ? "bg-red-500" :
@@ -414,6 +371,9 @@ export function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                  {recentActivities.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">Chưa có hoạt động nào</p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -481,7 +441,7 @@ export function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {users.map((user) => (
+                      {usersList.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
@@ -497,7 +457,7 @@ export function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${roleColors[user.role as keyof typeof roleColors]}`}>
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${roleColors[user.role as keyof typeof roleColors] || 'bg-gray-100 text-gray-700'}`}>
                               {user.role}
                             </span>
                           </td>

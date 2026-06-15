@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { friendService } from "@/api/friendService";
 
 export function WanderFriends() {
-  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups" | "suggested">("requests");
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuthStore();
   const { addToast } = useUIStore();
@@ -27,6 +27,22 @@ export function WanderFriends() {
   });
 
   const hasRealData = !!(user?.id && data && !isLoading);
+
+  // Fetch suggested friends
+  const { data: suggestedData, isLoading: isLoadingSuggested } = useQuery({
+    queryKey: ['suggestedFriends', user?.id],
+    queryFn: () => friendService.fetchSuggestedFriends(user?.id || ''),
+    enabled: !!user?.id,
+    retry: false,
+  });
+
+  const displaySuggested = suggestedData ? suggestedData.map((s: any) => ({
+    id: s.id,
+    name: s.full_name,
+    avatar: s.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200",
+    location: s.location || "Chưa cập nhật",
+    diariesCount: s.diaries_count || 0,
+  })) : [];
 
   const displayRequests = hasRealData
     ? data.requests.map((r: any) => ({
@@ -83,6 +99,18 @@ export function WanderFriends() {
     }
   });
 
+  const sendRequestMutation = useMutation({
+    mutationFn: (targetId: string) => friendService.followUser(user?.id || '', targetId),
+    onSuccess: () => {
+      addToast({ type: 'success', message: 'Đã gửi lời mời kết bạn!' });
+      queryClient.invalidateQueries({ queryKey: ['suggestedFriends', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['friendData', user?.id] });
+    },
+    onError: (error: any) => {
+      addToast({ type: 'error', message: 'Lỗi: ' + error.message });
+    }
+  });
+
   // Handlers
   const handleAccept = async (requesterId: string) => {
     if (hasRealData && data.requests.some((r: any) => r.id === requesterId)) {
@@ -100,6 +128,10 @@ export function WanderFriends() {
     if (hasRealData && data.friends.some((f: any) => f.id === friendId)) {
       unfriendMutation.mutate(friendId);
     }
+  };
+
+  const handleSendRequest = async (targetId: string) => {
+    sendRequestMutation.mutate(targetId);
   };
 
   const handleToggleGroup = (groupId: string, groupName: string) => {
@@ -149,6 +181,12 @@ export function WanderFriends() {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return g.name.toLowerCase().includes(q) || g.description.toLowerCase().includes(q);
+  });
+
+  const filteredSuggested = displaySuggested.filter((s: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return s.name.toLowerCase().includes(q) || (s.location && s.location.toLowerCase().includes(q));
   });
 
   return (
@@ -218,6 +256,18 @@ export function WanderFriends() {
         >
           Nhóm du lịch ({filteredGroups.length})
           {activeTab === "groups" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("suggested")}
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "suggested"
+              ? "text-[#ff3131]"
+              : "text-gray-600 hover:text-gray-900"
+            }`}
+        >
+          Gợi ý kết bạn
+          {activeTab === "suggested" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
         </button>
@@ -342,6 +392,50 @@ export function WanderFriends() {
                     >
                       <MessageCircle size={18} />
                     </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Suggested Friends Tab */}
+      {activeTab === "suggested" && (
+        <div>
+          {isLoadingSuggested ? (
+            <div className="text-center py-12 text-gray-500 bg-white rounded-2xl border border-gray-100">
+              Đang tải danh sách gợi ý...
+            </div>
+          ) : filteredSuggested.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 bg-white rounded-2xl border border-gray-100">
+              Không tìm thấy gợi ý kết bạn phù hợp.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredSuggested.map((suggested: any) => (
+                <div
+                  key={suggested.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <ImageWithFallback
+                      src={suggested.avatar}
+                      alt={suggested.name}
+                      className="w-20 h-20 rounded-full object-cover mb-3"
+                    />
+                    <h3 className="font-bold text-gray-900 mb-1">{suggested.name}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{suggested.location}</p>
+                    <p className="text-xs text-gray-400 mb-4">{suggested.diariesCount} bài viết</p>
+
+                    <button
+                      onClick={() => handleSendRequest(suggested.id)}
+                      disabled={sendRequestMutation.isPending}
+                      className="w-full px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <UserPlus size={16} />
+                      {sendRequestMutation.isPending ? 'Đang gửi...' : 'Thêm bạn bè'}
+                    </button>
                   </div>
                 </div>
               ))}

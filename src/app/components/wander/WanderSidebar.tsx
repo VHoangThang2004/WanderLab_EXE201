@@ -12,40 +12,62 @@ import {
   LogIn,
   LogOut,
   Compass,
-  Settings
+  Settings,
+  Bell,
+  MessageCircle,
+  Bot,
+  Activity,
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
-import { useAuthStore, useLanguageStore, useUIStore } from "@/stores";
+import { useAuthStore, useLanguageStore, useUIStore, useNotificationStore } from "@/stores";
 
 export function WanderSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { language, setLanguage, t } = useLanguageStore();
-  const { isDarkMode, toggleDarkMode } = useUIStore();
+  const { language, t } = useLanguageStore();
+  const { notifications } = useNotificationStore();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const navItems = [
-    { icon: Home, label: t("home"), path: "/", public: true },
-    { icon: Compass, label: t("explore"), path: "/explore", public: true },
-    { icon: Users, label: t("friends"), path: "/friends", public: false },
-    { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
-    { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
-    { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
-    { icon: User, label: t("dashboard"), path: "/dashboard", public: false },
-    ...(user?.role === 'admin' ? [{ icon: ShieldCheck, label: t("admin"), path: "/admin-dashboard", public: false }] : []),
-  ];
+  const isAdmin = user?.role === 'admin';
+
+  const navItems = isAdmin
+    ? [
+        { icon: Activity, label: "Tổng Quan", path: "/admin-dashboard", public: false },
+        { icon: Users, label: "Người Dùng", path: "/admin-dashboard?tab=users", public: false },
+        { icon: FileText, label: "Kiểm Duyệt Nội Dung", path: "/admin-dashboard?tab=content", public: false },
+        { icon: Sparkles, label: "AI & Dữ Liệu", path: "/admin-dashboard?tab=ai", public: false },
+      ]
+    : [
+        { icon: Home, label: t("home"), path: "/", public: true },
+        { icon: Compass, label: t("explore"), path: "/explore", public: true },
+        { icon: Users, label: t("friends"), path: "/friends", public: false },
+        { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
+        { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
+        { icon: MessageCircle, label: language === 'vi' ? "Nhắn Tin" : "Messages", path: "/messages", public: false },
+        { icon: Bot, label: language === 'vi' ? "AI Trợ Lý" : "AI Assistant", path: "/chat", public: false },
+        { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
+        { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
+      ];
 
   const isActive = (path: string) => {
-    if (path === "/") {
+    const [pathname, search] = path.split('?');
+    if (pathname === "/") {
       return location.pathname === "/";
+    }
+    if (pathname === "/admin-dashboard") {
+      const currentSearch = location.search.replace('?', '');
+      const targetSearch = search || '';
+      return location.pathname === pathname && currentSearch === targetSearch;
     }
     if (path === "/create" || path === "/create-itinerary") {
       return location.pathname === path;
     }
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(pathname);
   };
 
   const handleLogout = async () => {
@@ -57,7 +79,7 @@ export function WanderSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 bg-sidebar border-b border-sidebar-border px-4 py-3 z-50 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 px-4 py-3 z-50 flex items-center justify-between">
         <WanderLogo size="sm" />
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -77,7 +99,7 @@ export function WanderSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-sidebar border-r border-sidebar-border text-sidebar-foreground z-40 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white/80 dark:bg-black/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/10 text-gray-900 dark:text-gray-100 z-40 transform transition-transform duration-300 ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -99,14 +121,19 @@ export function WanderSidebar() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${
                     active
-                      ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-md"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-[#ff3131]"
+                      ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-lg shadow-[#ff3131]/30 hover:shadow-xl hover:scale-105"
+                      : "hover:bg-[#FFF5F3]/50 dark:hover:bg-white/5 hover:text-[#ff3131] hover:scale-[1.02]"
                   }`}
                 >
-                  <Icon size={22} />
+                  <Icon size={22} className={active ? "text-white" : "text-gray-500 dark:text-gray-400 group-hover:text-[#ff3131]"} />
                   <span>{item.label}</span>
+                  {item.path === "/notifications" && unreadCount > 0 && (
+                    <div className={`absolute right-4 px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-white text-[#ff3131]' : 'bg-[#ff3131] text-white'}`}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -138,14 +165,40 @@ export function WanderSidebar() {
                     <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
                   </div>
                 </Link>
-                {/* Settings button */}
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
-                >
-                  <Settings size={18} />
-                  <span>{language === 'vi' ? 'Cài đặt' : 'Settings'}</span>
-                </button>
+                
+                {/* 3 Action Icons Row */}
+                <div className="flex items-center justify-around pt-3 border-t border-sidebar-border mt-2">
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2.5 text-sidebar-foreground/70 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
+                    title={language === 'vi' ? 'Cài đặt' : 'Settings'}
+                  >
+                    <Settings size={22} />
+                  </Link>
+
+                  <Link
+                    to="/notifications"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="relative p-2.5 text-sidebar-foreground/70 hover:text-[#ff3131] hover:bg-sidebar-accent rounded-xl transition-all"
+                    title={language === 'vi' ? 'Thông báo' : 'Notifications'}
+                  >
+                    <Bell size={22} />
+                    {unreadCount > 0 && (
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#ff3131] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-sidebar">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </div>
+                    )}
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="p-2.5 text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                    title={language === 'vi' ? 'Đăng xuất' : 'Logout'}
+                  >
+                    <LogOut size={22} />
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -164,122 +217,20 @@ export function WanderSidebar() {
                 >
                   {t("register")}
                 </Link>
-                {/* Guest Settings button */}
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
+                <Link
+                  to="/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs text-sidebar-foreground/60 hover:text-[#ff3131] transition-all"
                 >
                   <Settings size={14} />
                   <span>{language === 'vi' ? 'Cài đặt hệ thống' : 'System Settings'}</span>
-                </button>
+                </Link>
               </div>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setIsSettingsOpen(false)}
-        >
-          <div 
-            className="bg-card border border-border text-card-foreground rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-6 relative animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Title */}
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                ⚙️ {language === 'vi' ? 'Cài đặt hệ thống' : 'System Settings'}
-              </h3>
-              <button 
-                onClick={() => setIsSettingsOpen(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Options */}
-            <div className="space-y-4">
-              {/* Theme Switcher */}
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {language === 'vi' ? 'Giao diện tối' : 'Dark Mode'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {language === 'vi' ? 'Chuyển đổi giao diện sáng/tối' : 'Toggle light/dark theme'}
-                  </p>
-                </div>
-                <button
-                  onClick={toggleDarkMode}
-                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${
-                    isDarkMode ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]' : 'bg-muted'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-card shadow-md transform transition-transform duration-200 ${
-                      isDarkMode ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Language Switcher */}
-              <div className="flex items-center justify-between py-2 border-t border-border">
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {language === 'vi' ? 'Ngôn ngữ' : 'Language'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {language === 'vi' ? 'Chọn ngôn ngữ hiển thị' : 'Choose display language'}
-                  </p>
-                </div>
-                <div className="flex bg-muted rounded-lg p-0.5 border border-border/40">
-                  <button
-                    onClick={() => setLanguage('vi')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                      language === 'vi'
-                        ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    VI
-                  </button>
-                  <button
-                    onClick={() => setLanguage('en')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                      language === 'en'
-                        ? 'bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Logout Area */}
-            {isAuthenticated && (
-              <div className="border-t border-border pt-4">
-                <button
-                  onClick={() => {
-                    setIsSettingsOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-destructive/10 text-destructive rounded-2xl font-semibold hover:bg-destructive/20 transition-all text-sm"
-                >
-                  <LogOut size={18} />
-                  {language === 'vi' ? 'Đăng xuất tài khoản' : 'Log Out Account'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }

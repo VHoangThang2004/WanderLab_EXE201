@@ -3,7 +3,7 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interactionService } from "@/api/interactionService";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useNotificationStore } from "@/stores";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -26,18 +26,29 @@ export function CommentsSection({ diaryId }: CommentsSectionProps) {
     enabled: !!diaryId
   });
 
+  const { addNotification } = useNotificationStore();
+
   // 2. Add Comment Mutation
   const addCommentMutation = useMutation({
     mutationFn: (content: string) => {
       if (!user) throw new Error("Vui lòng đăng nhập để bình luận");
       return interactionService.addComment(diaryId, user.id, content);
     },
-    onSuccess: () => {
+    onSuccess: (_, content) => {
       setNewComment("");
       // Refresh comments
       queryClient.invalidateQueries({ queryKey: ['comments', diaryId] });
       // Cũng refresh cả diary để cập nhật lại comments_count (nếu có)
       queryClient.invalidateQueries({ queryKey: ['diary', diaryId] });
+
+      // Create notification
+      addNotification({
+        type: "comment",
+        title: "Bình luận mới",
+        message: `${user?.full_name || 'Bạn'} vừa bình luận: '${content}'`,
+        linkTo: window.location.pathname,
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
     },
     onError: (err: any) => {
       alert(err.message || "Không thể gửi bình luận lúc này.");
@@ -66,11 +77,17 @@ export function CommentsSection({ diaryId }: CommentsSectionProps) {
       {/* Comment Input */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex gap-3">
-          <ImageWithFallback
-            src={user?.avatar_url || "https://ui-avatars.com/api/?name=Guest"}
-            alt={user?.full_name || "Khách"}
-            className="w-10 h-10 rounded-full object-cover"
-          />
+            {user?.avatar_url ? (
+              <ImageWithFallback
+                src={user.avatar_url}
+                alt={user.full_name || "Guest"}
+                className="w-10 h-10 rounded-full object-cover shadow-sm"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                {user?.full_name?.charAt(0).toUpperCase() || 'G'}
+              </div>
+            )}
           <div className="flex-1">
             <textarea
               value={newComment}
@@ -111,11 +128,17 @@ export function CommentsSection({ diaryId }: CommentsSectionProps) {
             <div key={comment.id} className="bg-white rounded-2xl border border-gray-200 p-5">
               {/* Comment Header */}
               <div className="flex gap-3 mb-3">
-                <ImageWithFallback
-                  src={comment.author?.avatar_url || "https://ui-avatars.com/api/?name=User"}
-                  alt={comment.author?.full_name || "User"}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                {comment.author?.avatar_url ? (
+                  <ImageWithFallback
+                    src={comment.author.avatar_url}
+                    alt={comment.author?.full_name || "User"}
+                    className="w-10 h-10 rounded-full object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                    {comment.author?.full_name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-900">{comment.author?.full_name || "User"}</span>

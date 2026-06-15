@@ -51,14 +51,14 @@ export const friendService = {
       .select('id')
       .eq('follower_id', followerId)
       .eq('following_id', followingId)
-      .single();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is row not found
+    if (error) {
       console.warn("Check following error:", error);
       return false;
     }
 
-    return !!data;
+    return !!data && data.length > 0;
   },
 
   /**
@@ -147,5 +147,34 @@ export const friendService = {
       following: followingProfiles,
       followers: followerProfiles,
     };
+  },
+
+  /**
+   * Fetch suggested friends (profiles that are not currently followed by the user)
+   */
+  async fetchSuggestedFriends(userId: string) {
+    if (!userId) return [];
+
+    // Fetch whom the user follows to exclude them
+    const { data: following } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', userId);
+      
+    const followingIds = new Set((following || []).map(f => f.following_id));
+    followingIds.add(userId); // Exclude self
+
+    // Fetch top 10 profiles not in followingIds
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, location, diaries_count, followers_count, following_count')
+      .limit(20);
+
+    if (error) {
+      console.warn("Error fetching suggested friends:", error);
+      return [];
+    }
+
+    return (profiles || []).filter(p => !followingIds.has(p.id)).slice(0, 10);
   }
 };

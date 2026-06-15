@@ -64,12 +64,12 @@ PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
 
 --- Sprint 3: Diary System ---
 
-  [ ] Tạo bảng DB: diaries, diary_images, diary_days, budget_items
+  [ ] Tạo bảng DB: diaries, diary_images, diary_days, diary_budget_breakdown
   [ ] Cấu hình Supabase Storage: bucket "diaries" (public)
   [ ] Kết nối CreateDiary.tsx → Supabase:
       - Upload ảnh → Storage
       - Lưu diary record → Database
-      - Lưu diary_days, budget_items → Database
+      - Lưu diary_days, diary_budget_breakdown → Database
   [ ] Kết nối DiaryDetail.tsx → Supabase:
       - Fetch diary + relations
       - Hiển thị dữ liệu thật thay vì mock
@@ -77,7 +77,7 @@ PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
 
 --- Sprint 4: Social Features ---
 
-  [ ] Tạo bảng DB: likes, comments, bookmarks, follows
+  [ ] Tạo bảng DB: diary_likes, comments, diary_bookmarks, follows
   [ ] Implement Like/Unlike functionality
   [ ] Implement Comment system (kèm replies)
   [ ] Implement Bookmark/Save diary

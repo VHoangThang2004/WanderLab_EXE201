@@ -9,12 +9,18 @@ import { WanderDashboard } from "./pages/wander/Dashboard";
 import { WanderFriends } from "./pages/wander/Friends";
 import { WanderDiaryDetail } from "./pages/wander/DiaryDetail";
 import { WanderCreateDiary } from "./pages/wander/CreateDiary";
+import { WanderEditDiary } from "./pages/wander/EditDiary";
 import { WanderPartner } from "./pages/wander/Partner";
 import { ChatPage } from "./pages/wander/ChatPage";
+import { MessagesPage } from "./pages/wander/Messages";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
 import { WanderExplore } from "./pages/wander/Explore";
+import { WanderUserProfile } from "./pages/wander/UserProfile";
+import { GroupDetail } from "./pages/wander/GroupDetail";
+import { Notifications } from "./pages/wander/Notifications";
+import { Settings } from "./pages/wander/Settings";
 import { WanderMainLayout } from "./components/wander/WanderMainLayout";
 import { ProtectedRoute, GuestRoute } from "./components/auth/ProtectedRoute";
 
@@ -105,10 +111,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/messages",
+        element: (
+          <ProtectedRoute>
+            <MessagesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/create",
         element: (
           <ProtectedRoute>
             <WanderCreateDiary />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/edit-diary/:id",
+        element: (
+          <ProtectedRoute>
+            <WanderEditDiary />
           </ProtectedRoute>
         ),
       },
@@ -133,6 +155,38 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile/:username",
+        element: (
+          <ProtectedRoute>
+            <WanderUserProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/groups/:id",
+        element: (
+          <ProtectedRoute>
+            <GroupDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/settings",
+        element: (
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         ),
       },

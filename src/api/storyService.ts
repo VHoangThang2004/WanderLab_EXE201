@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/stores';
 
 export interface StoryItem {
   id: string;
@@ -14,82 +15,79 @@ export interface StoryItem {
 
 export const storyService = {
   /**
-   * Tải ảnh Story lên Supabase Storage bucket 'diaries'
+   * Tải ảnh Story lên (Giả lập bằng URL object để test)
    */
   async uploadStoryImage(file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `stories/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('diaries')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    // Get public URL
-    const { data } = supabase.storage.from('diaries').getPublicUrl(filePath);
-    return data.publicUrl;
+    // Thay vì upload lên Supabase, tạo một URL tạm thời cho ảnh
+    // LƯU Ý: URL này sẽ mất khi reload lại trang, nhưng đủ để test chức năng UI.
+    return URL.createObjectURL(file);
   },
 
   /**
-   * Tạo story mới
+   * Tạo story mới (Giả lập bằng Local Storage vì lỗi thiếu bảng stories)
    */
   async createStory(imageUrl: string, caption?: string): Promise<any> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error('User not authenticated');
+    const user = useAuthStore.getState().user;
+    
+    const newStory: StoryItem = {
+      id: Math.random().toString(36).substring(2, 9),
+      user_id: user?.id || 'mock-id',
+      image_url: imageUrl,
+      caption: caption || null,
+      created_at: new Date().toISOString(),
+      author: {
+        name: user?.full_name || 'Người dùng',
+        avatar: user?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
+      }
+    };
 
-    const { data, error } = await supabase
-      .from('stories')
-      .insert({
-        user_id: userData.user.id,
-        image_url: imageUrl,
-        caption: caption || null
-      })
-      .select(`
-        *,
-        author:profiles(id, full_name, avatar_url)
-      `)
-      .single();
+    const storedStories = JSON.parse(localStorage.getItem('wanderlab_stories') || '[]');
+    storedStories.push(newStory);
+    localStorage.setItem('wanderlab_stories', JSON.stringify(storedStories));
 
-    if (error) throw error;
-    return data;
+    return newStory;
   },
 
   /**
-   * Lấy toàn bộ các tin đang hoạt động
+   * Lấy toàn bộ các tin đang hoạt động (Giả lập)
    */
   async fetchActiveStories(): Promise<StoryItem[]> {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select(`
-          id,
-          user_id,
-          image_url,
-          caption,
-          created_at,
-          author:profiles(id, full_name, avatar_url)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      if (data) {
-        return data.map((s: any) => ({
-          id: s.id,
-          user_id: s.user_id,
-          image_url: s.image_url,
-          caption: s.caption,
-          created_at: s.created_at,
-          author: {
-            name: s.author?.full_name || 'Người dùng ẩn danh',
-            avatar: s.author?.avatar_url || '',
-          }
-        }));
+      const storedStories = JSON.parse(localStorage.getItem('wanderlab_stories') || '[]');
+      
+      if (storedStories.length === 0) {
+        return [];
       }
+
+      // Sort by created_at desc
+      return storedStories.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } catch (err) {
       console.warn("fetchActiveStories failed", err);
+      return [];
     }
-    return [];
+  },
+
+  /**
+   * Cập nhật nội dung mô tả của Story (Giả lập)
+   */
+  async updateStory(id: string, newCaption: string): Promise<any> {
+    const storedStories = JSON.parse(localStorage.getItem('wanderlab_stories') || '[]');
+    const storyIndex = storedStories.findIndex((s: StoryItem) => s.id === id);
+    
+    if (storyIndex > -1) {
+      storedStories[storyIndex].caption = newCaption;
+      localStorage.setItem('wanderlab_stories', JSON.stringify(storedStories));
+      return storedStories[storyIndex];
+    }
+    throw new Error('Story not found');
+  },
+
+  /**
+   * Xoá Story (Giả lập)
+   */
+  async deleteStory(id: string): Promise<void> {
+    const storedStories = JSON.parse(localStorage.getItem('wanderlab_stories') || '[]');
+    const filteredStories = storedStories.filter((s: StoryItem) => s.id !== id);
+    localStorage.setItem('wanderlab_stories', JSON.stringify(filteredStories));
   }
 };

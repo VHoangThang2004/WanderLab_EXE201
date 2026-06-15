@@ -61,20 +61,20 @@ Auth    : Bearer Token (Supabase JWT)
 3. DIARIES (Supabase REST - /rest/v1/diaries)
 ================================================================================
 
-  GET    /rest/v1/diaries?status=eq.published&select=*,author:profiles(*)
+  GET    /rest/v1/diaries?status=eq.published&select=*,user:profiles(*)
          &order=created_at.desc&limit=10&offset=0
          Mô tả: Feed nhật ký (paginated)
 
   GET    /rest/v1/diaries?id=eq.<id>&select=*,
-         author:profiles(*),
+         user:profiles(*),
          diary_images(*),
          diary_days(*),
-         budget_items(*),
-         comments(*, author:profiles(*))
+         diary_budget_breakdown(*),
+         comments(*, user:profiles(*))
          Mô tả: Chi tiết nhật ký (kèm ảnh, timeline, budget, comments)
 
   POST   /rest/v1/diaries
-         Body: { author_id, title, location, description, ... }
+         Body: { user_id, title, location, description, ... }
          Mô tả: Tạo nhật ký mới
 
   PATCH  /rest/v1/diaries?id=eq.<id>
@@ -95,28 +95,28 @@ Auth    : Bearer Token (Supabase JWT)
 ================================================================================
 
   --- Likes ---
-  POST   /rest/v1/likes
+  POST   /rest/v1/diary_likes
          Body: { user_id, diary_id }
          Mô tả: Like nhật ký
 
-  DELETE /rest/v1/likes?user_id=eq.<uid>&diary_id=eq.<did>
+  DELETE /rest/v1/diary_likes?user_id=eq.<uid>&diary_id=eq.<did>
          Mô tả: Unlike
 
-  GET    /rest/v1/likes?diary_id=eq.<did>&select=count
+  GET    /rest/v1/diary_likes?diary_id=eq.<did>&select=count
          Mô tả: Đếm likes
 
   --- Bookmarks ---
-  POST   /rest/v1/bookmarks
+  POST   /rest/v1/diary_bookmarks
          Body: { user_id, diary_id }
 
-  DELETE /rest/v1/bookmarks?user_id=eq.<uid>&diary_id=eq.<did>
+  DELETE /rest/v1/diary_bookmarks?user_id=eq.<uid>&diary_id=eq.<did>
 
-  GET    /rest/v1/bookmarks?user_id=eq.<uid>&select=diary_id,diaries(*)
+  GET    /rest/v1/diary_bookmarks?user_id=eq.<uid>&select=diary_id,diaries(*)
          Mô tả: Danh sách đã lưu
 
   --- Comments ---
   POST   /rest/v1/comments
-         Body: { diary_id, author_id, content, parent_id? }
+         Body: { diary_id, user_id, content, parent_id? }
 
   DELETE /rest/v1/comments?id=eq.<id>
 

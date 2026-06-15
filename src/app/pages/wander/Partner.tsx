@@ -120,32 +120,7 @@ export function WanderPartner() {
     },
   ];
 
-  const testimonials = [
-    {
-      company: "Phú Quốc Resort",
-      author: "Nguyễn Minh Châu",
-      role: t("testimonial1Role", "partner"),
-      image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      text: t("testimonial1Text", "partner"),
-      rating: 5,
-    },
-    {
-      company: "Sa Pa Adventures",
-      author: "Trần Văn Hùng",
-      role: t("testimonial2Role", "partner"),
-      image: "https://images.unsplash.com/photo-1695485121912-25c7ea05119c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBjYXN1YWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3OTYyMTd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      text: t("testimonial2Text", "partner"),
-      rating: 5,
-    },
-    {
-      company: "Hội An Food Tours",
-      author: "Lê Thị Hương",
-      role: t("testimonial3Role", "partner"),
-      image: "https://images.unsplash.com/photo-1595085610896-fb31cfd5d4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHNtaWxpbmclMjBwcm9maWxlfGVufDF8fHx8MTc3MTgxNDE5NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      text: t("testimonial3Text", "partner"),
-      rating: 5,
-    },
-  ];
+  const testimonials: any[] = [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

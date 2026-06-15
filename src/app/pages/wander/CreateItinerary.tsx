@@ -152,29 +152,7 @@ const PHU_QUOC_ITINERARY = {
   ],
 };
 
-// Related diaries from Explore
-const RELATED_FROM_EXPLORE = [
-  {
-    id: "2",
-    title: "Thiên Đường Phú Quốc",
-    duration: "5 ngày",
-    budget: "22.500.000₫",
-    trustScore: 95,
-    author: "Hương L.",
-    image: "https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    tags: ["Biển", "Nghỉ dưỡng", "Lặn biển"],
-  },
-  {
-    id: "5",
-    title: "Đà Nẵng – Hội An Combo",
-    duration: "4 ngày",
-    budget: "23.750.000₫",
-    trustScore: 97,
-    author: "Anh D.",
-    image: "https://images.unsplash.com/flagged/photo-1583863374731-4224cbbc8c36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    tags: ["Biển", "Ẩm thực"],
-  },
-];
+const RELATED_FROM_EXPLORE: any[] = [];
 
 type Step = 1 | 2 | 3 | 4;
 

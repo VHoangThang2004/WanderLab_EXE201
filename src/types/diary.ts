@@ -95,6 +95,8 @@ export interface DiaryFeedItem {
   };
   image: string;
   location: string;
+  country?: string;
+  duration?: string;
   date: string;
   caption: string;
   likes: number;
