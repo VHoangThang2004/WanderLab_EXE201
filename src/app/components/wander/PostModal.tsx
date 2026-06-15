@@ -1,17 +1,8 @@
 import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
-import { useState } from "react";
-
-interface Comment {
-  id: string;
-  author: {
-    name: string;
-    avatar: string;
-  };
-  content: string;
-  timestamp: string;
-  likes: number;
-}
+import { useState, useEffect } from "react";
+import { useAuthStore, useNotificationStore } from "@/stores";
+import { interactionService, CommentItem } from "@/api/interactionService";
 
 interface PostModalProps {
   isOpen: boolean;
@@ -40,65 +31,98 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   const [likesCount, setLikesCount] = useState(post.likes);
   const [commentText, setCommentText] = useState("");
 
-  // Mock comments data
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      author: {
-        name: "Lê Văn Tuấn",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Đẹp quá! Mình cũng muốn đi nơi này lắm! 😍",
-      timestamp: "2 giờ trước",
-      likes: 12,
-    },
-    {
-      id: "2",
-      author: {
-        name: "Trần Phương Linh",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Cho mình hỏi đi mấy người vậy bạn? Mình cũng đang lên kế hoạch đi đây!",
-      timestamp: "1 giờ trước",
-      likes: 5,
-    },
-    {
-      id: "3",
-      author: {
-        name: "Nguyễn Minh Anh",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-      },
-      content: "Cảm ơn bạn đã chia sẻ! Rất hữu ích cho chuyến đi sắp tới của mình 🙏",
-      timestamp: "30 phút trước",
-      likes: 8,
-    },
-  ]);
+  const { user } = useAuthStore();
+  const { addNotification } = useNotificationStore();
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && post.id) {
+      loadComments();
+    }
+  }, [isOpen, post.id]);
+
+  const loadComments = async () => {
+    try {
+      setIsLoadingComments(true);
+      const data = await interactionService.fetchComments(post.id);
+      setComments(data);
+    } catch (error) {
+      console.error("Failed to load comments:", error);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
 
   if (!isOpen) return null;
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!user) return alert("Vui lòng đăng nhập để thích bài viết.");
+    
+    // Optimistic update
+    const previousState = isLiked;
+    const previousCount = likesCount;
     setIsLiked(!isLiked);
     setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+
+    try {
+      await interactionService.toggleLikeDiary(post.id, user.id);
+      
+      if (!isLiked) {
+        addNotification({
+          type: "like",
+          title: "Lượt thích mới",
+          message: `Bạn vừa thích bài viết của ${post.author.name}.`,
+          linkTo: window.location.pathname,
+          avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+        });
+      }
+    } catch (error) {
+      // Revert on error
+      setIsLiked(previousState);
+      setLikesCount(previousCount);
+      console.error("Failed to toggle like:", error);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!user) return alert("Vui lòng đăng nhập để lưu bài viết.");
+
+    // Optimistic update
+    const previousState = isSaved;
     setIsSaved(!isSaved);
+
+    try {
+      await interactionService.toggleBookmarkDiary(post.id, user.id);
+    } catch (error: any) {
+      setIsSaved(previousState);
+      console.error("Failed to toggle save:", error);
+      alert("Lỗi khi Lưu: " + (error?.message || JSON.stringify(error)));
+    }
   };
 
-  const handleComment = () => {
-    if (commentText.trim()) {
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        author: {
-          name: "Phan Văn Minh",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-        },
-        content: commentText,
-        timestamp: "Vừa xong",
-        likes: 0,
-      };
-      setComments([...comments, newComment]);
-      setCommentText("");
+  const handleComment = async () => {
+    if (!user) return alert("Vui lòng đăng nhập để bình luận.");
+    if (!commentText.trim()) return;
+
+    const content = commentText.trim();
+    setCommentText(""); // Optimistic clear
+
+    try {
+      const newComment = await interactionService.addComment(post.id, user.id, content);
+      setComments(prev => [newComment, ...prev]);
+
+      addNotification({
+        type: "comment",
+        title: "Bình luận mới",
+        message: `Bạn vừa bình luận: '${content}'`,
+        linkTo: window.location.pathname,
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
+    } catch (error: any) {
+      console.error("Failed to post comment:", error);
+      setCommentText(content); // Revert text
+      alert("Lỗi khi đăng bình luận: " + (error?.message || error?.details || JSON.stringify(error)));
     }
   };
 
@@ -109,7 +133,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Side - Image */}
-        <div className="bg-black flex items-center justify-center relative max-h-[90vh] lg:max-h-none">
+        <div className="bg-black flex items-center justify-center relative max-h-[90vh]">
           <ImageWithFallback
             src={post.image}
             alt={post.location}
@@ -118,7 +142,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
         </div>
 
         {/* Right Side - Details & Comments */}
-        <div className="flex flex-col h-[90vh] lg:h-auto">
+        <div className="flex flex-col h-[90vh] lg:h-auto lg:max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
@@ -146,11 +170,17 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
           {/* Caption */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-start gap-3 mb-3">
-              <ImageWithFallback
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-              />
+              {post.author.avatar && post.author.avatar !== 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04' ? (
+                <ImageWithFallback
+                  src={post.author.avatar}
+                  alt={post.author.name}
+                  className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm">
+                  {post.author.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
               <div>
                 <p className="text-gray-900">
                   <span className="font-bold mr-2">{post.author.name}</span>
@@ -174,33 +204,47 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
 
           {/* Comments Section */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-3">
-                <ImageWithFallback
-                  src={comment.author.avatar}
-                  alt={comment.author.name}
-                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <div className="bg-gray-100 rounded-2xl px-4 py-2">
-                    <p className="font-bold text-sm text-gray-900">{comment.author.name}</p>
-                    <p className="text-gray-800 text-sm">{comment.content}</p>
-                  </div>
-                  <div className="flex items-center gap-4 mt-1 px-2">
-                    <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
-                      Thích
-                    </button>
-                    <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
-                      Trả lời
-                    </button>
-                    <span className="text-xs text-gray-400">{comment.timestamp}</span>
-                    {comment.likes > 0 && (
-                      <span className="text-xs text-gray-500">{comment.likes} thích</span>
-                    )}
+            {isLoadingComments ? (
+              <div className="text-center text-sm text-gray-500 py-4">Đang tải bình luận...</div>
+            ) : comments.length === 0 ? (
+              <div className="text-center text-sm text-gray-500 py-4">Chưa có bình luận nào. Hãy là người đầu tiên!</div>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.id} className="flex items-start gap-3">
+                  {comment.author.avatar_url ? (
+                    <ImageWithFallback
+                      src={comment.author.avatar_url}
+                      alt={comment.author.full_name}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                      {comment.author.full_name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                      <p className="font-bold text-sm text-gray-900">{comment.author.full_name}</p>
+                      <p className="text-gray-800 text-sm">{comment.content}</p>
+                    </div>
+                    <div className="flex items-center gap-4 mt-1 px-2">
+                      <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                        Thích
+                      </button>
+                      <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                        Trả lời
+                      </button>
+                      <span className="text-xs text-gray-400">
+                        {new Date(comment.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {comment.likes_count > 0 && (
+                        <span className="text-xs text-gray-500">{comment.likes_count} thích</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Actions Bar */}
@@ -240,11 +284,17 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
 
             {/* Comment Input */}
             <div className="flex items-center gap-2">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400"
-                alt="Phan Văn Minh"
-                className="w-8 h-8 rounded-full object-cover"
-              />
+              {user?.avatar_url ? (
+                <ImageWithFallback
+                  src={user.avatar_url}
+                  alt={user.full_name || "Guest"}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs">
+                  {user?.full_name?.charAt(0).toUpperCase() || 'G'}
+                </div>
+              )}
               <input
                 type="text"
                 value={commentText}

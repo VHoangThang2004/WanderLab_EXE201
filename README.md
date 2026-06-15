@@ -1,6 +1,6 @@
 # 🌍 WanderLab
 
-> Nền tảng mạng xã hội du lịch thông minh dành cho người Việt — kết hợp **Nhật ký du lịch**, **AI Trip Planner** và **Cộng đồng du khách**.
+> WanderLab là nền tảng web du lịch trải nghiệm tích hợp nhật ký hành trình theo timeline và AI cá nhân hóa, giúp người dùng lưu giữ, chia sẻ trải nghiệm thực tế và khám phá các điểm đến hyper-local phù hợp với sở thích cá nhân.
 
 Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyznxz/WanderLab-Ver5)
 
@@ -10,12 +10,12 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 
 | Tính năng | Mô tả |
 |---|---|
-| 📔 **Nhật Ký Du Lịch** | Tạo, chia sẻ nhật ký với ảnh, timeline, ngân sách chi tiết |
-| 🤖 **AI Trip Planner** | Chatbot WanderBot tư vấn + tự động lập lịch trình |
-| 🔍 **Khám Phá** | Tìm kiếm nhật ký theo địa điểm, phong cách, ngân sách |
-| 💬 **Chat & Kết Nối** | Nhắn tin trực tiếp, theo dõi, kết bạn |
-| 💳 **Gói Subscription** | Free / Starter / Professional với thanh toán VNPay |
-| 🛡️ **Admin Panel** | Quản lý users, kiểm duyệt nội dung, thống kê AI |
+| 📔 **Nhật Ký Hành Trình (Timeline)** | Lưu giữ và chia sẻ trải nghiệm du lịch thực tế với hình ảnh, lịch trình từng ngày, và ngân sách chi tiết |
+| 🤖 **AI Trip Planner Cá Nhân Hóa** | Trợ lý ảo WanderBot tư vấn điểm đến và tự động lập lịch trình tối ưu dựa trên sở thích cá nhân |
+| 🔍 **Khám Phá Hyper-local** | Tìm kiếm điểm đến độc đáo, trải nghiệm văn hóa địa phương qua lăng kính cộng đồng du khách |
+| 💬 **Kết Nối Cộng Đồng** | Nhắn tin trực tiếp, theo dõi, kết nối với những người có chung đam mê xê dịch |
+| 💳 **Gói Subscription** | Nâng cấp trải nghiệm (Free / Starter / Professional) tích hợp thanh toán VNPay |
+| 🛡️ **Admin Panel** | Quản lý người dùng, kiểm duyệt nội dung, và giám sát hiệu suất hệ thống AI |
 
 ## 🛠️ Tech Stack
 
@@ -59,11 +59,14 @@ WanderLab/
 │   │   ├── pages/wander/        # 14 trang chính (xem bên dưới)
 │   │   ├── routes.tsx           # Route configuration
 │   │   └── App.tsx              # Root component
+│   ├── assets/                  # 🖼️ Hình ảnh tĩnh, icons
+│   ├── imports/                 # 📝 Tài liệu guidelines, text
 │   ├── lib/                     # Supabase client
-│   ├── stores/                  # Zustand stores (auth, ui)
+│   ├── stores/                  # Zustand stores (auth, ui, language)
 │   ├── styles/                  # Global CSS + theme
 │   ├── types/                   # TypeScript interfaces
-│   └── utils/                   # Utilities (format, constants)
+│   ├── utils/                   # Utilities (format, constants)
+│   └── main.tsx                 # Entry point
 │
 ├── .env.example                 # Template biến môi trường
 ├── package.json
@@ -136,9 +139,9 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 ## 📋 Tiến Độ
 
 - [x] **Phase 1** — Foundation: Dependencies, folder structure, types, stores, common components
-- [ ] **Phase 2** — Core Features: Diary CRUD, social interactions, file upload
-- [ ] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments
-- [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment
+- [x] **Phase 2** — Core Features: Auth (Supabase), Diary CRUD, Social interactions (Like, Comment, Follow), File upload
+- [ ] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments *(Đã xong UI, chờ tích hợp Backend)*
+- [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment *(Đã xong UI)*
 
 ---
 

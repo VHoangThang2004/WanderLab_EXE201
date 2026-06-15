@@ -113,10 +113,15 @@ export const useAuthStore = create<AuthState>()(
             password,
             options: {
               data: { full_name: fullName },
+              emailRedirectTo: `${window.location.origin}/login`,
             },
           });
 
           if (error) throw error;
+
+          if (data.user && data.user.identities && data.user.identities.length === 0) {
+            throw new Error("This email is already registered. Please log in or use another email.");
+          }
 
           // Sign out immediately — user must verify email before login
           await supabase.auth.signOut();

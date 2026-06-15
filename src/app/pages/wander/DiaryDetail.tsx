@@ -41,10 +41,11 @@ export function WanderDiaryDetail() {
   const [heroIndex, setHeroIndex] = useState(0);
 
   // Fetch from API
-  const { data: diary, isLoading } = useQuery({
+  const { data: diary, isLoading, isError, error } = useQuery({
     queryKey: ['diary', id],
     queryFn: () => diaryService.fetchDiaryById(id!),
-    enabled: !!id
+    enabled: !!id,
+    retry: 1
   });
 
   const { data: interactionState } = useQuery({
@@ -62,6 +63,30 @@ export function WanderDiaryDetail() {
 
   const isLiked = interactionState?.isLiked || false;
   const isSaved = interactionState?.isSaved || false;
+
+  const { data: followStatus } = useQuery({
+    queryKey: ['followStatus', diary?.author?.id, user?.id],
+    queryFn: async () => {
+      if (!isAuthenticated || !user || !diary?.author?.id) return false;
+      return interactionService.checkIsFollowing(user.id, diary.author.id);
+    },
+    enabled: !!diary?.author?.id && isAuthenticated
+  });
+  const isFollowing = followStatus || false;
+
+  const followMutation = useMutation({
+    mutationFn: () => {
+      if (!isAuthenticated || !user) {
+        throw new Error(language === 'vi' ? "Vui lòng đăng nhập để theo dõi" : "Please log in to follow");
+      }
+      return interactionService.toggleFollowUser(user.id, diary.author.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followStatus', diary?.author?.id, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['diary', id] });
+    },
+    onError: (err: any) => alert(err.message)
+  });
 
   const likeMutation = useMutation({
     mutationFn: () => {
@@ -104,12 +129,26 @@ export function WanderDiaryDetail() {
     [lightboxImages.length]
   );
 
-  if (isLoading || !diary) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <WanderNav />
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-500">{t("loading")}</p>
+        </div>
+        <WanderFooter />
+      </div>
+    );
+  }
+
+  if (isError || !diary) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <WanderNav />
+        <div className="flex-1 flex items-center justify-center flex-col gap-4">
+          <p className="text-red-500 font-bold text-xl">{language === 'vi' ? "Không tìm thấy nhật ký" : "Diary not found"}</p>
+          <p className="text-gray-500">{error?.message || "Nhật ký không tồn tại hoặc đã bị xóa."}</p>
+          <Link to="/" className="text-[#ff3131] hover:underline">{language === 'vi' ? "Quay về trang chủ" : "Return home"}</Link>
         </div>
         <WanderFooter />
       </div>
@@ -263,6 +302,7 @@ export function WanderDiaryDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* ── Review Photo Section ── */}
+        {diary.reviewPhotos && diary.reviewPhotos.length > 0 && (
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-9 h-9 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-xl flex items-center justify-center flex-shrink-0">
@@ -374,6 +414,7 @@ export function WanderDiaryDetail() {
             ))}
           </div>
         </section>
+        )}
 
         {/* ── Main Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -535,39 +576,7 @@ export function WanderDiaryDetail() {
               </div>
             )}
 
-            {/* Reviews */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                {t("communityReviews", "diaryDetail")}
-                <span className="ml-3 text-base font-normal text-gray-500">({diary.reviews.length} {t("reviewsUnit", "diaryDetail")})</span>
-              </h3>
-              <div className="space-y-5">
-                {diary.reviews.map((review, index) => (
-                  <div key={index} className="pb-5 border-b border-gray-100 last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-gray-900">{review.author}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} size={14} className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 fill-gray-300"} />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-500 flex-shrink-0 ml-4">{review.date}</span>
-                    </div>
-                    <p className="text-gray-700 mt-2">{review.text}</p>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-[#ff3131] transition-colors">
-                        <ThumbsUp size={15} /><span>{language === 'vi' ? 'Hữu Ích' : 'Helpful'}</span>
-                      </button>
-                      <button className="flex items-center gap-1 hover:text-[#ff3131] transition-colors">
-                        <MessageCircle size={15} /><span>{language === 'vi' ? 'Trả Lời' : 'Reply'}</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Reviews removed */}
 
             {/* Comments Section */}
             <div>
@@ -600,9 +609,19 @@ export function WanderDiaryDetail() {
                   <p className="text-xs text-gray-600">{language === 'vi' ? 'Người Theo Dõi' : 'Followers'}</p>
                 </div>
               </div>
-              <button className="w-full py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all">
-                {t("follow", "diaryDetail")}
-              </button>
+              {(!user || user.id !== diary.author.id) && (
+                <button 
+                  onClick={() => followMutation.mutate()}
+                  disabled={followMutation.isPending}
+                  className={`w-full py-3 rounded-xl font-semibold transition-all ${
+                    isFollowing 
+                      ? "bg-gray-100 text-gray-800 hover:bg-gray-200" 
+                      : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg"
+                  }`}
+                >
+                  {isFollowing ? (language === 'vi' ? 'Đang theo dõi' : 'Following') : t("follow", "diaryDetail")}
+                </button>
+              )}
             </div>
 
             {/* Quick Info */}
