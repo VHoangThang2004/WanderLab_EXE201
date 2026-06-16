@@ -21,12 +21,17 @@ import {
 import { useNavigate } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
-import { useLanguageStore } from "@/stores";
+import { useLanguageStore, useNotificationStore, useAuthStore, useUIStore } from "@/stores";
+import { aiService } from "@/api/aiService";
+import { toast } from "sonner";
 
 type PrivacySetting = "private" | "friends" | "public";
 
 export function WanderCreateDiary() {
   const { t, language } = useLanguageStore();
+  const { user } = useAuthStore();
+  const { addNotification } = useNotificationStore();
+  const { isDarkMode } = useUIStore();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
@@ -53,6 +58,15 @@ export function WanderCreateDiary() {
 
 
   const handleAiPolish = async () => {
+    if (!formData.description.trim()) {
+      toast.error(
+        language === 'vi'
+          ? "Vui lòng nhập trước một đoạn mô tả ngắn hoặc ý tưởng để AI viết tiếp!"
+          : "Please write a short description or ideas first so the AI can continue writing!"
+      );
+      return;
+    }
+
     setAiLoading(true);
     setShowAiPanel(true);
     setAiSuggestion("");
@@ -586,14 +600,92 @@ export function WanderCreateDiary() {
                         lineHeight: LINE_HEIGHT,
                       }}
                     />
+
+                    {/* AI Assistant Toolbar */}
+                    {isAiAssistantEnabled && (
+                      <div className="flex items-center justify-between mt-3 py-2 border-t border-dashed border-gray-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-neutral-400">
+                          <Sparkles size={14} className="text-[#ff3131] animate-pulse" />
+                          <span>{language === 'vi' ? "Trợ lý Viết AI:" : "AI Writing Assistant:"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={aiLoading}
+                            onClick={handleAiPolish}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                            {language === 'vi' ? "Tối ưu / Hoàn thiện" : "Polish & Complete"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Suggestions Display Panel */}
+                    {isAiAssistantEnabled && showAiPanel && (
+                      <div className="mt-3 bg-gradient-to-br from-amber-50/90 to-orange-50/90 dark:from-[#2e1d13]/90 dark:to-[#271c14]/90 rounded-xl p-4 border border-orange-200 dark:border-orange-950/60 shadow-sm transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3 border-b border-orange-100 dark:border-orange-950/40 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="text-[#ff3131]" size={16} />
+                            <span className="font-bold text-sm text-gray-900 dark:!text-[#ff914d]">
+                              {language === 'vi' ? "Gợi ý từ Trợ lý AI" : "AI Recommendation"}
+                            </span>
+                          </div>
+                          {aiLoading && (
+                            <div className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400 font-semibold animate-pulse">
+                              <Loader2 className="animate-spin" size={14} />
+                              <span>{language === 'vi' ? "AI đang suy nghĩ..." : "AI is writing..."}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {aiLoading ? (
+                          <div className="space-y-2 py-2">
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-full" />
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-[95%]" />
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-[80%]" />
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm text-gray-800 dark:text-neutral-200 leading-relaxed italic whitespace-pre-wrap bg-white/60 dark:bg-neutral-900/60 p-3 rounded-lg border border-orange-100 dark:border-orange-950/40">
+                              {aiSuggestion}
+                            </p>
+                            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3">
+                              <button
+                                type="button"
+                                onClick={() => setShowAiPanel(false)}
+                                className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-neutral-300 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 border border-gray-200 dark:border-neutral-700 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Bỏ qua" : "Discard"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleAppendAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/40 hover:bg-orange-200 dark:hover:bg-orange-900/40 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Chèn tiếp" : "Insert"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleApplyAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all cursor-pointer"
+                              >
+                                {language === 'vi' ? "Áp dụng" : "Apply"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-l-4 border-[#ff3131]">
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-[#2e1d13] dark:to-[#271c14] rounded-xl p-4 border-l-4 border-[#ff3131]">
                     <div className="flex items-start gap-3">
                       <Sparkles className={`${accentColor} flex-shrink-0 mt-1`} size={20} />
                       <div className="flex-1">
                         <p
-                          className="font-bold text-gray-900 dark:text-orange-200 mb-0 flex items-center justify-between"
+                          className="font-bold text-gray-900 dark:!text-[#ff914d] mb-0 flex items-center justify-between"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
                           <span>{language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}</span>

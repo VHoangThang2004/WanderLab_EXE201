@@ -7,7 +7,6 @@ import { Toaster } from './components/ui/sonner';
 import { useAuthStore } from '@/stores';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useRef, useState } from 'react';
-import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,7 +72,6 @@ export default function App() {
         <RouterProvider router={router} />
         <Toaster position="top-right" richColors />
         {!isChatPage && <AIChatbot />}
-        <Toaster position="top-right" />
       </QueryClientProvider>
     </ErrorBoundary>
   );

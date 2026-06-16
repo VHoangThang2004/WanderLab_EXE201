@@ -52,7 +52,7 @@ export const aiService = {
 
 
   /**
-   * Refines/polishes the user's draft description, or generates a complete one.
+   * Expands and completes the user's short draft description.
    */
   async polishDescription(currentText: string, context: any, language: string = "vi"): Promise<string> {
     try {
@@ -60,37 +60,37 @@ export const aiService = {
       const prompt =
         language === "vi"
           ? `Bạn là trợ lý ảo viết lách thông minh của WanderLab.
-Nhiệm vụ của bạn là ĐÁNH BÓNG và HOÀN THIỆN mô tả chuyến đi dựa trên ý tưởng sơ khai hoặc nội dung hiện tại của người dùng.
+Nhiệm vụ của bạn là VIẾT TIẾP và HOÀN THIỆN mô tả chuyến đi từ đoạn mô tả ngắn/ý tưởng sơ khai hiện có của người dùng để tạo nên một bài viết hấp dẫn, trọn vẹn và truyền cảm hứng.
 
 Thông tin chuyến đi (Ngữ cảnh):
 ${contextStr}
 
-Nội dung/Ý tưởng thô của người dùng:
-"${currentText || "(Chưa nhập ý tưởng, hãy tự động tạo mô tả hoàn chỉnh hấp dẫn dựa trên thông tin chuyến đi phía trên)"}"
+Ý tưởng/Đoạn mô tả ngắn hiện tại của người dùng:
+"${currentText}"
 
 Yêu cầu:
-1. Viết một đoạn văn mô tả hoàn chỉnh, hấp dẫn, chau chuốt và truyền cảm hứng.
-2. Độ dài khoảng 3-4 câu (dưới 100 từ).
-3. Làm nổi bật điểm độc đáo của địa danh và phong cách du lịch được lựa chọn.
-4. Chỉ trả về đoạn văn mô tả trực tiếp. Không thêm lời chào, không giải thích, không bọc trong ngoặc kép.`
+1. Giữ nguyên ý chính và phong cách trong ý tưởng hiện tại của người dùng, sau đó viết tiếp để mở rộng, hoàn thiện đoạn mô tả một cách mượt mà và tự nhiên.
+2. Độ dài đoạn văn hoàn thiện khoảng 4-5 câu (khoảng 80 - 120 từ).
+3. Làm nổi bật điểm độc đáo của địa danh, trải nghiệm và phong cách du lịch được lựa chọn.
+4. Chỉ trả về đoạn văn mô tả hoàn thiện trực tiếp. Không thêm lời chào, không giải thích, không bọc trong ngoặc kép.`
           : `You are the smart AI writing assistant of WanderLab.
-Your task is to POLISH and COMPLETE the trip description based on the user's raw thoughts or existing content.
+Your task is to EXPAND and COMPLETE the trip description based on the user's short draft/ideas to make it engaging, coherent, and inspiring.
 
 Trip Info (Context):
 ${contextStr}
 
-User's raw thoughts/content:
-"${currentText || "(Empty thoughts, please generate a complete engaging description based on the trip info above)"}"
+User's current short description/ideas:
+"${currentText}"
 
 Requirements:
-1. Write a complete, inspiring, and polished trip description paragraph.
-2. Length should be about 3-4 sentences (under 100 words).
-3. Emphasize the highlight of the destination and the travel style.
-4. Return ONLY the polished description text directly. No intro, no explanations, no quotation marks.`;
+1. Retain the core meaning and tone of the user's current draft, then continue writing to expand and complete the description smoothly and naturally.
+2. The final paragraph length should be about 4-5 sentences (80 - 120 words).
+3. Highlight the unique aspect of the destination, activities, and travel style.
+4. Return ONLY the completed description paragraph directly. No intro, no explanations, no quotation marks.`;
 
       return await this.generateContent(prompt);
     } catch (error: any) {
-      console.warn("Falling back to local mock polish due to API error or invalid key:", error.message);
+      console.warn("Falling back to local mock expansion due to API error or invalid key:", error.message);
       
       toast.warning(
         language === "vi"
@@ -170,11 +170,9 @@ function getMockPolish(currentText: string, context: any, language: string): str
   const groupSize = context?.groupSize || "1";
 
   if (language === "vi") {
-    const rawIdea = currentText ? `Dựa trên ý tưởng "${currentText}", hành` : "Hành";
-    return `${rawIdea} trình khám phá "${title}" tại ${location} hứa hẹn mang lại những trải nghiệm vô cùng độc đáo. Với phong cách du lịch ${style} dành cho nhóm ${groupSize} người, chuyến đi sẽ đưa bạn qua những cung đường tuyệt đẹp, hòa mình vào cuộc sống văn hóa bản địa và thưởng thức ẩm thực đặc trưng. Đây chắc chắn là chuyến đi đáng nhớ giúp tái tạo năng lượng hiệu quả.`;
+    return `${currentText || "Hành trình"} khám phá "${title}" tại ${location} sẽ mang lại những trải nghiệm vô cùng độc đáo. Với phong cách du lịch ${style} dành cho nhóm ${groupSize} người, chuyến đi sẽ đưa chúng ta qua những cung đường tuyệt đẹp, hòa mình vào cuộc sống văn hóa bản địa và thưởng thức ẩm thực đặc trưng. Đây chắc chắn là hành trình đáng nhớ đầy cảm hứng!`;
   } else {
-    const rawIdea = currentText ? `Based on "${currentText}", this` : "This";
-    return `${rawIdea} trip "${title}" to ${location} is designed to be an incredible experience. Tailored as a ${style} journey for ${groupSize} person(s), it offers a blend of adventure, local culture, and stunning views. It will be the perfect escape to unwind and create lifelong memories.`;
+    return `${currentText || "Our journey"} to discover "${title}" in ${location} is bound to be an incredible experience. Experiencing a ${style} trip with ${groupSize} traveler(s), we will enjoy a perfect blend of adventure, local culture, and stunning scenery, making memories that last a lifetime.`;
   }
 }
 
