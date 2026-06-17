@@ -81,14 +81,22 @@ WanderLab/
 | `/` | Landing | ❌ | Trang chủ, feed nhật ký |
 | `/login` | Login | ❌ | Đăng nhập (Email/Google/Facebook) |
 | `/register` | Register | ❌ | Đăng ký tài khoản |
+| `/forgot-password` | ForgotPassword | ❌ | Quên mật khẩu |
+| `/reset-password` | ResetPassword | ❌ | Đặt lại mật khẩu |
 | `/guide` | Guide | ❌ | Hướng dẫn sử dụng |
-| `/dashboard` | Dashboard | ✅ | Hồ sơ cá nhân |
+| `/dashboard` | Dashboard | ✅ | Hồ sơ cá nhân (Tổng quan) |
+| `/profile/:username` | UserProfile | ✅ | Trang cá nhân người dùng |
 | `/explore` | Explore | ❌ | Khám phá nhật ký |
 | `/create` | CreateDiary | ✅ | Tạo nhật ký mới |
+| `/edit-diary/:id` | EditDiary | ✅ | Chỉnh sửa nhật ký |
 | `/diary/:id` | DiaryDetail | ❌ | Chi tiết nhật ký |
 | `/create-itinerary` | CreateItinerary | ✅ | AI lập lịch trình |
-| `/friends` | Friends | ✅ | Bạn bè & theo dõi |
+| `/friends` | Friends | ✅ | Danh sách bạn bè & theo dõi |
+| `/groups/:id` | GroupDetail | ✅ | Chi tiết nhóm |
 | `/chat` | ChatPage | ✅ | Nhắn tin |
+| `/messages` | Messages | ✅ | Quản lý tin nhắn |
+| `/notifications` | Notifications | ✅ | Thông báo |
+| `/settings` | Settings | ✅ | Cài đặt tài khoản |
 | `/partner` | Partner | ❌ | Đối tác & bảng giá |
 | `/checkout` | Checkout | ✅ | Thanh toán subscription |
 | `/admin-dashboard` | AdminDashboard | ✅ (Admin) | Quản trị hệ thống |
@@ -141,7 +149,9 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 - [x] **Phase 1** — Foundation: Dependencies, folder structure, types, stores, common components
 - [x] **Phase 2** — Core Features: Auth (Supabase), Diary CRUD, Social interactions (Like, Comment, Follow), File upload
 - [ ] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments *(Đã xong UI, chờ tích hợp Backend)*
+  - *Chi tiết: Các trang UI `ChatPage.tsx`, `CreateItinerary.tsx` (AI lập lịch trình), và `Checkout.tsx` đã được tạo. Chờ kết nối API.*
 - [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment *(Đã xong UI)*
+  - *Chi tiết: Giao diện `AdminDashboard.tsx` đã sẵn sàng. Chờ tích hợp chức năng quản trị và deploy lên môi trường Production.*
 
 ---
 
