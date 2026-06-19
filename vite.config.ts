@@ -34,6 +34,19 @@ export default defineConfig({
     },
   },
 
+  // Optimize bundle size by chunking third-party libraries
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router', 'zustand', '@tanstack/react-query'],
+          ui: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', '@mui/material', 'framer-motion'],
+        },
+      },
+    },
+  },
+
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
