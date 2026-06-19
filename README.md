@@ -39,6 +39,10 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 ```text
 WanderLab/
 ├── database/                    # Script, cấu hình và SQL về database
+│   ├── 00_init_database.sql     # Script khởi tạo các bảng chính
+│   ├── 01_messages_table.sql    # Script khởi tạo tính năng Chat
+│   ├── 02_seed_mock_data.sql    # Dữ liệu mẫu (Người dùng, Nhật ký, Địa điểm)
+│   └── 03_seed_admin.sql        # Script tạo tài khoản Admin
 ├── document/                    # 📄 Tài liệu dự án (Overview, DB Schema, API, Roadmap)
 ├── guidelines/                  # Tài liệu hướng dẫn (code conventions, contribution)
 ├── src/                         # 💻 Source code chính
@@ -133,6 +137,15 @@ npm run preview    # Preview production build
 
 > **Lưu ý:** Project có thể chạy ở chế độ demo (không cần Supabase credentials) — sử dụng mock data có sẵn.
 
+### 🧪 Trải Nghiệm Demo
+
+Bạn có thể chạy dự án ở chế độ demo và sử dụng 2 tài khoản sau để kiểm tra toàn bộ tính năng (Mật khẩu chung: `123456`):
+
+- **Tài khoản User:** `vohoangthang2004@gmail.com`
+  *(Khám phá tính năng Tạo nhật ký, AI lên lịch trình, Giao lưu cộng đồng, AI Chatbot)*
+- **Tài khoản Admin:** `adminwanderlab@gmail.com`
+  *(Trải nghiệm bảo mật Route, Admin Dashboard với các tính năng Quản lý người dùng, Kiểm duyệt nội dung, Giám sát hệ thống AI)*
+
 ## 📖 Tài Liệu
 
 Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ trình thực hiện và hướng dẫn deployment nằm trong thư mục [`document/`](./document/):
@@ -149,10 +162,11 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 
 - [x] **Phase 1** — Foundation: Dependencies, folder structure, types, stores, common components
 - [x] **Phase 2** — Core Features: Auth (Supabase), Diary CRUD, Social interactions (Like, Comment, Follow), File upload
-- [ ] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments *(Đã xong UI, chờ tích hợp Backend)*
-  - *Chi tiết: Các trang UI `ChatPage.tsx`, `CreateItinerary.tsx` (AI lập lịch trình), và `Checkout.tsx` đã được tạo. Chờ kết nối API.*
-- [ ] **Phase 4** — Admin & Deploy: Admin panel, testing, production deployment *(Đã xong UI)*
-  - *Chi tiết: Giao diện `AdminDashboard.tsx` đã sẵn sàng. Chờ tích hợp chức năng quản trị và deploy lên môi trường Production.*
+- [x] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments *(Đã hoàn thiện UI & luồng hoạt động)*
+  - *Chi tiết: Các tính năng AI Chatbot (`AIAssistant.tsx`), AI Lập lịch trình (`CreateItinerary.tsx`), Thanh toán (`Checkout.tsx`) và Nhắn tin (`ChatPage.tsx`) đã hoàn thiện giao diện xuất sắc và luồng tương tác phía người dùng.*
+- [x] **Phase 4** — Admin Panel: Dashboard quản trị *(Đã hoàn thiện toàn bộ tính năng Client-side)*
+  - *Chi tiết: Giao diện `AdminDashboard.tsx` đã hoạt động với 4 phân hệ bảo mật: Tổng quan thống kê, Quản lý người dùng, Kiểm duyệt nội dung, và Giám sát AI.*
+- [ ] **Phase 5** — Backend Integration & Deploy: Kết nối tính năng Advanced & Admin với API thật và đưa lên môi trường Production.
 
 ---
 
