@@ -36,41 +36,42 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 
 ## 📂 Cấu Trúc Thư Mục
 
-```
+```text
 WanderLab/
-├── document/                    # 📄 Tài liệu dự án
-│   ├── 01_project_overview.txt  #   Tổng quan dự án
-│   ├── 02_database_schema.txt   #   Thiết kế DB (15 bảng, SQL)
-│   ├── 03_api_endpoints.txt     #   Danh sách API endpoints
-│   ├── 04_implementation_roadmap.txt # Lộ trình 10 sprints
-│   └── 05_deployment_guide.txt  #   Hướng dẫn deploy
-│
-├── src/
-│   ├── api/                     # Axios HTTP client + interceptors
+├── database/                    # Script, cấu hình và SQL về database
+├── document/                    # 📄 Tài liệu dự án (Overview, DB Schema, API, Roadmap)
+├── guidelines/                  # Tài liệu hướng dẫn (code conventions, contribution)
+├── src/                         # 💻 Source code chính
+│   ├── api/                     # Services gọi API (client, diary, friend, message, story)
 │   ├── app/
-│   │   ├── components/
-│   │   │   ├── auth/            # ProtectedRoute, GuestRoute
-│   │   │   ├── common/          # ErrorBoundary, LoadingSpinner, EmptyState
-│   │   │   ├── figma/           # Components export từ Figma
-│   │   │   ├── ui/              # shadcn/ui (48 components)
-│   │   │   └── wander/          # Custom WanderLab components
-│   │   ├── data/                # Mock data (đang thay bằng API)
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── pages/wander/        # 14 trang chính (xem bên dưới)
-│   │   ├── routes.tsx           # Route configuration
-│   │   └── App.tsx              # Root component
-│   ├── assets/                  # 🖼️ Hình ảnh tĩnh, icons
-│   ├── imports/                 # 📝 Tài liệu guidelines, text
-│   ├── lib/                     # Supabase client
-│   ├── stores/                  # Zustand stores (auth, ui, language)
-│   ├── styles/                  # Global CSS + theme
-│   ├── types/                   # TypeScript interfaces
-│   ├── utils/                   # Utilities (format, constants)
-│   └── main.tsx                 # Entry point
-│
-├── .env.example                 # Template biến môi trường
-├── package.json
-├── vite.config.ts
+│   │   ├── components/          # React components
+│   │   │   ├── auth/            # Các component bảo vệ route (ProtectedRoute)
+│   │   │   ├── common/          # Components dùng chung (ErrorBoundary, Loading, EmptyState)
+│   │   │   ├── figma/           # Các component xuất từ Figma (ImageWithFallback)
+│   │   │   ├── ui/              # shadcn/ui components (button, input, dialog,...)
+│   │   │   └── wander/          # Custom components của WanderLab (WanderNav, ChatBox,...)
+│   │   ├── data/                # Dữ liệu tĩnh và mock data (destinations, vietnamPaths)
+│   │   ├── hooks/               # Custom React hooks (useSavedItineraries)
+│   │   ├── pages/               # Các trang giao diện chính
+│   │   │   ├── admin/           # Trang quản trị (AdminDashboard)
+│   │   │   ├── auth/            # Các trang xác thực (ForgotPassword, ResetPassword)
+│   │   │   └── wander/          # Các trang người dùng (Landing, Dashboard, Explore, Create...)
+│   │   ├── routes.tsx           # Cấu hình React Router định tuyến
+│   │   └── App.tsx              # Root component thiết lập Layout, Providers
+│   ├── assets/                  # 🖼️ Hình ảnh, icons tĩnh (png, svg)
+│   ├── imports/                 # 📝 Tài liệu markdown guidelines bổ sung
+│   ├── lib/                     # Cấu hình thư viện ngoài (Supabase client)
+│   ├── stores/                  # Zustand state management stores
+│   ├── styles/                  # Global CSS, cấu hình Tailwind và Theme
+│   ├── types/                   # TypeScript interfaces (user, diary, chat, itinerary,...)
+│   ├── utils/                   # Utilities & constants (format data, vietnamProvinces)
+│   └── main.tsx                 # Entry point của ứng dụng React
+├── .env                         # Biến môi trường local (chứa API keys)
+├── index.html                   # HTML template chính
+├── package.json                 # Khai báo dependencies và scripts
+├── postcss.config.mjs           # Cấu hình PostCSS
+├── vercel.json                  # Cấu hình deploy Vercel
+├── vite.config.ts               # Cấu hình Vite bundler
 └── README.md                    # (file này)
 ```
 
