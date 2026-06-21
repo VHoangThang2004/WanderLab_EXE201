@@ -141,7 +141,7 @@ CREATE POLICY "Users delete own bookmarks" ON diary_bookmarks FOR DELETE USING (
 
 CREATE POLICY "Follows viewable" ON follows FOR SELECT USING (true);
 CREATE POLICY "Users insert own follows" ON follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
-CREATE POLICY "Users delete own follows" ON follows FOR DELETE USING (auth.uid() = follower_id);
+CREATE POLICY "Users delete own follows or follows targeting them" ON follows FOR DELETE USING (auth.uid() = follower_id OR auth.uid() = following_id);
 
 
 -- ==========================================
@@ -168,3 +168,103 @@ CREATE OR REPLACE FUNCTION increment_like(row_id UUID) RETURNS void AS $$ BEGIN 
 CREATE OR REPLACE FUNCTION decrement_like(row_id UUID) RETURNS void AS $$ BEGIN UPDATE diaries SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = row_id; END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION increment_comment(row_id UUID) RETURNS void AS $$ BEGIN UPDATE diaries SET comments_count = COALESCE(comments_count, 0) + 1 WHERE id = row_id; END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION decrement_comment(row_id UUID) RETURNS void AS $$ BEGIN UPDATE diaries SET comments_count = GREATEST(COALESCE(comments_count, 0) - 1, 0) WHERE id = row_id; END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- WANDERLAB - SEED ADMIN SCRIPT
+-- ==========================================
+
+-- TẠO TÀI KHOẢN TRONG AUTH.USERS
+-- Sử dụng một UUID tĩnh cố định cho Admin: '99999999-9999-9999-9999-999999999999'
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token
+) VALUES
+(
+  '00000000-0000-0000-0000-000000000000', 
+  '99999999-9999-9999-9999-999999999999', 
+  'authenticated', 
+  'authenticated', 
+  'adminwanderlab@gmail.com', 
+  crypt('123456', gen_salt('bf')), 
+  now(), now(), now(), 
+  '{"provider":"email","providers":["email"]}', 
+  '{"full_name":"Hệ Thống Admin", "avatar_url":"https://images.unsplash.com/photo-1517849845537-4d257902454a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200"}', 
+  now(), now(), '', '', '', ''
+) ON CONFLICT (id) DO NOTHING;
+
+-- KHÔI PHỤC PROFILE CHO CÁC TÀI KHOẢN AUTH CŨ (Tránh lỗi không đăng nhập được khi chạy lại DB)
+INSERT INTO public.profiles (id, full_name, avatar_url, role)
+SELECT 
+    id, 
+    COALESCE(raw_user_meta_data->>'full_name', 'Người dùng ' || substr(id::text, 1, 4)), 
+    raw_user_meta_data->>'avatar_url', 
+    'explorer'::user_role
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
+-- CẬP NHẬT QUYỀN (ROLE) THÀNH ADMIN TRONG BẢNG PROFILES
+-- Chắc chắn rằng tài khoản admin được cấp quyền đúng:
+UPDATE profiles 
+SET role = 'admin'::user_role 
+WHERE id = '99999999-9999-9999-9999-999999999999';
+
+-- TẠO BẢNG TIN NHẮN (MESSAGES)
+-- ==========================================
+
+DO $$ BEGIN CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+CREATE TABLE IF NOT EXISTS messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    receiver_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    media_url TEXT,
+    media_type TEXT,
+    reactions JSONB DEFAULT '{}'::jsonb,
+    status message_status DEFAULT 'sent',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    actor_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    content TEXT,
+    reference_id UUID,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Policy Notifications
+CREATE POLICY "Users can view their own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own notifications" ON notifications FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert notifications" ON notifications FOR INSERT WITH CHECK (true);
+
+-- Người dùng có thể đọc tin nhắn mà họ gửi hoặc nhận
+CREATE POLICY "Users can view their own messages" 
+ON messages FOR SELECT 
+USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+-- Người dùng có thể gửi tin nhắn đi
+CREATE POLICY "Users can insert messages" 
+ON messages FOR INSERT 
+WITH CHECK (auth.uid() = sender_id);
+
+-- Người dùng có thể cập nhật trạng thái tin nhắn mà họ nhận (ví dụ: đánh dấu là đã đọc)
+CREATE POLICY "Users can update received messages" 
+ON messages FOR UPDATE 
+USING (auth.uid() = receiver_id);
+
+-- Trigger tự động cập nhật updated_at
+CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ==========================================
+-- PHẦN 4: BẬT REALTIME CHO NHỮNG BẢNG CẦN THIẾT
+-- ==========================================
+-- Thêm các bảng vào danh sách theo dõi Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;

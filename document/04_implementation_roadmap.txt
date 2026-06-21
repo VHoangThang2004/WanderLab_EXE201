@@ -103,14 +103,14 @@ PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
 PHASE 3: ADVANCED FEATURES (Sprint 6-8) — TÍNH NĂNG NÂNG CAO
 ================================================================================
 
---- Sprint 6: Chat & Messaging (UI đã hoàn thành ✅) ---
+--- Sprint 6: Chat & Messaging (UI & DB đã hoàn thành ✅) ---
 
-  [ ] Tạo bảng DB: conversations, conversation_members, messages
+  [x] Tạo bảng DB: messages (Đã thiết lập schema Direct Message)
   [ ] Cấu hình Supabase Realtime channel
   [ ] Kết nối ChatPage.tsx → real data:
-      - Danh sách conversations
+      - Lấy danh sách lịch sử tin nhắn
       - Gửi/nhận tin nhắn realtime
-      - Upload ảnh trong chat
+      - Đánh dấu trạng thái tin nhắn (đã gửi, đã đọc)
   [ ] Implement online status indicator
 
 --- Sprint 7: AI Integration (UI đã hoàn thành ✅) ---
@@ -145,6 +145,7 @@ PHASE 4: ADMIN & POLISH (Sprint 9-10) — HOÀN THIỆN
 
 --- Sprint 9: Admin Panel (UI đã hoàn thành ✅) ---
 
+  [x] Khởi tạo tài khoản Admin mặc định & cập nhật quyền (role)
   [ ] Tạo Edge Function: admin-stats
   [ ] Kết nối AdminDashboard → real data:
       - Tab Tổng Quan: thống kê từ DB

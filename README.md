@@ -20,6 +20,7 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 ## 🛠️ Tech Stack
 
 **Frontend:**
+
 - React 18 + TypeScript
 - Vite 6.3
 - TailwindCSS v4 + shadcn/ui
@@ -29,6 +30,7 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 - Motion / Framer Motion (Animations)
 
 **Backend:**
+
 - Supabase (PostgreSQL + Auth + Storage + Realtime + Edge Functions)
 
 **AI:** Google Gemini API  
@@ -38,11 +40,10 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 
 ```text
 WanderLab/
-├── database/                    # Script, cấu hình và SQL về database
-│   ├── 00_init_database.sql     # Script khởi tạo các bảng chính
-│   ├── 01_messages_table.sql    # Script khởi tạo tính năng Chat
-│   ├── 02_seed_mock_data.sql    # Dữ liệu mẫu (Người dùng, Nhật ký, Địa điểm)
-│   └── 03_seed_admin.sql        # Script tạo tài khoản Admin
+├── database/                    # Script và cấu hình SQL về database
+│   ├── table.sql                # (V4.0) Script DUY NHẤT khởi tạo ALL-IN-ONE (Bảng, RLS, Trigger, Realtime)
+│   ├── create_storage.sql       # Script tạo bucket lưu trữ (Storage)
+│   └── update_storage_mime.sql  # Script mở giới hạn loại file đính kèm
 ├── document/                    # 📄 Tài liệu dự án (Overview, DB Schema, API, Roadmap)
 ├── guidelines/                  # Tài liệu hướng dẫn (code conventions, contribution)
 ├── src/                         # 💻 Source code chính
@@ -109,6 +110,7 @@ WanderLab/
 ## 🚀 Chạy Project
 
 ### Yêu cầu
+
 - Node.js >= 18
 - npm >= 9
 
@@ -118,8 +120,8 @@ WanderLab/
 # 1. Cài dependencies
 npm install
 
-# 2. Tạo file .env (copy từ template)
-cp .env.example .env
+# 2. Tạo file .env
+cp .env
 # Điền credentials Supabase vào .env
 
 # 3. Chạy development server
@@ -158,15 +160,19 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 | [`04_implementation_roadmap.txt`](./document/04_implementation_roadmap.txt) | Lộ trình 10 sprints chi tiết |
 | [`05_deployment_guide.txt`](./document/05_deployment_guide.txt) | Hướng dẫn setup Supabase, Vercel, VNPay |
 
-## 📋 Tiến Độ
+## 📋 Tiến Độ Dự Án (Hiện Trạng)
 
-- [x] **Phase 1** — Foundation: Dependencies, folder structure, types, stores, common components
-- [x] **Phase 2** — Core Features: Auth (Supabase), Diary CRUD, Social interactions (Like, Comment, Follow), File upload
-- [x] **Phase 3** — Advanced: Chat realtime, AI chatbot, payments *(Đã hoàn thiện UI & luồng hoạt động)*
-  - *Chi tiết: Các tính năng AI Chatbot (`AIAssistant.tsx`), AI Lập lịch trình (`CreateItinerary.tsx`), Thanh toán (`Checkout.tsx`) và Nhắn tin (`ChatPage.tsx`) đã hoàn thiện giao diện xuất sắc và luồng tương tác phía người dùng.*
-- [x] **Phase 4** — Admin Panel: Dashboard quản trị *(Đã hoàn thiện toàn bộ tính năng Client-side)*
-  - *Chi tiết: Giao diện `AdminDashboard.tsx` đã hoạt động với 4 phân hệ bảo mật: Tổng quan thống kê, Quản lý người dùng, Kiểm duyệt nội dung, và Giám sát AI.*
-- [ ] **Phase 5** — Backend Integration & Deploy: Kết nối tính năng Advanced & Admin với API thật và đưa lên môi trường Production.
+- [x] **Phase 1** — Foundation: Cấu trúc thư mục, Types, Zustand Stores, UI Components (Tailwind + Shadcn).
+- [x] **Phase 2** — Database & Auth: Tích hợp Supabase, RLS Policies, Profile, Social Interactions. Tối ưu database về 1 file `table.sql` duy nhất.
+- [x] **Phase 3** — Messaging & Realtime: Hoàn thiện 100% tính năng Chat như Messenger thực thụ:
+  - Nhắn tin Realtime ngay lập tức không cần tải trang.
+  - Gửi hình ảnh và tài liệu (Word, Excel, PDF, ZIP...).
+  - Thả Emoji (Reactions) lên từng tin nhắn.
+  - Hệ thống thông báo nổi (Chat Bubble Toast) toàn trang khi có tin nhắn tới.
+  - Đồng bộ trạng thái đã xem (Unread ping).
+  - UI Gọi điện Voice/Video call.
+- [x] **Phase 4** — Global Notifications & Admin Panel: Thông báo hệ thống và Dashboard quản trị.
+- [ ] **Phase 5** — Backend Integration & Deploy: Tích hợp VNPay, AI Gemini Trip Planner thực tế, và đưa lên môi trường Production.
 
 ---
 
