@@ -9,7 +9,7 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 ## ✨ Tính Năng Chính
 
 | Tính năng | Mô tả |
-|---|---|
+| --- | --- |
 | 📔 **Nhật Ký Hành Trình (Timeline)** | Lưu giữ và chia sẻ trải nghiệm du lịch thực tế với hình ảnh, lịch trình từng ngày, và ngân sách chi tiết |
 | 🤖 **AI Trip Planner Cá Nhân Hóa** | Trợ lý ảo WanderBot tư vấn điểm đến và tự động lập lịch trình tối ưu dựa trên sở thích cá nhân |
 | 🔍 **Khám Phá Hyper-local** | Tìm kiếm điểm đến độc đáo, trải nghiệm văn hóa địa phương qua lăng kính cộng đồng du khách |
@@ -83,7 +83,7 @@ WanderLab/
 ## 🗺️ Danh Sách Trang
 
 | Route | Trang | Auth | Mô tả |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `/` | Landing | ❌ | Trang chủ, feed nhật ký |
 | `/login` | Login | ❌ | Đăng nhập (Email/Google/Facebook) |
 | `/register` | Register | ❌ | Đăng ký tài khoản |
@@ -153,7 +153,7 @@ Bạn có thể chạy dự án ở chế độ demo và sử dụng 2 tài kho�
 Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ trình thực hiện và hướng dẫn deployment nằm trong thư mục [`document/`](./document/):
 
 | File | Nội dung |
-|---|---|
+| --- | --- |
 | [`01_project_overview.txt`](./document/01_project_overview.txt) | Tổng quan dự án, tính năng, tech stack |
 | [`02_database_schema.txt`](./document/02_database_schema.txt) | 15 bảng PostgreSQL + SQL + ERD |
 | [`03_api_endpoints.txt`](./document/03_api_endpoints.txt) | Tất cả REST, Auth, Storage, AI, Payment APIs |

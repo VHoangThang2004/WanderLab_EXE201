@@ -210,9 +210,10 @@ export const messageService = {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'messages' },
         (payload) => {
-          const record = (payload.new && Object.keys(payload.new).length > 0) ? payload.new : payload.old;
+          const record = (payload.new && Object.keys(payload.new as object).length > 0) ? payload.new : payload.old;
+          const typedRecord = record as Record<string, any>;
           // Ensure the message involves the current user
-          if (record && (record.receiver_id === userId || record.sender_id === userId)) {
+          if (typedRecord && (typedRecord.receiver_id === userId || typedRecord.sender_id === userId)) {
             onNewMessage(payload);
           }
         }

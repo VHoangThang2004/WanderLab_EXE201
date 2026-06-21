@@ -94,6 +94,7 @@ export function MessagesPage() {
     name: targetProfile.full_name || 'Người dùng',
     avatar: targetProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200',
     isOnline: true,
+    lastActive: undefined,
     lastMessage: 'Hãy là người đầu tiên gửi tin nhắn',
     time: '',
     unread: 0
