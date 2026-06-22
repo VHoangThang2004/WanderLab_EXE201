@@ -3,19 +3,54 @@ import { Link } from "react-router";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { Bell, Check, MessageSquare, ThumbsUp, Send, Trash2, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useNotificationStore, useAuthStore } from "@/stores";
+import { useAuthStore } from "@/stores";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationService, AppNotification } from "@/api/notificationService";
+import { supabase } from "@/lib/supabase";
 
 export function Notifications() {
-  const { notifications, addNotification, removeNotification, markAsRead, markAllAsRead, clearAll } = useNotificationStore();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
-  const filteredNotifications = filter === "unread"
-    ? notifications.filter(n => !n.isRead)
-    : notifications;
+  const { data: dbNotifications = [] } = useQuery({
+    queryKey: ['globalNotifications', user?.id],
+    queryFn: () => notificationService.fetchNotifications(user?.id || ''),
+    enabled: !!user?.id
+  });
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const filteredNotifications = filter === "unread"
+    ? dbNotifications.filter(n => !n.is_read)
+    : dbNotifications;
+
+  const unreadCount = dbNotifications.filter(n => !n.is_read).length;
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => notificationService.markAsRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['globalNotifications', user?.id] })
+  });
+
+  const removeNotificationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('notifications').delete().eq('id', id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['globalNotifications', user?.id] })
+  });
+
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      if (user?.id) await supabase.from('notifications').delete().eq('user_id', user.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['globalNotifications', user?.id] })
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      if (user?.id) await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['globalNotifications', user?.id] })
+  });
 
   const simulateAction = (type: "post" | "comment" | "like") => {
     let title = "";
@@ -38,17 +73,36 @@ export function Notifications() {
       linkTo = "/profile";
     }
 
-    addNotification({
+    if (!user?.id) return;
+    notificationService.createNotification(
+      user.id,
+      user.id,
       type,
-      title,
       message,
-      linkTo,
-      avatar,
-    });
+      linkTo
+    );
 
     toast(title, {
       description: message,
     });
+  };
+
+  const getNotificationLink = (notification: AppNotification) => {
+    if (!notification.reference_id) return "#";
+    // If it's a mock notification with an absolute path
+    if (notification.reference_id.startsWith('/')) return notification.reference_id;
+
+    switch (notification.type) {
+      case 'friend_request':
+      case 'friend_accept':
+        return "/friends";
+      case 'post':
+      case 'like':
+      case 'comment':
+        return `/diary/${notification.reference_id}`;
+      default:
+        return "#";
+    }
   };
 
   return (
@@ -95,16 +149,16 @@ export function Notifications() {
           </button>
           {unreadCount > 0 && (
             <button
-              onClick={markAllAsRead}
+              onClick={() => markAllAsReadMutation.mutate()}
               className="ml-auto px-6 py-2.5 bg-white text-[#ff3131] border border-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all"
             >
               <Check size={18} className="inline mr-2" />
               Đánh dấu đã đọc tất cả
             </button>
           )}
-          {notifications.length > 0 && (
+          {dbNotifications.length > 0 && (
             <button
-              onClick={clearAll}
+              onClick={() => clearAllMutation.mutate()}
               className={`${unreadCount > 0 ? "ml-2" : "ml-auto"} px-6 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-full font-semibold hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all flex items-center`}
             >
               <Trash2 size={18} className="inline mr-2" />
@@ -162,29 +216,39 @@ export function Notifications() {
               className="relative group"
             >
               <Link
-                to={notification.linkTo}
-                onClick={() => markAsRead(notification.id)}
+                to={getNotificationLink(notification)}
+                onClick={() => markAsReadMutation.mutate(notification.id)}
                 className={`block bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all pr-12 ${
-                  !notification.isRead ? "border-l-4 border-l-[#ff3131]" : ""
+                  !notification.is_read ? "border-l-4 border-l-[#ff3131]" : ""
                 }`}
               >
                 <div className="flex gap-4">
-                  {notification.avatar && (
+                  {notification.actor && (
                     <ImageWithFallback
-                      src={notification.avatar}
-                      alt={notification.title}
+                      src={notification.actor.avatar_url}
+                      alt={notification.actor.full_name}
                       className="w-14 h-14 rounded-full object-cover flex-shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900">{notification.title}</h3>
-                      {!notification.isRead && (
+                      <h3 className="font-bold text-gray-900">
+                        {notification.type === 'friend_request' ? 'Lời mời kết bạn' :
+                         notification.type === 'friend_accept' ? 'Chấp nhận kết bạn' : 
+                         notification.type === 'post' ? 'Đăng bài thành công' :
+                         notification.type === 'comment' ? 'Bình luận mới' :
+                         notification.type === 'like' ? 'Lượt thích mới' : 'Thông báo'}
+                      </h3>
+                      {!notification.is_read && (
                         <div className="w-2.5 h-2.5 bg-[#ff3131] rounded-full flex-shrink-0 mt-1.5" />
                       )}
                     </div>
-                    <p className="text-gray-700 mb-2">{notification.message}</p>
-                    <p className="text-sm text-gray-400">{notification.timestamp}</p>
+                    <p className="text-gray-700 mb-2">{notification.content}</p>
+                    <p className="text-sm text-gray-400">
+                      {new Date(notification.created_at).toLocaleDateString('vi-VN', {
+                        hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+                      })}
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -192,7 +256,7 @@ export function Notifications() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  removeNotification(notification.id);
+                  removeNotificationMutation.mutate(notification.id);
                 }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
                 title="Xóa thông báo này"

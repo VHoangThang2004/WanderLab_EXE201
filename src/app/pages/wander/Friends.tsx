@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useLanguageStore } from "@/stores";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
@@ -10,9 +10,17 @@ import { friendService } from "@/api/friendService";
 export function WanderFriends() {
   const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups" | "suggested">("requests");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const { user } = useAuthStore();
   const { addToast } = useUIStore();
   const queryClient = useQueryClient();
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Local state for dynamic groups (since there is no DB table for groups yet)
   const [localGroups, setLocalGroups] = useState<any[]>([]);
@@ -28,10 +36,10 @@ export function WanderFriends() {
 
   const hasRealData = !!(user?.id && data && !isLoading);
 
-  // Fetch suggested friends
+  // Fetch suggested friends (or global search results)
   const { data: suggestedData, isLoading: isLoadingSuggested } = useQuery({
-    queryKey: ['suggestedFriends', user?.id],
-    queryFn: () => friendService.fetchSuggestedFriends(user?.id || ''),
+    queryKey: ['suggestedFriends', user?.id, debouncedSearch],
+    queryFn: () => friendService.fetchSuggestedFriends(user?.id || '', debouncedSearch),
     enabled: !!user?.id,
     retry: false,
   });
@@ -89,7 +97,7 @@ export function WanderFriends() {
   });
 
   const unfriendMutation = useMutation({
-    mutationFn: (friendId: string) => friendService.unfollowUser(user?.id || '', friendId),
+    mutationFn: (friendId: string) => friendService.removeFriend(user?.id || '', friendId),
     onSuccess: () => {
       addToast({ type: 'success', message: 'Đã hủy kết bạn thành công.' });
       queryClient.invalidateQueries({ queryKey: ['friendData', user?.id] });
@@ -101,9 +109,10 @@ export function WanderFriends() {
 
   const sendRequestMutation = useMutation({
     mutationFn: (targetId: string) => friendService.followUser(user?.id || '', targetId),
-    onSuccess: () => {
+    onSuccess: (_, targetId) => {
       addToast({ type: 'success', message: 'Đã gửi lời mời kết bạn!' });
-      queryClient.invalidateQueries({ queryKey: ['suggestedFriends', user?.id] });
+      setSentRequests(prev => new Set(prev).add(targetId));
+      queryClient.invalidateQueries({ queryKey: ['suggestedFriends', user?.id, debouncedSearch] });
       queryClient.invalidateQueries({ queryKey: ['friendData', user?.id] });
     },
     onError: (error: any) => {
@@ -183,11 +192,8 @@ export function WanderFriends() {
     return g.name.toLowerCase().includes(q) || g.description.toLowerCase().includes(q);
   });
 
-  const filteredSuggested = displaySuggested.filter((s: any) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return s.name.toLowerCase().includes(q) || (s.location && s.location.toLowerCase().includes(q));
-  });
+  // Do not filter suggested locally anymore because we query globally
+  const filteredSuggested = displaySuggested;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -266,7 +272,7 @@ export function WanderFriends() {
               : "text-gray-600 hover:text-gray-900"
             }`}
         >
-          Gợi ý kết bạn
+          {searchQuery ? "Kết quả tìm kiếm" : "Gợi ý kết bạn"}
           {activeTab === "suggested" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
@@ -387,7 +393,7 @@ export function WanderFriends() {
                       Trang cá nhân
                     </Link>
                     <Link
-                      to={`/chat?userId=${friend.id}`}
+                      to={`/messages?userId=${friend.id}`}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all flex items-center justify-center"
                     >
                       <MessageCircle size={18} />
@@ -405,11 +411,11 @@ export function WanderFriends() {
         <div>
           {isLoadingSuggested ? (
             <div className="text-center py-12 text-gray-500 bg-white rounded-2xl border border-gray-100">
-              Đang tải danh sách gợi ý...
+              Đang tải danh sách...
             </div>
           ) : filteredSuggested.length === 0 ? (
             <div className="text-center py-12 text-gray-500 bg-white rounded-2xl border border-gray-100">
-              Không tìm thấy gợi ý kết bạn phù hợp.
+              {searchQuery ? "Không tìm thấy người dùng nào phù hợp." : "Không có gợi ý kết bạn phù hợp."}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -430,11 +436,24 @@ export function WanderFriends() {
 
                     <button
                       onClick={() => handleSendRequest(suggested.id)}
-                      disabled={sendRequestMutation.isPending}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      disabled={sendRequestMutation.isPending || sentRequests.has(suggested.id)}
+                      className={`w-full px-4 py-2 rounded-full font-semibold transition-all flex items-center justify-center gap-2 ${
+                        sentRequests.has(suggested.id)
+                          ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                          : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-md disabled:opacity-50"
+                      }`}
                     >
-                      <UserPlus size={16} />
-                      {sendRequestMutation.isPending ? 'Đang gửi...' : 'Thêm bạn bè'}
+                      {sentRequests.has(suggested.id) ? (
+                        <>
+                          <Check size={16} />
+                          Đã gửi lời mời
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={16} />
+                          {sendRequestMutation.isPending && sendRequestMutation.variables === suggested.id ? 'Đang gửi...' : 'Thêm bạn bè'}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

@@ -123,7 +123,7 @@ WanderLab/
 │   │   │   └── wander/         # Custom WanderLab components
 │   │   ├── data/               # Mock data (sẽ thay bằng API)
 │   │   ├── hooks/              # Custom React hooks
-│   │   ├── pages/wander/       # 14 trang chính
+│   │   ├── pages/wander/       # 20 trang chính
 │   │   ├── routes.tsx          # Route configuration
 │   │   └── App.tsx             # Root component
 │   ├── lib/                    # Supabase client config
@@ -137,7 +137,7 @@ WanderLab/
 └── README.md                   # Hướng dẫn chạy project
 
 ================================================================================
-6. DANH SÁCH TRANG (14 Pages)
+6. DANH SÁCH TRANG (22 Pages)
 ================================================================================
 
 +-----+--------------------+-----------------------+----------------------------+
@@ -146,17 +146,25 @@ WanderLab/
 |  1  | /                  | Landing               | Trang chủ, feed nhật ký    |
 |  2  | /login             | Login                 | Đăng nhập                  |
 |  3  | /register          | Register              | Đăng ký                    |
-|  4  | /guide             | Guide                 | Hướng dẫn sử dụng         |
-|  5  | /dashboard         | Dashboard             | Hồ sơ cá nhân             |
-|  6  | /explore           | Explore               | Khám phá nhật ký           |
-|  7  | /create            | CreateDiary            | Tạo nhật ký mới            |
-|  8  | /diary/:id         | DiaryDetail            | Chi tiết nhật ký           |
-|  9  | /create-itinerary  | CreateItinerary        | AI lập lịch trình          |
-| 10  | /friends           | Friends                | Danh sách bạn bè           |
-| 11  | /chat              | ChatPage               | Nhắn tin                   |
-| 12  | /partner           | Partner                | Đối tác & bảng giá         |
-| 13  | /checkout          | Checkout               | Thanh toán subscription    |
-| 14  | /admin-dashboard   | AdminDashboard         | Quản trị hệ thống         |
+|  4  | /forgot-password   | ForgotPassword        | Quên mật khẩu              |
+|  5  | /reset-password    | ResetPassword         | Đặt lại mật khẩu           |
+|  6  | /guide             | Guide                 | Hướng dẫn sử dụng         |
+|  7  | /dashboard         | Dashboard             | Hồ sơ cá nhân (Tổng quan) |
+|  8  | /profile/:username | UserProfile           | Trang cá nhân người dùng   |
+|  9  | /explore           | Explore               | Khám phá nhật ký           |
+| 10  | /create            | CreateDiary            | Tạo nhật ký mới            |
+| 11  | /edit-diary/:id    | EditDiary              | Chỉnh sửa nhật ký          |
+| 12  | /diary/:id         | DiaryDetail            | Chi tiết nhật ký           |
+| 13  | /create-itinerary  | CreateItinerary        | AI lập lịch trình          |
+| 14  | /friends           | Friends                | Danh sách bạn bè           |
+| 15  | /groups/:id        | GroupDetail            | Chi tiết nhóm              |
+| 16  | /chat              | ChatPage               | Nhắn tin (Full page)       |
+| 17  | /messages          | Messages               | Quản lý tin nhắn           |
+| 18  | /notifications     | Notifications          | Thông báo                  |
+| 19  | /settings          | Settings               | Cài đặt tài khoản          |
+| 20  | /partner           | Partner                | Đối tác & bảng giá         |
+| 21  | /checkout          | Checkout               | Thanh toán subscription    |
+| 22  | /admin-dashboard   | AdminDashboard         | Quản trị hệ thống         |
 +-----+--------------------+-----------------------+----------------------------+
 
 ================================================================================

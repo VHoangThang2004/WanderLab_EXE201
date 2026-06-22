@@ -22,7 +22,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
-import { useAuthStore, useLanguageStore, useUIStore, useNotificationStore } from "@/stores";
+import { useAuthStore, useLanguageStore, useUIStore } from "@/stores";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { notificationService } from "@/api/notificationService";
+import { messageService } from "@/api/messageService";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 export function WanderSidebar() {
   const location = useLocation();
@@ -30,8 +36,74 @@ export function WanderSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
   const { language, t } = useLanguageStore();
-  const { notifications } = useNotificationStore();
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  
+  const queryClient = useQueryClient();
+  const { data: dbNotifications = [] } = useQuery({
+    queryKey: ['globalNotifications', user?.id],
+    queryFn: () => notificationService.fetchNotifications(user?.id || ''),
+    enabled: !!user?.id
+  });
+
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    // Notifications Subscription
+    const notifChannel = notificationService.subscribeToNotifications(user.id, () => {
+      queryClient.invalidateQueries({ queryKey: ['globalNotifications', user.id] });
+    });
+    
+    // Global Messages Subscription
+    const msgChannel = messageService.subscribeToMessages(user.id, async (payload) => {
+      const newMsg = payload.new;
+      if (payload.eventType === 'INSERT' && newMsg && newMsg.receiver_id === user.id) {
+        
+        // Don't show toast if user is on the messages page (they can see the unread badge or chat)
+        const currentLoc = locationRef.current;
+        if (currentLoc.pathname.includes('/messages')) {
+          // If they are on messages page, the Messages component handles invalidation
+          return;
+        }
+
+        const { data: sender } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', newMsg.sender_id).single();
+        if (sender) {
+          toast(
+            <div 
+              className="flex items-center gap-3 w-full cursor-pointer" 
+              onClick={() => {
+                toast.dismiss();
+                navigate(`/messages?userId=${newMsg.sender_id}`);
+              }}
+            >
+              <img src={sender.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200'} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700" alt="avatar" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{sender.full_name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                  {newMsg.media_type === 'system_call' ? '📞 Cuộc gọi' : newMsg.media_url ? '📎 Tệp đính kèm' : newMsg.content}
+                </p>
+              </div>
+            </div>, 
+            { 
+              duration: 5000,
+              position: 'top-right',
+              className: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl rounded-xl'
+            }
+          );
+        }
+      }
+    });
+
+    return () => {
+      if (notifChannel) supabase.removeChannel(notifChannel);
+      if (msgChannel) supabase.removeChannel(msgChannel);
+    };
+  }, [user?.id, queryClient, navigate]);
+
+  const unreadCount = dbNotifications.filter(n => !n.is_read).length;
 
   const isAdmin = user?.role === 'admin';
 
@@ -49,7 +121,6 @@ export function WanderSidebar() {
         { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
         { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },
         { icon: MessageCircle, label: language === 'vi' ? "Nhắn Tin" : "Messages", path: "/messages", public: false },
-        { icon: Bot, label: language === 'vi' ? "AI Trợ Lý" : "AI Assistant", path: "/chat", public: false },
         { icon: Users, label: language === 'vi' ? "Hội Nhóm" : "Groups", path: "/groups/1", public: false },
         { icon: CreditCard, label: t("selectPlan"), path: "/partner", public: true },
       ];

@@ -37,65 +37,65 @@ PHASE 1: FOUNDATION (Sprint 1-2) — NỀN TẢNG
   [x] Tạo .env.example template
   [x] Build verification passed (2039 modules, 0 errors)
 
---- Sprint 2: Authentication ---
+--- Sprint 2: Authentication (HOÀN THÀNH ✅) ---
 
-  [ ] Tạo Supabase project trên supabase.com
-  [ ] Cấu hình Supabase Auth:
+  [x] Tạo Supabase project trên supabase.com
+  [x] Cấu hình Supabase Auth:
       - Bật Email/Password auth
       - Cấu hình Google OAuth provider
       - Cấu hình Facebook OAuth provider
-  [ ] Chạy SQL migration tạo bảng profiles
-  [ ] Kết nối trang Login.tsx → Supabase Auth:
+  [x] Chạy SQL migration tạo bảng profiles
+  [x] Kết nối trang Login.tsx → Supabase Auth:
       - Email/password login
       - Google login
       - Facebook login
-  [ ] Kết nối trang Register.tsx → Supabase Auth
-  [ ] Cập nhật App.tsx:
+  [x] Kết nối trang Register.tsx → Supabase Auth
+  [x] Cập nhật App.tsx:
       - Thêm QueryClientProvider (TanStack Query)
       - Thêm auth session listener (auto-refresh)
-  [ ] Cập nhật routes.tsx:
+  [x] Cập nhật routes.tsx:
       - Wrap protected routes với ProtectedRoute
       - Wrap Login/Register với GuestRoute
-  [ ] Cập nhật WanderSidebar: hiển thị user info thật
+  [x] Cập nhật WanderSidebar: hiển thị user info thật
 
 ================================================================================
 PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
 ================================================================================
 
---- Sprint 3: Diary System ---
+--- Sprint 3: Diary System (HOÀN THÀNH ✅) ---
 
-  [ ] Tạo bảng DB: diaries, diary_images, diary_days, diary_budget_breakdown
-  [ ] Cấu hình Supabase Storage: bucket "diaries" (public)
-  [ ] Kết nối CreateDiary.tsx → Supabase:
+  [x] Tạo bảng DB: diaries, diary_images, diary_days, diary_budget_breakdown
+  [x] Cấu hình Supabase Storage: bucket "diaries" (public)
+  [x] Kết nối CreateDiary.tsx → Supabase:
       - Upload ảnh → Storage
       - Lưu diary record → Database
       - Lưu diary_days, diary_budget_breakdown → Database
-  [ ] Kết nối DiaryDetail.tsx → Supabase:
+  [x] Kết nối DiaryDetail.tsx → Supabase:
       - Fetch diary + relations
       - Hiển thị dữ liệu thật thay vì mock
-  [ ] Replace mock data trong diaries.ts bằng API calls
+  [x] Replace mock data trong diaries.ts bằng API calls
 
---- Sprint 4: Social Features ---
+--- Sprint 4: Social Features (HOÀN THÀNH ✅) ---
 
-  [ ] Tạo bảng DB: diary_likes, comments, diary_bookmarks, follows
-  [ ] Implement Like/Unlike functionality
-  [ ] Implement Comment system (kèm replies)
-  [ ] Implement Bookmark/Save diary
-  [ ] Implement Follow/Unfollow user
-  [ ] Kết nối Landing.tsx (feed) → real data
-  [ ] Kết nối Explore.tsx → real data + filters
+  [x] Tạo bảng DB: diary_likes, comments, diary_bookmarks, follows
+  [x] Implement Like/Unlike functionality
+  [x] Implement Comment system (kèm replies)
+  [x] Implement Bookmark/Save diary
+  [x] Implement Follow/Unfollow user
+  [x] Kết nối Landing.tsx (feed) → real data
+  [x] Kết nối Explore.tsx → real data + filters
 
---- Sprint 5: User Profile ---
+--- Sprint 5: User Profile (HOÀN THÀNH ✅) ---
 
-  [ ] Tạo Storage buckets: "avatars", "covers"
-  [ ] Kết nối Dashboard.tsx → real user data:
+  [x] Tạo Storage buckets: "avatars", "covers"
+  [x] Kết nối Dashboard.tsx → real user data:
       - Avatar upload
       - Cover image upload
       - Edit profile (bio, location)
       - Hiển thị nhật ký thật của user
       - Thống kê thật
-  [ ] Kết nối Friends.tsx → follows data
-  [ ] Refactor pages lớn:
+  [x] Kết nối Friends.tsx → follows data
+  [x] Refactor pages lớn:
       - AdminDashboard.tsx → tách sub-components
       - CreateDiary.tsx → tách sub-components
 
@@ -103,17 +103,17 @@ PHASE 2: CORE FEATURES (Sprint 3-5) — TÍNH NĂNG LÕI
 PHASE 3: ADVANCED FEATURES (Sprint 6-8) — TÍNH NĂNG NÂNG CAO
 ================================================================================
 
---- Sprint 6: Chat & Messaging ---
+--- Sprint 6: Chat & Messaging (UI & DB đã hoàn thành ✅) ---
 
-  [ ] Tạo bảng DB: conversations, conversation_members, messages
+  [x] Tạo bảng DB: messages (Đã thiết lập schema Direct Message)
   [ ] Cấu hình Supabase Realtime channel
   [ ] Kết nối ChatPage.tsx → real data:
-      - Danh sách conversations
+      - Lấy danh sách lịch sử tin nhắn
       - Gửi/nhận tin nhắn realtime
-      - Upload ảnh trong chat
+      - Đánh dấu trạng thái tin nhắn (đã gửi, đã đọc)
   [ ] Implement online status indicator
 
---- Sprint 7: AI Integration ---
+--- Sprint 7: AI Integration (UI đã hoàn thành ✅) ---
 
   [ ] Tạo Supabase Edge Function: ai-chat
       - Kết nối Google Gemini API
@@ -125,7 +125,7 @@ PHASE 3: ADVANCED FEATURES (Sprint 6-8) — TÍNH NĂNG NÂNG CAO
   [ ] Kết nối CreateItinerary.tsx → real AI
   [ ] Kết nối WanderBot chatbot (App.tsx) → real AI
 
---- Sprint 8: Payments ---
+--- Sprint 8: Payments (UI đã hoàn thành ✅) ---
 
   [ ] Đăng ký VNPay Sandbox merchant account
   [ ] Tạo Edge Function: payment-create
@@ -143,8 +143,9 @@ PHASE 3: ADVANCED FEATURES (Sprint 6-8) — TÍNH NĂNG NÂNG CAO
 PHASE 4: ADMIN & POLISH (Sprint 9-10) — HOÀN THIỆN
 ================================================================================
 
---- Sprint 9: Admin Panel ---
+--- Sprint 9: Admin Panel (UI đã hoàn thành ✅) ---
 
+  [x] Khởi tạo tài khoản Admin mặc định & cập nhật quyền (role)
   [ ] Tạo Edge Function: admin-stats
   [ ] Kết nối AdminDashboard → real data:
       - Tab Tổng Quan: thống kê từ DB
