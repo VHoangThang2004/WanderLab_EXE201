@@ -21,6 +21,7 @@ import { WanderUserProfile } from "./pages/wander/UserProfile";
 import { GroupDetail } from "./pages/wander/GroupDetail";
 import { Notifications } from "./pages/wander/Notifications";
 import { Settings } from "./pages/wander/Settings";
+import { DiaryBook } from "./pages/wander/DiaryBook";
 import { WanderMainLayout } from "./components/wander/WanderMainLayout";
 import { ProtectedRoute, GuestRoute } from "./components/auth/ProtectedRoute";
 
@@ -131,6 +132,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <WanderEditDiary />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/diary-book",
+        element: (
+          <ProtectedRoute>
+            <DiaryBook />
           </ProtectedRoute>
         ),
       },

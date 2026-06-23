@@ -147,16 +147,16 @@ export function WanderCreateDiary() {
     return normalizedProvince.includes(normalizedInput);
   });
 
-  const [timeline, setTimeline] = useState([
-    { day: 1, title: "", activities: [""], budget: "" },
+  const [timeline, setTimeline] = useState<any[]>([
+    { day: 1, title: "", activities: [""], budget: "", imageFiles: [], videoFiles: [], audioFiles: [] },
   ]);
 
-  const totalSteps = 5;
+  const totalSteps = 4;
 
   const addTimelineDay = () => {
     setTimeline([
       ...timeline,
-      { day: timeline.length + 1, title: "", activities: [""], budget: "" },
+      { day: timeline.length + 1, title: "", activities: [""], budget: "", imageFiles: [], videoFiles: [], audioFiles: [] },
     ]);
   };
 
@@ -224,6 +224,23 @@ export function WanderCreateDiary() {
       // 1. Upload ảnh
       const coverUrl = await diaryService.uploadDiaryImage(coverFile);
 
+      // 1.5 Upload timeline files
+      const timelineWithUrls = await Promise.all(timeline.map(async (day) => {
+        const imageUrls = await Promise.all((day.imageFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+        const videoUrls = await Promise.all((day.videoFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+        const audioUrls = await Promise.all((day.audioFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+
+        return {
+          day: day.day,
+          title: day.title || `Ngày ${day.day}`,
+          activities: day.activities.filter((a: string) => a.trim() !== ""),
+          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ",
+          images: imageUrls,
+          videos: videoUrls,
+          audios: audioUrls,
+        };
+      }));
+
       // 2. Chuẩn bị payload
       const payload: CreateDiaryPayload = {
         title: formData.title,
@@ -237,12 +254,7 @@ export function WanderCreateDiary() {
         status: privacySetting === "private" ? "draft" : "published",
         tips: ["Hãy chuẩn bị kem chống nắng", "Đặt phòng trước 1 tháng"], // Mock tips
         budget_notes: ["Nên mang theo một ít tiền mặt"],
-        timeline: timeline.map(day => ({
-          day: day.day,
-          title: day.title || `Ngày ${day.day}`,
-          activities: day.activities.filter(a => a.trim() !== ""),
-          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ"
-        })),
+        timeline: timelineWithUrls,
         budget_breakdown: [
           { category: "Di chuyển", amount: "Vừa phải", percentage: 30 },
           { category: "Ăn uống", amount: "Phải chăng", percentage: 40 },
@@ -280,8 +292,7 @@ export function WanderCreateDiary() {
   const stepTitles = [
     t("step1", "createDiary"),
     language === 'vi' ? "Ngân Sách & Nhóm Du Lịch" : "Budget & Travel Group",
-    t("step2", "createDiary"),
-    t("step4", "createDiary"),
+    language === 'vi' ? "Lịch Trình & Media" : "Timeline & Media",
     t("step5", "createDiary"),
   ];
 
@@ -511,6 +522,50 @@ export function WanderCreateDiary() {
                       <option value="Budget" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Tiết Kiệm" : "Budget"}</option>
                       <option value="Beach" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Biển & Nghỉ Dưỡng" : "Beach & Resort"}</option>
                     </select>
+                  </div>
+
+                  <div style={{ marginBottom: LINE_HEIGHT, marginTop: LINE_HEIGHT }}>
+                    <label
+                      className="block font-bold text-gray-900 dark:text-white mb-2"
+                      style={{ lineHeight: LINE_HEIGHT }}
+                    >
+                      {language === 'vi' ? "🖼️ Ảnh Bìa Chuyến Đi *" : "🖼️ Trip Cover Image *"}
+                    </label>
+                    <div
+                      className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-xl p-6 text-center transition-all cursor-pointer relative`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setCoverFile(file);
+                            setCoverPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      {coverPreview ? (
+                        <div className="flex flex-col items-center">
+                          <img src={coverPreview} alt="Preview" className="h-24 object-cover rounded-lg mb-2 shadow-sm" />
+                          <p className="font-bold text-sm text-green-600 dark:text-green-450">
+                            {coverFile?.name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {language === 'vi' ? 'Nhấn để thay đổi' : 'Click to change'}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                          <p className="text-sm font-semibold text-gray-700 dark:text-neutral-300">
+                            {language === 'vi' ? 'Nhấn để tải ảnh bìa lên' : 'Click to upload cover image'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">JPG, PNG (Max 10MB)</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -808,88 +863,81 @@ export function WanderCreateDiary() {
                               />
                             </div>
                           </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                            <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-3">{language === 'vi' ? "Media (Ảnh/Video/Audio)" : "Media (Image/Video/Audio)"}</label>
+                            <div className="flex flex-wrap gap-4">
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">{language === 'vi' ? 'Ảnh' : 'Image'}</span>
+                                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  const newTimeline = [...timeline];
+                                  const currentImages = newTimeline[dayIndex].imageFiles || [];
+                                  if (currentImages.length + files.length > 10) {
+                                    alert(language === 'vi' ? "Tối đa 10 ảnh mỗi ngày!" : "Max 10 images per day!");
+                                    return;
+                                  }
+                                  newTimeline[dayIndex].imageFiles = [...currentImages, ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Video</span>
+                                <input type="file" multiple accept="video/*" className="hidden" onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  const newTimeline = [...timeline];
+                                  const currentVideos = newTimeline[dayIndex].videoFiles || [];
+                                  if (currentVideos.length + files.length > 2) {
+                                    alert(language === 'vi' ? "Tối đa 2 video mỗi ngày!" : "Max 2 videos per day!");
+                                    return;
+                                  }
+                                  newTimeline[dayIndex].videoFiles = [...currentVideos, ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Audio</span>
+                                <input type="file" multiple accept="audio/*" className="hidden" onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  const newTimeline = [...timeline];
+                                  newTimeline[dayIndex].audioFiles = [...(newTimeline[dayIndex].audioFiles || []), ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+                            </div>
+                            
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(day.imageFiles || []).map((f: File, i: number) => (
+                                <div key={`img-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-orange-500">📸</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                              {(day.videoFiles || []).map((f: File, i: number) => (
+                                <div key={`vid-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-blue-500">🎬</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                              {(day.audioFiles || []).map((f: File, i: number) => (
+                                <div key={`aud-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-green-500">🎵</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Step 4: Media Upload */}
+              {/* Step 4: Privacy & Publish */}
               {currentStep === 4 && (
-                <div className="space-y-0">
-                  <div
-                    className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-2xl p-12 text-center transition-all cursor-pointer relative`}
-                    style={{ marginBottom: `${GRID_HEIGHT}px` }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setCoverFile(file);
-                          setCoverPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    {coverPreview ? (
-                      <div className="flex flex-col items-center">
-                        <img src={coverPreview} alt="Preview" className="h-32 object-cover rounded-xl mb-3 shadow-md" />
-                        <p className="font-bold text-green-600 dark:text-green-450">
-                          {language === 'vi' ? 'Đã chọn ảnh bìa:' : 'Cover image selected:'} {coverFile?.name}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-neutral-400 mt-1">
-                          {language === 'vi' ? 'Nhấn để thay đổi' : 'Click to change'}
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-                        <p
-                          className="font-bold text-gray-900 dark:text-white"
-                          style={{ lineHeight: LINE_HEIGHT }}
-                        >
-                          {language === 'vi' ? '📸 Nhấn vào đây để tải ảnh bìa lên (Bắt buộc)' : '📸 Click here to upload a cover image (Required)'}
-                        </p>
-                        <p
-                          className="text-sm text-gray-600 dark:text-neutral-450"
-                          style={{ lineHeight: LINE_HEIGHT }}
-                        >
-                          {language === 'vi' ? 'Tải lên hình ảnh chất lượng cao từ chuyến đi của bạn (JPG, PNG, tối đa 10MB)' : 'Upload high-quality images from your trip (JPG, PNG, max 10MB)'}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500" style={{ marginBottom: `${GRID_HEIGHT}px` }}>
-                    <h3
-                      className="font-bold text-gray-900 dark:text-white"
-                      style={{ lineHeight: LINE_HEIGHT }}
-                    >
-                      {language === 'vi' ? '📸 Mẹo Chụp Ảnh' : '📸 Photography Tips'}
-                    </h3>
-                    <ul className="space-y-0 text-sm text-gray-700 dark:text-neutral-350">
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Sử dụng hình ảnh độ phân giải cao để tăng chất lượng' : '• Use high-resolution images to improve quality'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Kết hợp ảnh phong cảnh, hoạt động và văn hoá địa phương' : '• Combine landscape, activity, and local culture photos'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Chọn một ảnh bìa nổi bật cho nhật ký' : '• Choose a striking cover image for your journal'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Thêm chú thích để kể câu chuyện đằng sau mỗi bức ảnh' : '• Add captions to tell the story behind each photo'}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 5: Privacy & Publish */}
-              {currentStep === 5 && (
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-900 dark:text-white mb-4">

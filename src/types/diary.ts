@@ -13,6 +13,9 @@ export interface DiaryDay {
   title: string;
   activities: string[];
   budget: string;
+  images?: string[];
+  videos?: string[];
+  audios?: string[];
 }
 
 export interface BudgetItem {

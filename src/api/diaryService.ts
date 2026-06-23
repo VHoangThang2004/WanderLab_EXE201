@@ -238,6 +238,9 @@ export const diaryService = {
         title: day.title,
         activities: day.activities,
         budget: day.budget,
+        images: day.images || [],
+        videos: day.videos || [],
+        audios: day.audios || [],
       }));
       await supabase.from('diary_days').insert(daysToInsert);
     }
@@ -309,6 +312,61 @@ export const diaryService = {
       }
     } catch (err) {
       console.warn("Failed to fetch user diaries from Supabase", err);
+    }
+    return [];
+  },
+
+  /**
+   * Lấy danh sách toàn bộ nhật ký với đầy đủ timeline để làm Cuốn Nhật Ký
+   */
+  async fetchUserFullDiaries(userId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('diaries')
+        .select(`
+          *,
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url),
+          timeline:diary_days(*),
+          budget_breakdown:diary_budget_breakdown(*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch full diaries error:', error);
+      } else if (data) {
+        return data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          location: item.location,
+          country: item.country,
+          image: item.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
+          duration: item.duration,
+          dates: item.dates,
+          totalBudget: item.total_budget,
+          groupSize: item.group_size,
+          description: item.description,
+          author: {
+            id: item.author?.id || 'unknown',
+            name: item.author?.full_name || 'Unknown User',
+            avatar: item.author?.avatar_url || '',
+          },
+          date: new Date(item.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
+          timeline: item.timeline?.map((day: any) => ({
+            day: day.day_number,
+            title: day.title,
+            activities: day.activities || [],
+            budget: day.budget
+          })) || [],
+          budgetBreakdown: item.budget_breakdown?.map((b: any) => ({
+            category: b.category,
+            amount: b.amount,
+            percentage: b.percentage
+          })) || [],
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to fetch user full diaries from Supabase", err);
     }
     return [];
   },
