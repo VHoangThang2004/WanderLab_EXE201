@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
 import { useAuthStore, useLanguageStore, useUIStore } from "@/stores";
 import {
@@ -19,10 +19,660 @@ import {
   Volume2,
   Moon,
   Sun,
-  Check
+  X,
+  Check,
+  AlertCircle,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 
+// ─── Profile Info Modal ────────────────────────────────────────────
+function ProfileModal({
+  isOpen,
+  onClose,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  t: (key: string, section?: string) => string;
+}) {
+  const { user, updateProfile } = useAuthStore();
+  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [location, setLocation] = useState(user?.location || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      setFullName(user.full_name || "");
+      setBio(user.bio || "");
+      setLocation(user.location || "");
+      setStatus(null);
+    }
+  }, [isOpen, user]);
+
+  const handleSave = async () => {
+    if (!fullName.trim()) return;
+    setIsLoading(true);
+    setStatus(null);
+    try {
+      await updateProfile({
+        full_name: fullName.trim(),
+        bio: bio.trim() || null,
+        location: location.trim() || null,
+      });
+      setStatus({ type: "success", message: t("profileUpdateSuccess", "settings") });
+      setTimeout(() => onClose(), 1500);
+    } catch {
+      setStatus({ type: "error", message: t("profileUpdateError", "settings") });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#ff3131] to-[#ff914d] px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">{t("profileModalTitle", "settings")}</h2>
+                <p className="text-white/80 text-sm mt-0.5">{t("profileModalSubtitle", "settings")}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5 space-y-5">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("fullNameLabel", "settings")} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder={t("fullNamePlaceholder", "settings")}
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+              />
+            </div>
+
+            {/* Bio */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("bioLabel", "settings")}
+              </label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder={t("bioPlaceholder", "settings")}
+                rows={3}
+                maxLength={200}
+                className="w-full px-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all resize-none text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1 text-right">{bio.length}/200</p>
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("locationLabel", "settings")}
+              </label>
+              <div className="relative">
+                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={t("locationPlaceholder", "settings")}
+                  className="w-full pl-10 pr-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Status message */}
+            <AnimatePresence>
+              {status && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${
+                    status.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : "bg-red-500/10 text-red-600 border border-red-500/20"
+                  }`}
+                >
+                  {status.type === "success" ? <Check size={16} /> : <AlertCircle size={16} />}
+                  {status.message}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              {t("cancelBtn", "settings")}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isLoading || !fullName.trim()}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-medium hover:shadow-lg hover:shadow-[#ff3131]/25 transition-all text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && <Loader2 size={16} className="animate-spin" />}
+              {isLoading ? t("saving", "settings") : t("saveBtn", "settings")}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Contact Info Modal ────────────────────────────────────────────
+function ContactModal({
+  isOpen,
+  onClose,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  t: (key: string, section?: string) => string;
+}) {
+  const { user, updateEmail, updatePhone } = useAuthStore();
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Track original values to detect changes
+  const [originalEmail, setOriginalEmail] = useState(user?.email || "");
+  const [originalPhone, setOriginalPhone] = useState(user?.phone || "");
+
+  useEffect(() => {
+    if (isOpen && user) {
+      setEmail(user.email || "");
+      setPhone(user.phone || "");
+      setOriginalEmail(user.email || "");
+      setOriginalPhone(user.phone || "");
+      setStatus(null);
+    }
+  }, [isOpen, user]);
+
+  const emailChanged = email.trim() !== originalEmail;
+  const phoneChanged = phone.trim() !== originalPhone;
+
+  const handleSave = async () => {
+    setStatus(null);
+
+    try {
+      // Update email if changed
+      if (emailChanged && email.trim()) {
+        setEmailLoading(true);
+        await updateEmail(email.trim());
+        setOriginalEmail(email.trim());
+        setStatus({ type: "success", message: t("emailUpdateSuccess", "settings") });
+        setEmailLoading(false);
+      }
+
+      // Update phone if changed
+      if (phoneChanged) {
+        setPhoneLoading(true);
+        await updatePhone(phone.trim());
+        setOriginalPhone(phone.trim());
+        setStatus({ type: "success", message: t("phoneUpdateSuccess", "settings") });
+        setPhoneLoading(false);
+      }
+
+      if (!emailChanged && !phoneChanged) {
+        onClose();
+        return;
+      }
+
+      setTimeout(() => onClose(), 1500);
+    } catch {
+      setEmailLoading(false);
+      setPhoneLoading(false);
+      setStatus({ type: "error", message: t("contactUpdateError", "settings") });
+    }
+  };
+
+  const isLoading = emailLoading || phoneLoading;
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#ff3131] to-[#ff914d] px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">{t("contactModalTitle", "settings")}</h2>
+                <p className="text-white/80 text-sm mt-0.5">{t("contactModalSubtitle", "settings")}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5 space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("emailLabel", "settings")}
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("emailPlaceholder", "settings")}
+                  className="w-full pl-10 pr-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+                />
+              </div>
+              {emailChanged && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="text-xs text-amber-600 mt-1.5 flex items-center gap-1"
+                >
+                  <AlertCircle size={12} />
+                  {t("emailConfirmNote", "settings")}
+                </motion.p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("phoneLabel", "settings")}
+              </label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t("phonePlaceholder", "settings")}
+                  className="w-full pl-10 pr-4 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Status message */}
+            <AnimatePresence>
+              {status && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${
+                    status.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : "bg-red-500/10 text-red-600 border border-red-500/20"
+                  }`}
+                >
+                  {status.type === "success" ? <Check size={16} /> : <AlertCircle size={16} />}
+                  {status.message}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              {t("cancelBtn", "settings")}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isLoading || (!emailChanged && !phoneChanged)}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-medium hover:shadow-lg hover:shadow-[#ff3131]/25 transition-all text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && <Loader2 size={16} className="animate-spin" />}
+              {isLoading ? t("saving", "settings") : t("saveBtn", "settings")}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Change Password Modal ─────────────────────────────────────────
+function PasswordModal({
+  isOpen,
+  onClose,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  t: (key: string, section?: string) => string;
+}) {
+  const { changePassword } = useAuthStore();
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentPwd("");
+      setNewPwd("");
+      setConfirmPwd("");
+      setShowCurrent(false);
+      setShowNew(false);
+      setShowConfirm(false);
+      setStatus(null);
+    }
+  }, [isOpen]);
+
+  const validate = (): string | null => {
+    if (newPwd.length < 6) return t("passwordTooShort", "settings");
+    if (newPwd !== confirmPwd) return t("passwordMismatch", "settings");
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    const error = validate();
+    if (error) {
+      setStatus({ type: "error", message: error });
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus(null);
+    try {
+      await changePassword(currentPwd, newPwd);
+      setStatus({ type: "success", message: t("passwordChangeSuccess", "settings") });
+      setTimeout(() => onClose(), 1500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("passwordChangeError", "settings");
+      setStatus({ type: "error", message: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isValid = currentPwd.length > 0 && newPwd.length >= 6 && confirmPwd.length > 0;
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-[#ff3131] to-[#ff914d] px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">{t("passwordModalTitle", "settings")}</h2>
+                <p className="text-white/80 text-sm mt-0.5">{t("passwordModalSubtitle", "settings")}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5 space-y-5">
+            {/* Current Password */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("currentPassword", "settings")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  placeholder={t("currentPasswordPlaceholder", "settings")}
+                  className="w-full pl-10 pr-10 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("newPassword", "settings")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder={t("newPasswordPlaceholder", "settings")}
+                  className="w-full pl-10 pr-10 py-2.5 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff3131]/50 focus:border-[#ff3131] transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {/* Password strength indicator */}
+              {newPwd.length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((level) => {
+                      const strength =
+                        newPwd.length >= 12 && /[A-Z]/.test(newPwd) && /[0-9]/.test(newPwd) && /[^A-Za-z0-9]/.test(newPwd)
+                          ? 4
+                          : newPwd.length >= 8 && (/[A-Z]/.test(newPwd) || /[0-9]/.test(newPwd))
+                          ? 3
+                          : newPwd.length >= 6
+                          ? 2
+                          : 1;
+                      return (
+                        <div
+                          key={level}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            level <= strength
+                              ? strength <= 1
+                                ? "bg-red-500"
+                                : strength === 2
+                                ? "bg-amber-500"
+                                : strength === 3
+                                ? "bg-blue-500"
+                                : "bg-emerald-500"
+                              : "bg-muted-foreground/20"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("passwordRequirements", "settings")}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
+                {t("confirmPassword", "settings")} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPwd}
+                  onChange={(e) => setConfirmPwd(e.target.value)}
+                  placeholder={t("confirmPasswordPlaceholder", "settings")}
+                  className={`w-full pl-10 pr-10 py-2.5 bg-muted border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all text-sm ${
+                    confirmPwd.length > 0 && newPwd !== confirmPwd
+                      ? "border-red-400 focus:ring-red-400/50 focus:border-red-400"
+                      : confirmPwd.length > 0 && newPwd === confirmPwd
+                      ? "border-emerald-400 focus:ring-emerald-400/50 focus:border-emerald-400"
+                      : "border-border focus:ring-[#ff3131]/50 focus:border-[#ff3131]"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {confirmPwd.length > 0 && newPwd !== confirmPwd && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-xs text-red-500 mt-1 flex items-center gap-1"
+                >
+                  <AlertCircle size={12} />
+                  {t("passwordMismatch", "settings")}
+                </motion.p>
+              )}
+              {confirmPwd.length > 0 && newPwd === confirmPwd && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-xs text-emerald-500 mt-1 flex items-center gap-1"
+                >
+                  <Check size={12} />
+                  ✓
+                </motion.p>
+              )}
+            </div>
+
+            {/* Status message */}
+            <AnimatePresence>
+              {status && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${
+                    status.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : "bg-red-500/10 text-red-600 border border-red-500/20"
+                  }`}
+                >
+                  {status.type === "success" ? <Check size={16} /> : <AlertCircle size={16} />}
+                  {status.message}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              {t("cancelBtn", "settings")}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !isValid}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white font-medium hover:shadow-lg hover:shadow-[#ff3131]/25 transition-all text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading && <Loader2 size={16} className="animate-spin" />}
+              {isLoading ? t("changingPassword", "settings") : t("changePasswordBtn", "settings")}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Main Settings Page ────────────────────────────────────────────
 export function Settings() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -34,11 +684,16 @@ export function Settings() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // Modal states
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+
   const userInfo = {
     name: user?.full_name || t("defaultUser", "settings"),
     email: user?.email || t("noEmail", "settings"),
-    phone: t("noPhone", "settings"), // Backend usually doesn't return phone right away
-    location: t("noAddress", "settings"),
+    phone: user?.phone || t("noPhone", "settings"),
+    location: user?.location || t("noAddress", "settings"),
     avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
   };
 
@@ -91,13 +746,23 @@ export function Settings() {
   ];
 
   const handleAction = async (action: string) => {
-    if (action === "logout") {
-      await logout();
-      navigate("/login");
-      return;
+    switch (action) {
+      case "profile":
+        setProfileModalOpen(true);
+        return;
+      case "contact":
+        setContactModalOpen(true);
+        return;
+      case "password":
+        setPasswordModalOpen(true);
+        return;
+      case "logout":
+        await logout();
+        navigate("/login");
+        return;
+      default:
+        alert(t("featureDev", "settings"));
     }
-
-    alert(t("featureDev", "settings"));
   };
 
   return (
@@ -249,6 +914,11 @@ export function Settings() {
           </div>
         </motion.div>
       </div>
+
+      {/* Modals */}
+      <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} t={t} />
+      <ContactModal isOpen={contactModalOpen} onClose={() => setContactModalOpen(false)} t={t} />
+      <PasswordModal isOpen={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} />
     </div>
   );
 }

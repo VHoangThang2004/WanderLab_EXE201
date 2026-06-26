@@ -19,12 +19,16 @@ interface AuthState {
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateEmail: (newEmail: string) => Promise<void>;
+  updatePhone: (phone: string) => Promise<void>;
   updateProfile: (updates: {
     full_name?: string;
     bio?: string | null;
     location?: string | null;
     avatar_url?: string | null;
     cover_image_url?: string | null;
+    phone?: string | null;
   }) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   uploadCover: (file: File) => Promise<string>;
@@ -35,12 +39,13 @@ interface AuthState {
  * Works even if profiles table doesn't exist yet.
  */
 function buildUser(
-  authUser: { id: string; email?: string | null; created_at: string; user_metadata?: Record<string, unknown> },
+  authUser: { id: string; email?: string | null; phone?: string | null; created_at: string; user_metadata?: Record<string, unknown> },
   profile?: Record<string, unknown> | null
 ): User {
   return {
     id: authUser.id,
     email: authUser.email || '',
+    phone: (profile?.phone as string) || authUser.phone || null,
     full_name: (profile?.full_name as string) || (authUser.user_metadata?.full_name as string) || '',
     avatar_url: (profile?.avatar_url as string) || null,
     cover_image_url: (profile?.cover_image_url as string) || null,
@@ -192,6 +197,70 @@ export const useAuthStore = create<AuthState>()(
           if (error) throw error;
         } finally {
           set({ isLoading: false });
+        }
+      },
+
+      changePassword: async (currentPassword: string, newPassword: string) => {
+        const { user } = get();
+        if (!user) throw new Error('User not authenticated');
+        set({ isLoading: true });
+        try {
+          // Verify current password by re-authenticating
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: currentPassword,
+          });
+          if (signInError) throw new Error('Mật khẩu hiện tại không đúng');
+
+          // Update to new password
+          const { error: updateError } = await supabase.auth.updateUser({
+            password: newPassword,
+          });
+          if (updateError) throw updateError;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateEmail: async (newEmail: string) => {
+        set({ isLoading: true });
+        try {
+          const { error } = await supabase.auth.updateUser({
+            email: newEmail,
+          });
+          if (error) throw error;
+
+          // Update local user state
+          const { user } = get();
+          if (user) {
+            set({ user: { ...user, email: newEmail }, isLoading: false });
+          }
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      updatePhone: async (phone: string) => {
+        const { user } = get();
+        if (!user) throw new Error('User not authenticated');
+        set({ isLoading: true });
+        try {
+          // Save phone to profiles table
+          const { error } = await supabase
+            .from('profiles')
+            .update({ phone })
+            .eq('id', user.id);
+
+          if (error) throw error;
+
+          set({
+            user: { ...user, phone },
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
         }
       },
 

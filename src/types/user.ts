@@ -4,6 +4,7 @@ export type UserStatus = 'active' | 'suspended' | 'pending';
 export interface User {
   id: string;
   email: string;
+  phone: string | null;
   full_name: string;
   avatar_url: string | null;
   cover_image_url: string | null;
