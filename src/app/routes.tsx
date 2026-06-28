@@ -18,7 +18,6 @@ import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
 import { WanderExplore } from "./pages/wander/Explore";
 import { WanderUserProfile } from "./pages/wander/UserProfile";
-import { GroupDetail } from "./pages/wander/GroupDetail";
 import { Notifications } from "./pages/wander/Notifications";
 import { Settings } from "./pages/wander/Settings";
 import { DiaryBook } from "./pages/wander/DiaryBook";
@@ -176,14 +175,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "/groups/:id",
-        element: (
-          <ProtectedRoute>
-            <GroupDetail />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "/notifications",
         element: (
           <ProtectedRoute>
@@ -193,11 +184,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/settings",
-        element: (
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        ),
+        element: <Settings />,
       },
     ],
   },

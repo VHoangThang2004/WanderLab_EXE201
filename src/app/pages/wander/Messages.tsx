@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore, useLanguageStore } from '@/stores';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
+import { UserAvatar } from '../../components/wander/UserAvatar';
 import { Search, Phone, Video, Info, MoreVertical, Send, Image as ImageIcon, Smile, Paperclip, Check, CheckCheck, MessageCircle, PhoneMissed, PhoneCall } from 'lucide-react';
 import { CallModal } from '../../components/wander/CallModal';
 import { useSearchParams } from 'react-router';
@@ -204,7 +205,7 @@ export function MessagesPage() {
               }`}
             >
               <div className="relative flex-shrink-0">
-                <ImageWithFallback src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover" />
+                <UserAvatar src={chat.avatar} name={chat.name} className="w-14 h-14 text-xl" />
                 {chat.isOnline && (
                   <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
                 )}
@@ -247,7 +248,7 @@ export function MessagesPage() {
                   <Search size={20} />
                 </button>
                 <div className="relative">
-                  <ImageWithFallback src={activeChat.avatar} alt={activeChat.name} className="w-10 h-10 rounded-full object-cover" />
+                  <UserAvatar src={activeChat.avatar} name={activeChat.name} className="w-10 h-10 text-sm" />
                   {activeChat.isOnline && (
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full" />
                   )}
@@ -285,7 +286,7 @@ export function MessagesPage() {
                     <div className="flex max-w-[75%] sm:max-w-[65%] gap-2 items-end">
                       {!isMe && (
                         <div className="w-7 h-7 flex-shrink-0">
-                          {showAvatar && <ImageWithFallback src={activeChat.avatar} alt={activeChat.name} className="w-7 h-7 rounded-full object-cover" />}
+                          {showAvatar && <UserAvatar src={activeChat.avatar} name={activeChat.name} className="w-7 h-7 text-[10px]" />}
                         </div>
                       )}
                       
@@ -477,7 +478,7 @@ export function MessagesPage() {
             {showInfoPanel && (
               <div className="w-64 md:w-80 border-l border-gray-200 dark:border-white/10 flex flex-col bg-white dark:bg-card">
                 <div className="p-6 flex flex-col items-center border-b border-gray-200 dark:border-white/10">
-                  <ImageWithFallback src={activeChat.avatar} alt={activeChat.name} className="w-24 h-24 rounded-full object-cover mb-4" />
+                  <UserAvatar src={activeChat.avatar} name={activeChat.name} className="w-24 h-24 mb-4 text-3xl" />
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white text-center">{activeChat.name}</h3>
                   <p className="text-sm text-gray-500 mb-4">{activeChat.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</p>
                   

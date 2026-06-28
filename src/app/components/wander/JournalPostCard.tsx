@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Bookmark, MapPin, Calendar, Users, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
+import { UserAvatar } from "./UserAvatar";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { PostModal } from "./PostModal";
@@ -130,17 +131,11 @@ export function JournalPostCard({
         {/* Author Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-3">
-            {author.avatar && author.avatar !== 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04' ? (
-              <ImageWithFallback
-                src={author.avatar}
-                alt={author.name}
-                className="w-10 h-10 rounded-full object-cover shadow-sm"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                {author.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
+            <UserAvatar
+              src={author.avatar}
+              name={author.name}
+              className="w-10 h-10 text-sm shadow-sm"
+            />
             <div className="flex-1 min-w-0">
               <span className="font-semibold text-gray-900">
                 {author.name}

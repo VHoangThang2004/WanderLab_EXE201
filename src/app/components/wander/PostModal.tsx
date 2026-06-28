@@ -1,5 +1,6 @@
 import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
+import { UserAvatar } from "./UserAvatar";
 import { useState, useEffect } from "react";
 import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService, CommentItem } from "@/api/interactionService";
@@ -146,10 +147,10 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <ImageWithFallback
+              <UserAvatar
                 src={post.author.avatar}
-                alt={post.author.name}
-                className="w-10 h-10 rounded-full object-cover"
+                name={post.author.name}
+                className="w-10 h-10 text-sm"
               />
               <div>
                 <p className="font-bold text-gray-900">{post.author.name}</p>
@@ -170,17 +171,11 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
           {/* Caption */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-start gap-3 mb-3">
-              {post.author.avatar && post.author.avatar !== 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04' ? (
-                <ImageWithFallback
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm">
-                  {post.author.name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )}
+              <UserAvatar
+                src={post.author.avatar}
+                name={post.author.name}
+                className="w-8 h-8 flex-shrink-0 shadow-sm text-xs"
+              />
               <div>
                 <p className="text-gray-900">
                   <span className="font-bold mr-2">{post.author.name}</span>
@@ -211,17 +206,11 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
             ) : (
               comments.map((comment) => (
                 <div key={comment.id} className="flex items-start gap-3">
-                  {comment.author.avatar_url ? (
-                    <ImageWithFallback
-                      src={comment.author.avatar_url}
-                      alt={comment.author.full_name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                      {comment.author.full_name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={comment.author.avatar_url}
+                    name={comment.author.full_name}
+                    className="w-8 h-8 flex-shrink-0 text-xs"
+                  />
                   <div className="flex-1">
                     <div className="bg-gray-100 rounded-2xl px-4 py-2">
                       <p className="font-bold text-sm text-gray-900">{comment.author.full_name}</p>

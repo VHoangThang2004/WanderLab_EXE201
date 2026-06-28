@@ -2,6 +2,7 @@ import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { Link } from "react-router";
 import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen, Wallet } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { UserAvatar } from "../../components/wander/UserAvatar";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { VietnamMap } from "../../components/wander/VietnamMap";
 import { useState, useEffect } from "react";
@@ -9,6 +10,7 @@ import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailMod
 import { useAuthStore, useLanguageStore } from "@/stores";
 import { diaryService } from "@/api/diaryService";
 import { VIETNAM_PROVINCES, normalizeSearchString } from "@/utils/vietnamProvinces";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
 
 // Helper: extract visited provinces from user diaries
 const getVisitedProvinces = (diaries: any[]) => {
@@ -30,6 +32,7 @@ export function WanderDashboard() {
   const { user, updateProfile, uploadAvatar, uploadCover } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const { t, language } = useLanguageStore();
+  const { limits, getUsage } = useUsageLimits();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
   const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "trips">("posts");
@@ -287,7 +290,7 @@ export function WanderDashboard() {
 
               {/* Stats */}
               {!isAdmin && (
-                <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-6 text-sm mb-4">
                   <div>
                     <span className="font-bold text-gray-900">{userProfile.diariesCount}</span>
                     <span className="text-gray-600 ml-1">{t("diariesInfo")}</span>
@@ -303,6 +306,78 @@ export function WanderDashboard() {
                       <span className="font-bold text-gray-900">{userProfile.followingCount}</span>
                       <span className="text-gray-600 ml-1">{t("followingInfo")}</span>
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Usage Plan Status */}
+              {!isAdmin && (
+                <div className="mt-6 max-w-2xl flex flex-col sm:flex-row gap-4">
+                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${
+                    user?.plan === 'pro' 
+                      ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
+                      : user?.plan === 'plus'
+                        ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+                        : 'bg-white border-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Wallet size={18} className={user?.plan === 'pro' ? 'text-orange-500' : 'text-gray-500'} />
+                        <span className="font-bold text-gray-900">
+                          {language === 'vi' ? 'Gói hiện tại:' : 'Current Plan:'} 
+                          <span className={`ml-2 uppercase tracking-wide font-extrabold ${
+                            user?.plan === 'pro' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ff3131] to-[#ff914d]' 
+                            : user?.plan === 'plus' ? 'text-[#ff3131]' : 'text-gray-700'
+                          }`}>
+                            {user?.plan || 'Free'}
+                          </span>
+                        </span>
+                      </div>
+                      {(!user?.plan || user.plan === 'free' || user.plan === 'plus') && (
+                        <Link to="/partner" className="px-4 py-1.5 bg-[#ff3131] text-white text-xs rounded-xl font-bold hover:bg-[#e62b2b] transition-colors shadow-sm">
+                          {language === 'vi' ? 'Nâng cấp' : 'Upgrade'}
+                        </Link>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs text-gray-600 font-medium">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>{language === 'vi' ? 'Đăng Nhật Ký' : 'Journals'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.create_diary - getUsage('create_diary'))}/{limits.create_diary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('create_diary') >= limits.create_diary ? 'bg-red-500' : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.create_diary - getUsage('create_diary')) / limits.create_diary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>{language === 'vi' ? 'Tạo Lịch Trình' : 'Itineraries'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.create_itinerary - getUsage('create_itinerary'))}/{limits.create_itinerary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('create_itinerary') >= limits.create_itinerary ? 'bg-red-500' : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.create_itinerary - getUsage('create_itinerary')) / limits.create_itinerary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>AI {language === 'vi' ? 'Nhật Ký' : 'Journal'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.ai_diary - getUsage('ai_diary'))}/{limits.ai_diary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('ai_diary') >= limits.ai_diary ? 'bg-red-500' : 'bg-[#4f46e5]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.ai_diary - getUsage('ai_diary')) / limits.ai_diary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>AI {language === 'vi' ? 'Lịch Trình' : 'Itinerary'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.ai_itinerary - getUsage('ai_itinerary'))}/{limits.ai_itinerary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('ai_itinerary') >= limits.ai_itinerary ? 'bg-red-500' : 'bg-[#4f46e5]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.ai_itinerary - getUsage('ai_itinerary')) / limits.ai_itinerary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -365,10 +440,10 @@ export function WanderDashboard() {
                   {/* Create Post Card */}
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
                     <div className="flex items-center gap-4">
-                      <ImageWithFallback
+                      <UserAvatar
                         src={userProfile.avatar}
-                        alt={userProfile.name}
-                        className="w-12 h-12 rounded-full object-cover"
+                        name={userProfile.name}
+                        className="w-12 h-12 text-lg"
                       />
                       <Link
                         to="/create"

@@ -675,7 +675,7 @@ function PasswordModal({
 // ─── Main Settings Page ────────────────────────────────────────────
 export function Settings() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
   const { language, setLanguage, t } = useLanguageStore();
   const { isDarkMode, toggleDarkMode } = useUIStore();
 
@@ -694,10 +694,10 @@ export function Settings() {
     email: user?.email || t("noEmail", "settings"),
     phone: user?.phone || t("noPhone", "settings"),
     location: user?.location || t("noAddress", "settings"),
-    avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+    avatar: user?.avatar_url || "",
   };
 
-  const settingsSections = [
+  const allSections = [
     {
       title: t("secAccount", "settings"),
       icon: User,
@@ -745,6 +745,13 @@ export function Settings() {
     },
   ];
 
+  const settingsSections = isAuthenticated
+    ? allSections
+    : allSections.filter(
+        (sec) =>
+          sec.title === t("secAppearance", "settings") || sec.title === t("secAbout", "settings")
+      );
+
   const handleAction = async (action: string) => {
     switch (action) {
       case "profile":
@@ -786,6 +793,7 @@ export function Settings() {
         </motion.div>
 
         {/* Profile Card */}
+        {isAuthenticated && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -794,12 +802,18 @@ export function Settings() {
         >
           <div className="flex items-center gap-4">
             <div className="relative">
-              <ImageWithFallback
-                src={userInfo.avatar}
-                alt={userInfo.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
-              />
-              <button className="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all">
+              {userInfo.avatar ? (
+                <ImageWithFallback
+                  src={userInfo.avatar}
+                  alt={userInfo.name}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[#ff3131]"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-3xl shadow-inner border-2 border-transparent">
+                  {userInfo.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <button className="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all border-2 border-card">
                 <Camera size={14} />
               </button>
             </div>
@@ -813,6 +827,7 @@ export function Settings() {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Settings Sections */}
         <div className="space-y-4 sm:space-y-6">
@@ -889,6 +904,7 @@ export function Settings() {
         </div>
 
         {/* Danger Zone */}
+        {isAuthenticated && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -913,6 +929,7 @@ export function Settings() {
             </button>
           </div>
         </motion.div>
+        )}
       </div>
 
       {/* Modals */}

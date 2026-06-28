@@ -22,6 +22,7 @@ interface AuthState {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateEmail: (newEmail: string) => Promise<void>;
   updatePhone: (phone: string) => Promise<void>;
+  setPlan: (plan: 'free' | 'plus' | 'pro') => void;
   updateProfile: (updates: {
     full_name?: string;
     bio?: string | null;
@@ -29,6 +30,7 @@ interface AuthState {
     avatar_url?: string | null;
     cover_image_url?: string | null;
     phone?: string | null;
+    plan?: 'free' | 'plus' | 'pro';
   }) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   uploadCover: (file: File) => Promise<string>;
@@ -52,6 +54,7 @@ function buildUser(
     bio: (profile?.bio as string) || null,
     location: (profile?.location as string) || null,
     role: (profile?.role as User['role']) || 'explorer',
+    plan: (profile?.plan === 'starter' ? 'plus' : profile?.plan === 'professional' ? 'pro' : profile?.plan || 'free') as User['plan'],
     status: (profile?.status as User['status']) || 'active',
     reputation_score: (profile?.reputation_score as number) || 0,
     diaries_count: (profile?.diaries_count as number) || 0,
@@ -264,14 +267,26 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      setPlan: (plan) => {
+        const { user } = get();
+        if (user) {
+          set({ user: { ...user, plan } });
+        }
+      },
+
       updateProfile: async (updates) => {
         const { user } = get();
         if (!user) throw new Error('User not authenticated');
         set({ isLoading: true });
         try {
+          // Map frontend plan names to backend enum names
+          const dbUpdates = { ...updates };
+          if (dbUpdates.plan === 'plus') dbUpdates.plan = 'starter' as any;
+          if (dbUpdates.plan === 'pro') dbUpdates.plan = 'professional' as any;
+
           const { error } = await supabase
             .from('profiles')
-            .update(updates)
+            .update(dbUpdates)
             .eq('id', user.id);
 
           if (error) throw error;

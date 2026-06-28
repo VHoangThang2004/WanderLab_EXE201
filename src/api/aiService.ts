@@ -11,13 +11,18 @@ export const aiService = {
    * General-purpose Gemini API request sender.
    */
   async generateContent(prompt: string): Promise<string> {
-    if (!GEMINI_API_KEY || !isApiKeyValid) {
-      throw new Error("INVALID_KEY");
+    if (!GEMINI_API_KEY) {
+      console.error("Gemini API error: VITE_GEMINI_API_KEY is missing or empty.");
+      throw new Error("INVALID_KEY: Missing Key");
+    }
+    if (!isApiKeyValid) {
+      console.error("Gemini API error: VITE_GEMINI_API_KEY is invalid (must start with AIzaSy). Current key starts with:", GEMINI_API_KEY.substring(0, 5));
+      throw new Error("INVALID_KEY: Invalid Key format");
     }
 
     try {
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           contents: [
             {
@@ -139,6 +144,87 @@ Keep it very short (2-3 sentences), specifying expected daily budget and 2-3 top
       await new Promise(resolve => setTimeout(resolve, 800));
       return getMockBudgetSuggestions(context.location, context.style || "Tự do", context.groupSize || "1", language);
     }
+  },
+
+  /**
+   * Generates a full itinerary (JSON array) based on the user's selected context.
+   */
+  async generateItinerary(context: any, language: string = "vi"): Promise<any[]> {
+    const { destination, duration, budget, groupSize, interests } = context;
+    const days = parseInt(duration) || 3;
+    
+    const prompt = language === "vi"
+      ? `Bạn là một AI lên lịch trình du lịch chuyên nghiệp.
+Hãy tạo một lịch trình ${days} ngày cho chuyến đi tới ${destination}.
+Thông tin chuyến đi:
+- Ngân sách: ${budget}
+- Nhóm: ${groupSize}
+- Sở thích: ${interests.join(", ")}
+
+YÊU CẦU QUAN TRỌNG:
+Chỉ trả về DUY NHẤT một đối tượng JSON hợp lệ, không có văn bản nào khác, theo đúng cấu trúc sau:
+{
+  "days": [
+    {
+      "day": 1,
+      "title": "Tiêu đề ngày 1",
+      "emoji": "✈️",
+      "activities": ["Sáng: ...", "Trưa: ...", "Chiều: ...", "Tối: ..."],
+      "budget": "Dự kiến chi phí ngày 1 (VND)"
+    }
+  ],
+  "budgetBreakdown": [
+    { "label": "Khách sạn / Resort", "amount": "4.500.000₫" },
+    { "label": "Ăn uống", "amount": "1.800.000₫" },
+    { "label": "Di chuyển", "amount": "500.000₫" }
+  ],
+  "totalBudget": "11.400.000₫"
+}`
+      : `You are a professional travel AI planner.
+Create a ${days}-day itinerary for a trip to ${destination}.
+Trip Info:
+- Budget: ${budget}
+- Group: ${groupSize}
+- Interests: ${interests.join(", ")}
+
+CRITICAL REQUIREMENT:
+Return ONLY a valid JSON object, with no other text, exactly matching this structure:
+{
+  "days": [
+    {
+      "day": 1,
+      "title": "Day 1 Title",
+      "emoji": "✈️",
+      "activities": ["Morning: ...", "Noon: ...", "Afternoon: ...", "Evening: ..."],
+      "budget": "Estimated cost for day 1"
+    }
+  ],
+  "budgetBreakdown": [
+    { "label": "Hotel / Resort", "amount": "4.500.000₫" },
+    { "label": "Dining", "amount": "1.800.000₫" },
+    { "label": "Transportation", "amount": "500.000₫" }
+  ],
+  "totalBudget": "11.400.000₫"
+}`;
+
+    try {
+      const responseText = await this.generateContent(prompt);
+      // Clean up markdown block if present
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+      return JSON.parse(jsonString);
+    } catch (error: any) {
+      console.warn("Falling back to mock itinerary due to API error or invalid key:", error?.response?.data || error.message);
+      
+      toast.warning(
+        language === "vi"
+          ? `Đang chạy Mock Mode. Lỗi: ${error?.response?.data?.error?.message || error.message}`
+          : `Running in Demo Mode. Error: ${error?.response?.data?.error?.message || error.message}`
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return getMockItinerary(destination, days, language);
+    }
   }
 };
 
@@ -190,4 +276,30 @@ Highlights:
 2. Enjoy signature local food and dishes with your group of ${groupSize}.
 3. Take pictures at the best photography spots.`;
   }
+}
+
+function getMockItinerary(destination: string, days: number, language: string): any {
+  const arr = [];
+  const destName = destination.toUpperCase();
+  for (let i = 1; i <= days; i++) {
+    arr.push({
+      day: i,
+      title: language === "vi" ? `Khám phá ${destName} - Ngày ${i}` : `Explore ${destName} - Day ${i}`,
+      emoji: ["🌅", "🤿", "🏖️", "🌿", "🎡"][i % 5],
+      activities: language === "vi" 
+        ? [`Sáng: Khởi hành đi các điểm nổi tiếng ở ${destName}`, `Trưa: Ăn trưa đặc sản địa phương`, `Chiều: Chụp ảnh và nghỉ ngơi`, `Tối: Đi dạo chợ đêm`] 
+        : [`Morning: Depart to famous spots in ${destName}`, `Noon: Eat local specialties`, `Afternoon: Take photos and rest`, `Evening: Walk around the night market`],
+      budget: language === "vi" ? "1.000.000₫" : "1,000,000 VND",
+    });
+  }
+  return {
+    days: arr,
+    budgetBreakdown: [
+      { label: language === "vi" ? "Vé máy bay / Di chuyển" : "Flight / Transport", amount: "2.000.000₫" },
+      { label: language === "vi" ? "Khách sạn" : "Hotel", amount: "3.000.000₫" },
+      { label: language === "vi" ? "Ăn uống" : "Dining", amount: "2.000.000₫" },
+      { label: language === "vi" ? "Vui chơi" : "Activities", amount: "1.000.000₫" }
+    ],
+    totalBudget: "8.000.000₫"
+  };
 }

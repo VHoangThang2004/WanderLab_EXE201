@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { UserAvatar } from "../../components/wander/UserAvatar";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useLanguageStore } from "@/stores";
 import { Users, UserPlus, Check, X, MessageCircle, MoreVertical, Search, Globe, Lock, Settings } from "lucide-react";
@@ -298,10 +299,10 @@ export function WanderFriends() {
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
                 >
                   <div className="flex flex-col items-center text-center">
-                    <ImageWithFallback
+                    <UserAvatar
                       src={request.avatar}
-                      alt={request.name}
-                      className="w-20 h-20 rounded-full object-cover mb-3"
+                      name={request.name}
+                      className="w-20 h-20 mb-3 text-3xl"
                     />
                     <h3 className="font-bold text-gray-900 mb-1">{request.name}</h3>
                     <p className="text-sm text-gray-500 mb-2">{request.location}</p>
@@ -356,10 +357,10 @@ export function WanderFriends() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex gap-3">
                       <div className="relative">
-                        <ImageWithFallback
+                        <UserAvatar
                           src={friend.avatar}
-                          alt={friend.name}
-                          className="w-16 h-16 rounded-full object-cover"
+                          name={friend.name}
+                          className="w-16 h-16 text-2xl"
                         />
                         {friend.isOnline && (
                           <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
@@ -425,10 +426,10 @@ export function WanderFriends() {
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
                 >
                   <div className="flex flex-col items-center text-center">
-                    <ImageWithFallback
+                    <UserAvatar
                       src={suggested.avatar}
-                      alt={suggested.name}
-                      className="w-20 h-20 rounded-full object-cover mb-3"
+                      name={suggested.name}
+                      className="w-20 h-20 mb-3 text-3xl"
                     />
                     <h3 className="font-bold text-gray-900 mb-1">{suggested.name}</h3>
                     <p className="text-sm text-gray-500 mb-2">{suggested.location}</p>

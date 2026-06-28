@@ -24,6 +24,7 @@ import type { CreateDiaryPayload } from "@/types/diary";
 import { useLanguageStore, useNotificationStore, useAuthStore, useUIStore } from "@/stores";
 import { aiService } from "@/api/aiService";
 import { toast } from "sonner";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
 
 type PrivacySetting = "private" | "friends" | "public";
 
@@ -32,6 +33,7 @@ export function WanderCreateDiary() {
   const { user } = useAuthStore();
   const { addNotification } = useNotificationStore();
   const { isDarkMode } = useUIStore();
+  const { checkLimit, incrementUsage, checkMediaLimits, validateVideoResolution } = useUsageLimits();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
@@ -58,6 +60,8 @@ export function WanderCreateDiary() {
 
 
   const handleAiPolish = async () => {
+    if (!checkLimit('ai_diary')) return;
+
     if (!formData.description.trim()) {
       toast.error(
         language === 'vi'
@@ -74,6 +78,7 @@ export function WanderCreateDiary() {
     try {
       const polished = await aiService.polishDescription(formData.description, formData, language);
       setAiSuggestion(polished);
+      incrementUsage('ai_diary');
       toast.success(
         language === 'vi'
           ? "Đã tạo mô tả hoàn thiện thành công!"
@@ -213,6 +218,8 @@ export function WanderCreateDiary() {
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const handleSubmit = async () => {
+    if (!checkLimit('create_diary')) return;
+
     if (!formData.title || !formData.location || !coverFile) {
       alert("Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!");
       return;
@@ -275,6 +282,7 @@ export function WanderCreateDiary() {
       });
 
       alert(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
+      incrementUsage('create_diary');
       navigate(`/dashboard`);
     } catch (err: any) {
       console.error(err);
@@ -873,12 +881,13 @@ export function WanderCreateDiary() {
                                 <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">{language === 'vi' ? 'Ảnh' : 'Image'}</span>
                                 <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
                                   const files = Array.from(e.target.files || []);
+                                  if (!files.length) return;
+                                  
+                                  const totalImages = timeline.reduce((acc, curr) => acc + (curr.imageFiles?.length || 0), 0);
+                                  if (!checkMediaLimits(totalImages, files.length, 0, 0)) return;
+
                                   const newTimeline = [...timeline];
                                   const currentImages = newTimeline[dayIndex].imageFiles || [];
-                                  if (currentImages.length + files.length > 10) {
-                                    alert(language === 'vi' ? "Tối đa 10 ảnh mỗi ngày!" : "Max 10 images per day!");
-                                    return;
-                                  }
                                   newTimeline[dayIndex].imageFiles = [...currentImages, ...files];
                                   setTimeline(newTimeline);
                                 }} />
@@ -887,14 +896,20 @@ export function WanderCreateDiary() {
                               <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
                                 <Upload size={20} className="text-gray-400 mb-2" />
                                 <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Video</span>
-                                <input type="file" multiple accept="video/*" className="hidden" onChange={(e) => {
+                                <input type="file" multiple accept="video/*" className="hidden" onChange={async (e) => {
                                   const files = Array.from(e.target.files || []);
+                                  if (!files.length) return;
+
+                                  const totalVideos = timeline.reduce((acc, curr) => acc + (curr.videoFiles?.length || 0), 0);
+                                  if (!checkMediaLimits(0, 0, totalVideos, files.length)) return;
+
+                                  for (const file of files) {
+                                    const isValid = await validateVideoResolution(file);
+                                    if (!isValid) return;
+                                  }
+
                                   const newTimeline = [...timeline];
                                   const currentVideos = newTimeline[dayIndex].videoFiles || [];
-                                  if (currentVideos.length + files.length > 2) {
-                                    alert(language === 'vi' ? "Tối đa 2 video mỗi ngày!" : "Max 2 videos per day!");
-                                    return;
-                                  }
                                   newTimeline[dayIndex].videoFiles = [...currentVideos, ...files];
                                   setTimeline(newTimeline);
                                 }} />

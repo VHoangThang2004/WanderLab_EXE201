@@ -9,6 +9,7 @@ export interface FriendProfile {
   diaries_count: number;
   followers_count: number;
   following_count: number;
+  role?: string;
 }
 
 export const friendService = {
@@ -136,7 +137,8 @@ export const friendService = {
           location,
           diaries_count,
           followers_count,
-          following_count
+          following_count,
+          role
         )
       `)
       .eq('following_id', userId);
@@ -158,7 +160,8 @@ export const friendService = {
           location,
           diaries_count,
           followers_count,
-          following_count
+          following_count,
+          role
         )
       `)
       .eq('follower_id', userId);
@@ -174,14 +177,14 @@ export const friendService = {
         const p = f.following || f.profiles;
         return Array.isArray(p) ? p[0] : p;
       })
-      .filter(Boolean);
+      .filter(p => p && p.role !== 'admin');
 
     const followerProfiles: FriendProfile[] = (followers || [])
       .map((f: any) => {
         const p = f.follower || f.profiles;
         return Array.isArray(p) ? p[0] : p;
       })
-      .filter(Boolean);
+      .filter(p => p && p.role !== 'admin');
 
     const followingIds = new Set(followingProfiles.map((p) => p.id));
 
@@ -225,7 +228,8 @@ export const friendService = {
 
     let query = supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, location, diaries_count, followers_count, following_count');
+      .select('id, full_name, avatar_url, location, diaries_count, followers_count, following_count, role')
+      .neq('role', 'admin');
 
     if (searchQuery.trim()) {
       // Search by name if query is provided

@@ -8,6 +8,8 @@ import {
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
+import { aiService } from "@/api/aiService";
 
 const translateItineraryItem = (text: string, lang: string) => {
   if (lang === 'vi') return text;
@@ -158,6 +160,7 @@ type Step = 1 | 2 | 3 | 4;
 
 export function CreateItinerary() {
   const { t, language } = useLanguageStore();
+  const { checkLimit, incrementUsage } = useUsageLimits();
   const [step, setStep] = useState<Step>(1);
   const [destination, setDestination] = useState("pq");
   const [duration, setDuration] = useState("5 ngày");
@@ -167,6 +170,7 @@ export function CreateItinerary() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [itineraryData, setItineraryData] = useState<any>(null);
 
   const { saveItinerary } = useSavedItineraries();
 
@@ -178,19 +182,34 @@ export function CreateItinerary() {
     );
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!checkLimit('ai_itinerary')) return;
+
     setIsGenerating(true);
     setIsSaved(false);
-    setTimeout(() => {
-      setIsGenerating(false);
+    
+    try {
+      const data = await aiService.generateItinerary(
+        { 
+          destination: selectedDest.name, 
+          duration, 
+          budget, 
+          groupSize, 
+          interests 
+        }, 
+        language
+      );
+      setItineraryData(data);
+      incrementUsage('ai_itinerary');
       setGenerated(true);
       setStep(4);
-    }, 1800);
+    } catch (error) {
+      console.error("Error generating itinerary:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  // Pick itinerary template based on duration
-  const itineraryKey = duration.startsWith("3") ? "3 ngày" : "5 ngày";
-  const itinerary = PHU_QUOC_ITINERARY[itineraryKey as keyof typeof PHU_QUOC_ITINERARY] ?? PHU_QUOC_ITINERARY["5 ngày"];
   const durationNum = parseInt(duration);
   const isPhúQuoc = destination === "pq";
 
@@ -473,7 +492,7 @@ export function CreateItinerary() {
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Calendar size={16} className="text-[#ff3131]" /> {t("dailyItinerary", "createItinerary")}
               </h3>
-              {(isPhúQuoc ? itinerary : itinerary).map((day) => (
+              {itineraryData?.days?.map((day: any) => (
                 <div key={day.day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="bg-gradient-to-r from-[#ff3131]/10 to-[#ff914d]/10 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -505,21 +524,15 @@ export function CreateItinerary() {
                 <Wallet size={16} className="text-[#ff3131]" /> {t("costEstimate", "createItinerary")}
               </h3>
               <div className="space-y-2">
-                {[
-                  { label: "Vé máy bay (khứ hồi)", amount: "2.400.000₫" },
-                  { label: "Khách sạn / Resort", amount: "4.500.000₫" },
-                  { label: "Ăn uống", amount: "1.800.000₫" },
-                  { label: "Tour & Vui chơi", amount: "2.200.000₫" },
-                  { label: "Di chuyển nội đảo", amount: "500.000₫" },
-                ].map(({ label, amount }) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{translateItineraryItem(label, language)}</span>
-                    <span className="font-semibold text-gray-900">{amount}</span>
+                {itineraryData?.budgetBreakdown?.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{translateItineraryItem(item.label, language)}</span>
+                    <span className="font-semibold text-gray-900">{item.amount}</span>
                   </div>
                 ))}
                 <div className="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">{t("totalEstimate", "createItinerary")}</span>
-                  <span className="font-bold text-[#ff3131] text-base">~11.400.000₫/{language === 'vi' ? 'người' : 'person'}</span>
+                  <span className="font-bold text-[#ff3131] text-base">{itineraryData?.totalBudget || "~11.400.000₫"}</span>
                 </div>
               </div>
             </div>
@@ -582,6 +595,8 @@ export function CreateItinerary() {
               <button
                 onClick={() => {
                   if (isSaved) return;
+                  if (!checkLimit('create_itinerary')) return;
+
                   saveItinerary({
                     destination: selectedDest.name,
                     destinationRegion: selectedDest.region,
@@ -590,16 +605,11 @@ export function CreateItinerary() {
                     groupSize,
                     budget,
                     interests,
-                    estimatedTotal: "~11.400.000₫/người",
-                    days: itinerary,
-                    budgetBreakdown: [
-                      { label: "Vé máy bay (khứ hồi)", amount: "2.400.000₫" },
-                      { label: "Khách sạn / Resort", amount: "4.500.000₫" },
-                      { label: "Ăn uống", amount: "1.800.000₫" },
-                      { label: "Tour & Vui chơi", amount: "2.200.000₫" },
-                      { label: "Di chuyển nội đảo", amount: "500.000₫" },
-                    ],
+                    estimatedTotal: itineraryData?.totalBudget ? `${itineraryData.totalBudget}` : "~11.400.000₫",
+                    days: itineraryData?.days || [],
+                    budgetBreakdown: itineraryData?.budgetBreakdown || [],
                   });
+                  incrementUsage('create_itinerary');
                   setIsSaved(true);
                 }}
                 className={`flex-1 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all border-2 ${

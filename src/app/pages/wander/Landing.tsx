@@ -1,6 +1,7 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { UserCard } from "../../components/wander/UserCard";
 import { Link } from "react-router";
+import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen, Plus, X, Upload, ChevronLeft, ChevronRight, MoreVertical, Trash2, Edit2 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useAuthStore, useLanguageStore } from "@/stores";
@@ -164,36 +165,51 @@ export function WanderLanding() {
       <div className="min-h-screen">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-[#ff3131] via-[#ff5e3a] to-[#ff914d] text-white overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-10 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-          </div>
+          {/* Animated Background Orbs */}
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-10 left-10 w-96 h-96 bg-white rounded-full blur-3xl" 
+          />
+          <motion.div 
+            animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-10 right-10 w-[30rem] h-[30rem] bg-yellow-300 rounded-full blur-3xl pointer-events-none" 
+          />
+          
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+              <motion.div 
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="space-y-8"
+              >
+                <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight">
                   {t("heroTitle", "landing")}<br />
-                  <span className="text-yellow-200">{t("heroHighlight", "landing")}</span>
+                  <span className="text-white">{t("heroHighlight", "landing")}</span>
                 </h1>
                 <p className="text-xl text-white/90 max-w-lg">
                   {t("heroSubtitle", "landing")}
                 </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link
-                    to="/register"
-                    className="px-8 py-4 bg-white text-[#ff3131] rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
-                  >
-                    {t("startFree", "landing")}
-                  </Link>
-                  <Link
-                    to="/explore"
-                    className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all"
-                  >
-                    {t("exploreBtn", "landing")}
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <Link to="/register">
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: "0px 20px 40px rgba(0,0,0,0.2)" }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-4 bg-white/90 backdrop-blur-md text-[#ff3131] rounded-full font-bold text-lg transition-colors hover:bg-white"
+                    >
+                      {t("startFree", "landing")}
+                    </motion.button>
                   </Link>
                 </div>
-              </div>
-              <div className="hidden lg:grid grid-cols-2 gap-4">
+              </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                className="hidden lg:grid grid-cols-2 gap-4"
+              >
                 <div className="space-y-4">
                   <div className="rounded-2xl overflow-hidden shadow-2xl h-48">
                     <ImageWithFallback
@@ -226,7 +242,7 @@ export function WanderLanding() {
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>

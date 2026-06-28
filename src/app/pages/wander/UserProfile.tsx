@@ -18,6 +18,7 @@ import {
   Globe
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { UserAvatar } from "../../components/wander/UserAvatar";
 
 // Mock user data - in real app, this would be fetched based on userId
 const userData = {
@@ -209,10 +210,10 @@ export function WanderUserProfile() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Avatar */}
           <div className="relative">
-            <ImageWithFallback
+            <UserAvatar
               src={user.avatar}
-              alt={user.name}
-              className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+              name={user.name}
+              className="w-32 h-32 border-4 border-white shadow-lg text-5xl"
             />
             <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-4 border-white rounded-full" />
           </div>

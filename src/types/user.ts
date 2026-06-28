@@ -11,6 +11,7 @@ export interface User {
   bio: string | null;
   location: string | null;
   role: UserRole;
+  plan?: 'free' | 'plus' | 'pro';
   status: UserStatus;
   reputation_score: number;
   diaries_count: number;

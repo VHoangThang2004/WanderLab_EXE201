@@ -48,7 +48,7 @@ export const notificationService = {
   /**
    * Create a notification
    */
-  async createNotification(userId: string, actorId: string, type: string, content: string, referenceId?: string) {
+  async createNotification(userId: string, actorId: string | null, type: string, content: string, referenceId?: string) {
     const { error } = await supabase.from('notifications').insert({
       user_id: userId,
       actor_id: actorId,
