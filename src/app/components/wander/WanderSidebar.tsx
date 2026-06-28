@@ -18,7 +18,8 @@ import {
   Bot,
   FileText,
   Sparkles,
-  Book
+  Book,
+  Activity
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
