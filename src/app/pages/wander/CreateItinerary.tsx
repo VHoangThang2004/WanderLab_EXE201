@@ -8,6 +8,8 @@ import {
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
+import { aiService } from "@/api/aiService";
 import { generateItinerary, type GeneratedItinerary, type ItineraryDay, type BudgetItem } from "@/api/itineraryAiService";
 
 const translateItineraryItem = (text: string, lang: string) => {
@@ -166,6 +168,7 @@ type Step = 1 | 2 | 3 | 4;
 
 export function CreateItinerary() {
   const { t, language } = useLanguageStore();
+  const { checkLimit, incrementUsage } = useUsageLimits();
   const [step, setStep] = useState<Step>(1);
   const [destination, setDestination] = useState("pq");
   const [duration, setDuration] = useState("5 ngày");
@@ -175,8 +178,7 @@ export function CreateItinerary() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [aiResult, setAiResult] = useState<GeneratedItinerary | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [itineraryData, setItineraryData] = useState<any>(null);
 
   const { saveItinerary } = useSavedItineraries();
 
@@ -188,47 +190,36 @@ export function CreateItinerary() {
     );
   };
 
-  // Map group size text → number
-  const getGroupSizeNum = (g: string): number => {
-    const map: Record<string, number> = { "1 mình": 1, "Cặp đôi": 2, "Nhóm bạn (3–5)": 4, "Gia đình": 4, "Đoàn lớn (6+)": 8 };
-    return map[g] || 2;
-  };
-
   const handleGenerate = async () => {
+    if (!checkLimit('ai_itinerary')) return;
+
     setIsGenerating(true);
     setIsSaved(false);
-    setAiError(null);
-
-    const durationNum = parseInt(duration) || 5;
-
-    const result = await generateItinerary({
-      destination: selectedDest.name,
-      duration_days: durationNum,
-      budget_level: budget,
-      group_size: getGroupSizeNum(groupSize),
-      interests,
-    });
-
-    setIsGenerating(false);
-
-    if (result.itinerary) {
-      setAiResult(result.itinerary);
+    
+    try {
+      const data = await aiService.generateItinerary(
+        { 
+          destination: selectedDest.name, 
+          duration, 
+          budget, 
+          groupSize, 
+          interests 
+        }, 
+        language
+      );
+      setItineraryData(data);
+      incrementUsage('ai_itinerary');
       setGenerated(true);
       setStep(4);
-    } else {
-      // Fallback to mock data nếu AI lỗi
-      console.warn('AI itinerary failed, using fallback:', result.error);
-      setAiError(result.error || null);
-      setAiResult(PHU_QUOC_FALLBACK);
-      setGenerated(true);
-      setStep(4);
+    } catch (error) {
+      console.error("Error generating itinerary:", error);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  // Computed itinerary data for display
-  const itinerary: ItineraryDay[] = aiResult?.days || PHU_QUOC_FALLBACK.days;
-  const budgetBreakdown: BudgetItem[] = aiResult?.budget_breakdown || PHU_QUOC_FALLBACK.budget_breakdown;
-  const totalEstimate: string = aiResult?.total_estimate || PHU_QUOC_FALLBACK.total_estimate;
+  const durationNum = parseInt(duration);
+  const isPhúQuoc = destination === "pq";
 
   const gradientBtn = "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg transition-all";
 
@@ -523,7 +514,7 @@ export function CreateItinerary() {
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
                 <Calendar size={16} className="text-[#ff3131]" /> {t("dailyItinerary", "createItinerary")}
               </h3>
-              {itinerary.map((day) => (
+              {itineraryData?.days?.map((day: any) => (
                 <div key={day.day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="bg-gradient-to-r from-[#ff3131]/10 to-[#ff914d]/10 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -555,15 +546,15 @@ export function CreateItinerary() {
                 <Wallet size={16} className="text-[#ff3131]" /> {t("costEstimate", "createItinerary")}
               </h3>
               <div className="space-y-2">
-                {budgetBreakdown.map(({ label, amount }) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{translateItineraryItem(label, language)}</span>
-                    <span className="font-semibold text-gray-900">{amount}</span>
+                {itineraryData?.budgetBreakdown?.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{translateItineraryItem(item.label, language)}</span>
+                    <span className="font-semibold text-gray-900">{item.amount}</span>
                   </div>
                 ))}
                 <div className="border-t border-dashed border-gray-200 mt-2 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">{t("totalEstimate", "createItinerary")}</span>
-                  <span className="font-bold text-[#ff3131] text-base">{totalEstimate}</span>
+                  <span className="font-bold text-[#ff3131] text-base">{itineraryData?.totalBudget || "~11.400.000₫"}</span>
                 </div>
               </div>
             </div>
@@ -643,6 +634,8 @@ export function CreateItinerary() {
               <button
                 onClick={() => {
                   if (isSaved) return;
+                  if (!checkLimit('create_itinerary')) return;
+
                   saveItinerary({
                     destination: selectedDest.name,
                     destinationRegion: selectedDest.region,
@@ -651,10 +644,11 @@ export function CreateItinerary() {
                     groupSize,
                     budget,
                     interests,
-                    estimatedTotal: totalEstimate,
-                    days: itinerary,
-                    budgetBreakdown,
+                    estimatedTotal: itineraryData?.totalBudget ? `${itineraryData.totalBudget}` : "~11.400.000₫",
+                    days: itineraryData?.days || [],
+                    budgetBreakdown: itineraryData?.budgetBreakdown || [],
                   });
+                  incrementUsage('create_itinerary');
                   setIsSaved(true);
                 }}
                 className={`flex-1 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all border-2 ${

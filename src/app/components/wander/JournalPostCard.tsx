@@ -1,9 +1,10 @@
 import { Heart, MessageCircle, Bookmark, MapPin, Calendar, Users, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
+import { UserAvatar } from "./UserAvatar";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { PostModal } from "./PostModal";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService } from "@/api/interactionService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { diaryService } from "@/api/diaryService";
@@ -45,6 +46,7 @@ export function JournalPostCard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -73,6 +75,17 @@ export function JournalPostCard({
     
     try {
       await interactionService.toggleLikeDiary(id, user.id);
+      
+      // Notify only when liking, not unliking
+      if (!isLiked) {
+        addNotification({
+          type: "like",
+          title: "Lượt thích mới",
+          message: `Bạn vừa thích bài viết của ${author.name}.`,
+          linkTo: window.location.pathname,
+          avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+        });
+      }
     } catch (err: any) {
       // Revert if failed
       setIsLiked(isLiked);
@@ -114,21 +127,15 @@ export function JournalPostCard({
 
   return (
     <>
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all relative">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative group/card">
         {/* Author Header */}
         <div className="p-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-3">
-            {author.avatar && author.avatar !== 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04' ? (
-              <ImageWithFallback
-                src={author.avatar}
-                alt={author.name}
-                className="w-10 h-10 rounded-full object-cover shadow-sm"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                {author.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
+            <UserAvatar
+              src={author.avatar}
+              name={author.name}
+              className="w-10 h-10 text-sm shadow-sm"
+            />
             <div className="flex-1 min-w-0">
               <span className="font-semibold text-gray-900">
                 {author.name}
@@ -220,13 +227,13 @@ export function JournalPostCard({
               {/* Like */}
               <button
                 onClick={handleLike}
-                className={`flex items-center gap-1.5 transition-colors ${
+                className={`flex items-center gap-1.5 transition-all duration-300 hover:scale-110 ${
                   isLiked ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
                 }`}
               >
                 <Heart
                   size={20}
-                  className={isLiked ? "fill-current" : ""}
+                  className={isLiked ? "fill-current drop-shadow-md" : ""}
                 />
                 <span className="text-sm font-medium">{likes}</span>
               </button>
@@ -234,7 +241,7 @@ export function JournalPostCard({
               {/* Comment */}
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-1.5 text-gray-500 hover:text-[#ff3131] transition-colors"
+                className="flex items-center gap-1.5 text-gray-500 hover:text-[#ff3131] transition-all duration-300 hover:scale-110"
               >
                 <MessageCircle size={20} />
                 <span className="text-sm font-medium">{comments}</span>
@@ -244,13 +251,13 @@ export function JournalPostCard({
             {/* Save */}
             <button
               onClick={handleSave}
-              className={`transition-colors ${
+              className={`transition-all duration-300 hover:scale-110 ${
                 isSaved ? "text-[#ff3131]" : "text-gray-500 hover:text-[#ff3131]"
               }`}
             >
               <Bookmark
                 size={20}
-                className={isSaved ? "fill-current" : ""}
+                className={isSaved ? "fill-current drop-shadow-md" : ""}
               />
             </button>
           </div>

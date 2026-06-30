@@ -12,10 +12,15 @@ import { WanderCreateDiary } from "./pages/wander/CreateDiary";
 import { WanderEditDiary } from "./pages/wander/EditDiary";
 import { WanderPartner } from "./pages/wander/Partner";
 import { ChatPage } from "./pages/wander/ChatPage";
+import { MessagesPage } from "./pages/wander/Messages";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
 import { WanderExplore } from "./pages/wander/Explore";
+import { WanderUserProfile } from "./pages/wander/UserProfile";
+import { Notifications } from "./pages/wander/Notifications";
+import { Settings } from "./pages/wander/Settings";
+import { DiaryBook } from "./pages/wander/DiaryBook";
 import { WanderMainLayout } from "./components/wander/WanderMainLayout";
 import { ProtectedRoute, GuestRoute } from "./components/auth/ProtectedRoute";
 
@@ -106,6 +111,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/messages",
+        element: (
+          <ProtectedRoute>
+            <MessagesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/create",
         element: (
           <ProtectedRoute>
@@ -118,6 +131,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <WanderEditDiary />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/diary-book",
+        element: (
+          <ProtectedRoute>
+            <DiaryBook />
           </ProtectedRoute>
         ),
       },
@@ -144,6 +165,26 @@ export const router = createBrowserRouter([
             <AdminDashboard />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/profile/:username",
+        element: (
+          <ProtectedRoute>
+            <WanderUserProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/settings",
+        element: <Settings />,
       },
     ],
   },

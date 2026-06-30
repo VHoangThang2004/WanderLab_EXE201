@@ -2,6 +2,7 @@ import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { Link } from "react-router";
 import { Plus, Settings, MapPin, Calendar, Users, Heart, Bookmark, MessageCircle, Image, Route, X, BookOpen, Wallet } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { UserAvatar } from "../../components/wander/UserAvatar";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { VietnamMap } from "../../components/wander/VietnamMap";
 import { useState, useEffect } from "react";
@@ -9,6 +10,7 @@ import { ItineraryDetailModal } from "../../components/wander/ItineraryDetailMod
 import { useAuthStore, useLanguageStore } from "@/stores";
 import { diaryService } from "@/api/diaryService";
 import { VIETNAM_PROVINCES, normalizeSearchString } from "@/utils/vietnamProvinces";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
 
 // Helper: extract visited provinces from user diaries
 const getVisitedProvinces = (diaries: any[]) => {
@@ -28,7 +30,9 @@ const getVisitedProvinces = (diaries: any[]) => {
 
 export function WanderDashboard() {
   const { user, updateProfile, uploadAvatar, uploadCover } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const { t, language } = useLanguageStore();
+  const { limits, getUsage } = useUsageLimits();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
   const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "trips">("posts");
@@ -285,281 +289,359 @@ export function WanderDashboard() {
               <p className="text-gray-700 max-w-2xl mb-4">{userProfile.bio}</p>
 
               {/* Stats */}
-              <div className="flex items-center gap-6 text-sm">
-                <div>
-                  <span className="font-bold text-gray-900">{userProfile.diariesCount}</span>
-                  <span className="text-gray-600 ml-1">{t("diariesInfo")}</span>
+              {!isAdmin && (
+                <div className="flex items-center gap-6 text-sm mb-4">
+                  <div>
+                    <span className="font-bold text-gray-900">{userProfile.diariesCount}</span>
+                    <span className="text-gray-600 ml-1">{t("diariesInfo")}</span>
+                  </div>
+                  <div>
+                    <button className="hover:text-[#ff3131] transition-colors">
+                      <span className="font-bold text-gray-900">{userProfile.followersCount.toLocaleString("vi-VN")}</span>
+                      <span className="text-gray-600 ml-1">{t("followInfo")}</span>
+                    </button>
+                  </div>
+                  <div>
+                    <button className="hover:text-[#ff3131] transition-colors">
+                      <span className="font-bold text-gray-900">{userProfile.followingCount}</span>
+                      <span className="text-gray-600 ml-1">{t("followingInfo")}</span>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <button className="hover:text-[#ff3131] transition-colors">
-                    <span className="font-bold text-gray-900">{userProfile.followersCount.toLocaleString("vi-VN")}</span>
-                    <span className="text-gray-600 ml-1">{t("followInfo")}</span>
-                  </button>
+              )}
+
+              {/* Usage Plan Status */}
+              {!isAdmin && (
+                <div className="mt-6 max-w-2xl flex flex-col sm:flex-row gap-4">
+                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${
+                    user?.plan === 'pro' 
+                      ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
+                      : user?.plan === 'plus'
+                        ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+                        : 'bg-white border-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Wallet size={18} className={user?.plan === 'pro' ? 'text-orange-500' : 'text-gray-500'} />
+                        <span className="font-bold text-gray-900">
+                          {language === 'vi' ? 'Gói hiện tại:' : 'Current Plan:'} 
+                          <span className={`ml-2 uppercase tracking-wide font-extrabold ${
+                            user?.plan === 'pro' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ff3131] to-[#ff914d]' 
+                            : user?.plan === 'plus' ? 'text-[#ff3131]' : 'text-gray-700'
+                          }`}>
+                            {user?.plan || 'Free'}
+                          </span>
+                        </span>
+                      </div>
+                      {(!user?.plan || user.plan === 'free' || user.plan === 'plus') && (
+                        <Link to="/partner" className="px-4 py-1.5 bg-[#ff3131] text-white text-xs rounded-xl font-bold hover:bg-[#e62b2b] transition-colors shadow-sm">
+                          {language === 'vi' ? 'Nâng cấp' : 'Upgrade'}
+                        </Link>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs text-gray-600 font-medium">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>{language === 'vi' ? 'Đăng Nhật Ký' : 'Journals'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.create_diary - getUsage('create_diary'))}/{limits.create_diary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('create_diary') >= limits.create_diary ? 'bg-red-500' : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.create_diary - getUsage('create_diary')) / limits.create_diary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>{language === 'vi' ? 'Tạo Lịch Trình' : 'Itineraries'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.create_itinerary - getUsage('create_itinerary'))}/{limits.create_itinerary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('create_itinerary') >= limits.create_itinerary ? 'bg-red-500' : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.create_itinerary - getUsage('create_itinerary')) / limits.create_itinerary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>AI {language === 'vi' ? 'Nhật Ký' : 'Journal'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.ai_diary - getUsage('ai_diary'))}/{limits.ai_diary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('ai_diary') >= limits.ai_diary ? 'bg-red-500' : 'bg-[#4f46e5]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.ai_diary - getUsage('ai_diary')) / limits.ai_diary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-1.5">
+                          <span>AI {language === 'vi' ? 'Lịch Trình' : 'Itinerary'}</span>
+                          <span className="font-bold text-gray-900">{Math.max(0, limits.ai_itinerary - getUsage('ai_itinerary'))}/{limits.ai_itinerary}</span>
+                        </div>
+                        <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full ${getUsage('ai_itinerary') >= limits.ai_itinerary ? 'bg-red-500' : 'bg-[#4f46e5]'}`} style={{ width: `${Math.min(100, (Math.max(0, limits.ai_itinerary - getUsage('ai_itinerary')) / limits.ai_itinerary) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <button className="hover:text-[#ff3131] transition-colors">
-                    <span className="font-bold text-gray-900">{userProfile.followingCount}</span>
-                    <span className="text-gray-600 ml-1">{t("followingInfo")}</span>
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-8 border-t border-gray-100">
-            <button
-              onClick={() => setActiveTab("posts")}
-              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "posts"
-                ? "text-[#ff3131]"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {t("myJournals")}
-              {activeTab === "posts" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("saved_itineraries")}
-              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_itineraries"
-                ? "text-[#ff3131]"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {t("savedItineraries")}
-              {activeTab === "saved_itineraries" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
-              )}
-            </button>
+          {!isAdmin && (
+            <div className="flex gap-8 border-t border-gray-100">
+              <button
+                onClick={() => setActiveTab("posts")}
+                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "posts"
+                  ? "text-[#ff3131]"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
+              >
+                {t("myJournals")}
+                {activeTab === "posts" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("saved_itineraries")}
+                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_itineraries"
+                  ? "text-[#ff3131]"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
+              >
+                {t("savedItineraries")}
+                {activeTab === "saved_itineraries" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+                )}
+              </button>
 
-            <button
-              onClick={() => setActiveTab("trips")}
-              className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "trips"
-                ? "text-[#ff3131]"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {t("itineraryStats")}
-              {activeTab === "trips" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
-              )}
-            </button>
-          </div>
+              <button
+                onClick={() => setActiveTab("trips")}
+                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "trips"
+                  ? "text-[#ff3131]"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
+              >
+                {t("itineraryStats")}
+                {activeTab === "trips" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {activeTab === "posts" && (
-              <div className="space-y-6">
-                {/* Create Post Card */}
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                  <div className="flex items-center gap-4">
-                    <ImageWithFallback
-                      src={userProfile.avatar}
-                      alt={userProfile.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <Link
-                      to="/create"
-                      className="flex-1 px-4 py-3 bg-[#FFF5F3] text-gray-600 rounded-full hover:bg-gray-100 transition-all"
-                    >
-                      {t("shareMemory")}
-                    </Link>
-                    <Link
-                      to="/create"
-                      className="px-5 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center gap-2"
-                    >
-                      <Plus size={18} />
-                      {t("create")}
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Journal Posts */}
-                {isLoadingDiaries ? (
-                  <div className="text-center py-10 text-gray-500">
-                    {language === 'vi' ? 'Đang tải nhật ký...' : 'Loading journals...'}
-                  </div>
-                ) : userDiaries.length === 0 ? (
-                  <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
-                    <BookOpen className="mx-auto text-gray-300 mb-4" size={48} />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {language === 'vi' ? 'Bạn chưa có nhật ký nào' : 'No journals yet'}
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      {language === 'vi' ? 'Hãy tạo nhật ký đầu tiên để lưu giữ kỷ niệm chuyến đi của bạn!' : 'Create your first journal to save your trip memories!'}
-                    </p>
-                    <Link
-                      to="/create"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
-                    >
-                      {t("createJournal")}
-                    </Link>
-                  </div>
-                ) : (
-                  userDiaries.map((post) => (
-                    <JournalPostCard key={post.id} {...post} />
-                  ))
-                )}
-              </div>
-            )}
-
-            {activeTab === "saved_itineraries" && (
-              <div className="space-y-6">
-                <div>
-                  {savedItineraries.length === 0 ? (
-                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center mt-6">
-                      <Route className="mx-auto text-gray-300 mb-4" size={48} />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {language === 'vi' ? 'Bạn chưa lưu lịch trình nào' : 'No saved itineraries yet'}
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        {language === 'vi' ? 'Sử dụng AI để lên kế hoạch và lưu lại các lịch trình yêu thích của bạn.' : 'Use AI to plan and save your favorite itineraries.'}
-                      </p>
+      {!isAdmin && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              {activeTab === "posts" && (
+                <div className="space-y-6">
+                  {/* Create Post Card */}
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center gap-4">
+                      <UserAvatar
+                        src={userProfile.avatar}
+                        name={userProfile.name}
+                        className="w-12 h-12 text-lg"
+                      />
                       <Link
-                        to="/create-itinerary"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                        to="/create"
+                        className="flex-1 px-4 py-3 bg-[#FFF5F3] text-gray-600 rounded-full hover:bg-gray-100 transition-all"
+                      >
+                        {t("shareMemory")}
+                      </Link>
+                      <Link
+                        to="/create"
+                        className="px-5 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all flex items-center gap-2"
                       >
                         <Plus size={18} />
-                        {language === 'vi' ? 'Lập Kế Hoạch AI' : 'Create AI Itinerary'}
+                        {t("create")}
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Journal Posts */}
+                  {isLoadingDiaries ? (
+                    <div className="text-center py-10 text-gray-500">
+                      {language === 'vi' ? 'Đang tải nhật ký...' : 'Loading journals...'}
+                    </div>
+                  ) : userDiaries.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+                      <BookOpen className="mx-auto text-gray-300 mb-4" size={48} />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {language === 'vi' ? 'Bạn chưa có nhật ký nào' : 'No journals yet'}
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        {language === 'vi' ? 'Hãy tạo nhật ký đầu tiên để lưu giữ kỷ niệm chuyến đi của bạn!' : 'Create your first journal to save your trip memories!'}
+                      </p>
+                      <Link
+                        to="/create"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                      >
+                        {t("createJournal")}
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      {savedItineraries.map((itinerary: any) => (
-                        <div key={itinerary.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
-                          <div className="h-40 relative cursor-pointer group" onClick={() => setOpenItinerary(itinerary)}>
-                            <ImageWithFallback src={itinerary.destinationImage} alt={itinerary.destination} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-[#ff3131] shadow-sm">
-                              {itinerary.duration}
-                            </div>
-                            <div className="absolute bottom-4 left-5 right-5">
-                              <h4 className="text-white font-bold text-xl mb-1">{itinerary.destination}</h4>
-                              <div className="flex flex-wrap gap-2 text-xs text-white/90">
-                                <span className="flex items-center gap-1"><Users size={12}/> {itinerary.groupSize}</span>
-                                <span className="flex items-center gap-1"><Wallet size={12}/> {itinerary.budget}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="p-5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">{itinerary.savedAt}</span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setOpenItinerary(itinerary)}
-                                  className="px-4 py-2 text-sm font-semibold text-[#ff3131] bg-[#FFF5F3] hover:bg-red-100 rounded-xl transition-colors"
-                                >
-                                  {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
-                                </button>
-                                <button
-                                  onClick={() => removeItinerary(itinerary.id)}
-                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                                >
-                                  <X size={20} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    userDiaries.map((post) => (
+                      <JournalPostCard key={post.id} {...post} />
+                    ))
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-
-
-            {activeTab === "trips" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900">{t("travelStats")}</h2>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-4">
-                  {dynamicTravelStats.map((stat) => (
-                    <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
-                      <p className="text-3xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-2">
-                        {stat.value}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {stat.label === "Tỉnh thành"
-                          ? (language === 'vi' ? 'Tỉnh thành' : 'Provinces')
-                          : stat.label === "Quốc gia"
-                            ? (language === 'vi' ? 'Quốc gia' : 'Countries')
-                            : (language === 'vi' ? 'Tổng ngày' : 'Total Days')}
-                      </p>
-                    </div>
-                  ))}
+              {activeTab === "saved_itineraries" && (
+                <div className="space-y-6">
+                  <div>
+                    {savedItineraries.length === 0 ? (
+                      <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center mt-6">
+                        <Route className="mx-auto text-gray-300 mb-4" size={48} />
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          {language === 'vi' ? 'Bạn chưa lưu lịch trình nào' : 'No saved itineraries yet'}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                          {language === 'vi' ? 'Sử dụng AI để lên kế hoạch và lưu lại các lịch trình yêu thích của bạn.' : 'Use AI to plan and save your favorite itineraries.'}
+                        </p>
+                        <Link
+                          to="/create-itinerary"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-md transition-all"
+                        >
+                          <Plus size={18} />
+                          {language === 'vi' ? 'Lập Kế Hoạch AI' : 'Create AI Itinerary'}
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        {savedItineraries.map((itinerary: any) => (
+                          <div key={itinerary.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
+                            <div className="h-40 relative cursor-pointer group" onClick={() => setOpenItinerary(itinerary)}>
+                              <ImageWithFallback src={itinerary.destinationImage} alt={itinerary.destination} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-bold text-[#ff3131] shadow-sm">
+                                {itinerary.duration}
+                              </div>
+                              <div className="absolute bottom-4 left-5 right-5">
+                                <h4 className="text-white font-bold text-xl mb-1">{itinerary.destination}</h4>
+                                <div className="flex flex-wrap gap-2 text-xs text-white/90">
+                                  <span className="flex items-center gap-1"><Users size={12}/> {itinerary.groupSize}</span>
+                                  <span className="flex items-center gap-1"><Wallet size={12}/> {itinerary.budget}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-500">{itinerary.savedAt}</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => setOpenItinerary(itinerary)}
+                                    className="px-4 py-2 text-sm font-semibold text-[#ff3131] bg-[#FFF5F3] hover:bg-red-100 rounded-xl transition-colors"
+                                  >
+                                    {language === 'vi' ? 'Xem chi tiết' : 'View Details'}
+                                  </button>
+                                  <button
+                                    onClick={() => removeItinerary(itinerary.id)}
+                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                  >
+                                    <X size={20} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              )}
 
-                {/* Travel Map (Animated & Interactive) */}
-                <VietnamMap visitedProvinces={visitedProvinces} />
-              </div>
-            )}
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
-              <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
-              <Link
-                to="/create"
-                className="block w-full px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md transition-all text-center"
-              >
-                {t("createJournal")}
-              </Link>
-              <Link
-                to="/create-itinerary"
-                className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
-              >
-                <Route size={16} />
-                {t("aiPlanner")}
-              </Link>
-              <Link
-                to="/explore"
-                className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
-              >
-                {t("searchExplore")}
-              </Link>
+
+              {activeTab === "trips" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-gray-900">{t("travelStats")}</h2>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {dynamicTravelStats.map((stat) => (
+                      <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+                        <p className="text-3xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-2">
+                          {stat.value}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {stat.label === "Tỉnh thành"
+                            ? (language === 'vi' ? 'Tỉnh thành' : 'Provinces')
+                            : stat.label === "Quốc gia"
+                              ? (language === 'vi' ? 'Quốc gia' : 'Countries')
+                              : (language === 'vi' ? 'Tổng ngày' : 'Total Days')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Travel Map (Animated & Interactive) */}
+                  <VietnamMap visitedProvinces={visitedProvinces} />
+                </div>
+              )}
             </div>
 
-            {/* Activity Summary */}
-            <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
-              <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Heart size={14} className="text-[#ff3131]" />
-                    <span>{t("totalLikes")}</span>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
+                <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
+                <Link
+                  to="/create"
+                  className="block w-full px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md transition-all text-center"
+                >
+                  {t("createJournal")}
+                </Link>
+                <Link
+                  to="/create-itinerary"
+                  className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <Route size={16} />
+                  {t("aiPlanner")}
+                </Link>
+                <Link
+                  to="/explore"
+                  className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
+                >
+                  {t("searchExplore")}
+                </Link>
+              </div>
+
+              {/* Activity Summary */}
+              <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
+                <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Heart size={14} className="text-[#ff3131]" />
+                      <span>{t("totalLikes")}</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{totalLikes.toLocaleString()}</span>
                   </div>
-                  <span className="font-bold text-gray-900">{totalLikes.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MessageCircle size={14} className="text-[#ff3131]" />
-                    <span>{t("comments")}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MessageCircle size={14} className="text-[#ff3131]" />
+                      <span>{t("comments")}</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{totalComments.toLocaleString()}</span>
                   </div>
-                  <span className="font-bold text-gray-900">{totalComments.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Bookmark size={14} className="text-[#ff3131]" />
-                    <span>{t("bookmarks")}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Bookmark size={14} className="text-[#ff3131]" />
+                      <span>{t("bookmarks")}</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{totalBookmarks.toLocaleString()}</span>
                   </div>
-                  <span className="font-bold text-gray-900">{totalBookmarks.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Itinerary Modal */}
       {openItinerary && (

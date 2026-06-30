@@ -1,7 +1,8 @@
 import { JournalPostCard } from "../../components/wander/JournalPostCard";
 import { UserCard } from "../../components/wander/UserCard";
 import { Link } from "react-router";
-import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen, Plus, X, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Sparkles, TrendingUp, Compass, MapPin, Shield, BookOpen, Plus, X, Upload, ChevronLeft, ChevronRight, MoreVertical, Trash2, Edit2 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useAuthStore, useLanguageStore } from "@/stores";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -50,6 +51,11 @@ export function WanderLanding() {
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const [isEditStoryOpen, setIsEditStoryOpen] = useState(false);
+  const [editStoryCaption, setEditStoryCaption] = useState("");
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+
   const combinedStories = [
     ...(dbStories || []),
   ];
@@ -76,7 +82,7 @@ export function WanderLanding() {
 
   // Slideshow progress timer
   useEffect(() => {
-    if (activeStoryIndex === null) return;
+    if (activeStoryIndex === null || isActionMenuOpen || isEditStoryOpen) return;
 
     setProgress(0);
     const interval = setInterval(() => {
@@ -117,42 +123,93 @@ export function WanderLanding() {
     } finally {
       setIsSubmittingStory(false);
     }
-  };  // Guest landing — hero + CTA
+  };
+
+  const handleEditStorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (activeStoryIndex === null) return;
+    const storyId = combinedStories[activeStoryIndex].id;
+    
+    try {
+      setIsSubmittingEdit(true);
+      await storyService.updateStory(storyId, editStoryCaption);
+      alert(language === 'vi' ? "Cập nhật thành công!" : "Story updated successfully!");
+      setIsEditStoryOpen(false);
+      refetchStories();
+    } catch (err: any) {
+      alert(`${language === 'vi' ? "Lỗi cập nhật" : "Failed to update"}: ${err.message}`);
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const handleDeleteStory = async () => {
+    if (activeStoryIndex === null) return;
+    const confirmDelete = window.confirm(language === 'vi' ? "Bạn có chắc chắn muốn xoá tin này không?" : "Are you sure you want to delete this story?");
+    if (!confirmDelete) return;
+
+    const storyId = combinedStories[activeStoryIndex].id;
+    try {
+      await storyService.deleteStory(storyId);
+      setIsActionMenuOpen(false);
+      setActiveStoryIndex(null);
+      refetchStories();
+    } catch (err: any) {
+      alert(`${language === 'vi' ? "Lỗi xoá tin" : "Failed to delete"}: ${err.message}`);
+    }
+  };
+
+  // Guest landing — hero + CTA
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-[#ff3131] via-[#ff5e3a] to-[#ff914d] text-white overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-10 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-          </div>
+          {/* Animated Background Orbs */}
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-10 left-10 w-96 h-96 bg-white rounded-full blur-3xl" 
+          />
+          <motion.div 
+            animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.25, 0.1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-10 right-10 w-[30rem] h-[30rem] bg-yellow-300 rounded-full blur-3xl pointer-events-none" 
+          />
+          
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+              <motion.div 
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="space-y-8"
+              >
+                <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight">
                   {t("heroTitle", "landing")}<br />
-                  <span className="text-yellow-200">{t("heroHighlight", "landing")}</span>
+                  <span className="text-white">{t("heroHighlight", "landing")}</span>
                 </h1>
                 <p className="text-xl text-white/90 max-w-lg">
                   {t("heroSubtitle", "landing")}
                 </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link
-                    to="/register"
-                    className="px-8 py-4 bg-white text-[#ff3131] rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all"
-                  >
-                    {t("startFree", "landing")}
-                  </Link>
-                  <Link
-                    to="/explore"
-                    className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold text-lg hover:bg-white/10 transition-all"
-                  >
-                    {t("exploreBtn", "landing")}
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <Link to="/register">
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: "0px 20px 40px rgba(0,0,0,0.2)" }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-4 bg-white/90 backdrop-blur-md text-[#ff3131] rounded-full font-bold text-lg transition-colors hover:bg-white"
+                    >
+                      {t("startFree", "landing")}
+                    </motion.button>
                   </Link>
                 </div>
-              </div>
-              <div className="hidden lg:grid grid-cols-2 gap-4">
+              </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                className="hidden lg:grid grid-cols-2 gap-4"
+              >
                 <div className="space-y-4">
                   <div className="rounded-2xl overflow-hidden shadow-2xl h-48">
                     <ImageWithFallback
@@ -185,7 +242,7 @@ export function WanderLanding() {
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -543,29 +600,65 @@ export function WanderLanding() {
                 ))}
               </div>
 
-              {/* Author Details */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full border-2 border-[#ff3131] overflow-hidden p-0.5 bg-white flex-shrink-0">
-                  {combinedStories[activeStoryIndex].author?.avatar ? (
-                    <img
-                      src={combinedStories[activeStoryIndex].author.avatar}
-                      alt={combinedStories[activeStoryIndex].author.name}
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs">
-                      {combinedStories[activeStoryIndex].author?.name?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+              {/* Author Details & Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border-2 border-[#ff3131] overflow-hidden p-0.5 bg-white flex-shrink-0">
+                    {combinedStories[activeStoryIndex].author?.avatar ? (
+                      <img
+                        src={combinedStories[activeStoryIndex].author.avatar}
+                        alt={combinedStories[activeStoryIndex].author.name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs">
+                        {combinedStories[activeStoryIndex].author?.name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-sm drop-shadow-md">
+                      {combinedStories[activeStoryIndex].author?.name}
+                    </h3>
+                    <p className="text-white/60 text-xs drop-shadow-md">
+                      {combinedStories[activeStoryIndex].created_at ? new Date(combinedStories[activeStoryIndex].created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ""}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-white font-bold text-sm drop-shadow-md">
-                    {combinedStories[activeStoryIndex].author?.name}
-                  </h3>
-                  <p className="text-white/60 text-xs drop-shadow-md">
-                    {combinedStories[activeStoryIndex].created_at ? new Date(combinedStories[activeStoryIndex].created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ""}
-                  </p>
-                </div>
+
+                {/* 3-dots menu for story owner */}
+                {user?.id && combinedStories[activeStoryIndex].user_id === user.id && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
+                      className="text-white p-2 hover:bg-white/20 rounded-full transition-colors focus:outline-none"
+                    >
+                      <MoreVertical size={20} />
+                    </button>
+                    {isActionMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 z-[60] overflow-hidden">
+                        <button
+                          onClick={() => {
+                            setEditStoryCaption(combinedStories[activeStoryIndex].caption || "");
+                            setIsActionMenuOpen(false);
+                            setIsEditStoryOpen(true);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Edit2 size={16} />
+                          {language === 'vi' ? 'Sửa nội dung' : 'Edit Caption'}
+                        </button>
+                        <button
+                          onClick={handleDeleteStory}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          {language === 'vi' ? 'Xóa tin' : 'Delete Story'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -591,12 +684,58 @@ export function WanderLanding() {
 
             {/* Bottom Caption */}
             {combinedStories[activeStoryIndex].caption && (
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white text-center">
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white text-center pointer-events-none">
                 <p className="text-sm font-medium leading-relaxed drop-shadow-md">
                   {combinedStories[activeStoryIndex].caption}
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Story Caption Modal */}
+      {isEditStoryOpen && activeStoryIndex !== null && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative animate-scale-up">
+            <button
+              onClick={() => setIsEditStoryOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {language === 'vi' ? "Sửa nội dung tin" : "Edit Story Caption"}
+            </h2>
+
+            <form onSubmit={handleEditStorySubmit} className="space-y-4">
+              <div>
+                <textarea
+                  rows={3}
+                  value={editStoryCaption}
+                  onChange={(e) => setEditStoryCaption(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#ff3131] focus:ring-1 focus:ring-[#ff3131] outline-none resize-none text-sm"
+                  placeholder={language === 'vi' ? "Viết mô tả ngắn cho câu chuyện của bạn..." : "Write a short caption for your story..."}
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditStoryOpen(false)}
+                  className="px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all text-sm"
+                >
+                  {language === 'vi' ? 'Hủy' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingEdit}
+                  className="px-5 py-2 bg-[#ff3131] text-white rounded-xl font-semibold hover:bg-[#e62b2b] transition-all text-sm disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isSubmittingEdit ? (language === 'vi' ? "Đang lưu..." : "Saving...") : (language === 'vi' ? "Lưu" : "Save")}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -15,17 +15,25 @@ import {
   ChevronRight,
   ChevronLeft,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 
 import { useNavigate } from "react-router";
 import { diaryService } from "@/api/diaryService";
 import type { CreateDiaryPayload } from "@/types/diary";
-import { useLanguageStore } from "@/stores";
+import { useLanguageStore, useNotificationStore, useAuthStore, useUIStore } from "@/stores";
+import { aiService } from "@/api/aiService";
+import { toast } from "sonner";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
 
 type PrivacySetting = "private" | "friends" | "public";
 
 export function WanderCreateDiary() {
   const { t, language } = useLanguageStore();
+  const { user } = useAuthStore();
+  const { addNotification } = useNotificationStore();
+  const { isDarkMode } = useUIStore();
+  const { checkLimit, incrementUsage, checkMediaLimits, validateVideoResolution } = useUsageLimits();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [privacySetting, setPrivacySetting] = useState<PrivacySetting>("public");
@@ -44,6 +52,84 @@ export function WanderCreateDiary() {
     description: "",
     style: "",
   });
+
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isAiAssistantEnabled, setIsAiAssistantEnabled] = useState(false);
+
+
+  const handleAiPolish = async () => {
+    if (!checkLimit('ai_diary')) return;
+
+    if (!formData.description.trim()) {
+      toast.error(
+        language === 'vi'
+          ? "Vui lòng nhập trước một đoạn mô tả ngắn hoặc ý tưởng để AI viết tiếp!"
+          : "Please write a short description or ideas first so the AI can continue writing!"
+      );
+      return;
+    }
+
+    setAiLoading(true);
+    setShowAiPanel(true);
+    setAiSuggestion("");
+
+    try {
+      const polished = await aiService.polishDescription(formData.description, formData, language);
+      setAiSuggestion(polished);
+      incrementUsage('ai_diary');
+      toast.success(
+        language === 'vi'
+          ? "Đã tạo mô tả hoàn thiện thành công!"
+          : "Successfully generated polished description!"
+      );
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        (language === 'vi' ? "Lỗi gọi AI: " : "AI Call Error: ") + error.message
+      );
+      setShowAiPanel(false);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleApplyAiSuggestion = () => {
+    setFormData(prev => ({ ...prev, description: aiSuggestion }));
+    setShowAiPanel(false);
+    toast.success(
+      language === 'vi'
+        ? "Đã áp dụng mô tả từ AI!"
+        : "Applied AI description!"
+    );
+  };
+
+  const handleAppendAiSuggestion = () => {
+    setFormData(prev => {
+      const separator = prev.description.endsWith(" ") || prev.description.length === 0 ? "" : " ";
+      return {
+        ...prev,
+        description: prev.description + separator + aiSuggestion
+      };
+    });
+    setShowAiPanel(false);
+    toast.success(
+      language === 'vi'
+        ? "Đã chèn tiếp gợi ý từ AI!"
+        : "Appended AI suggestion!"
+    );
+  };
+
+  const handleToggleAiAssistant = () => {
+    if (isAiAssistantEnabled) {
+      setIsAiAssistantEnabled(false);
+      setShowAiPanel(false);
+      setAiSuggestion("");
+    } else {
+      setIsAiAssistantEnabled(true);
+    }
+  };
 
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,16 +152,16 @@ export function WanderCreateDiary() {
     return normalizedProvince.includes(normalizedInput);
   });
 
-  const [timeline, setTimeline] = useState([
-    { day: 1, title: "", activities: [""], budget: "" },
+  const [timeline, setTimeline] = useState<any[]>([
+    { day: 1, title: "", activities: [""], budget: "", imageFiles: [], videoFiles: [], audioFiles: [] },
   ]);
 
-  const totalSteps = 5;
+  const totalSteps = 4;
 
   const addTimelineDay = () => {
     setTimeline([
       ...timeline,
-      { day: timeline.length + 1, title: "", activities: [""], budget: "" },
+      { day: timeline.length + 1, title: "", activities: [""], budget: "", imageFiles: [], videoFiles: [], audioFiles: [] },
     ]);
   };
 
@@ -132,6 +218,8 @@ export function WanderCreateDiary() {
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const handleSubmit = async () => {
+    if (!checkLimit('create_diary')) return;
+
     if (!formData.title || !formData.location || !coverFile) {
       alert("Vui lòng điền tiêu đề, địa điểm và tải ảnh bìa lên!");
       return;
@@ -142,6 +230,23 @@ export function WanderCreateDiary() {
 
       // 1. Upload ảnh
       const coverUrl = await diaryService.uploadDiaryImage(coverFile);
+
+      // 1.5 Upload timeline files
+      const timelineWithUrls = await Promise.all(timeline.map(async (day) => {
+        const imageUrls = await Promise.all((day.imageFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+        const videoUrls = await Promise.all((day.videoFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+        const audioUrls = await Promise.all((day.audioFiles || []).map((file: File) => diaryService.uploadDiaryImage(file)));
+
+        return {
+          day: day.day,
+          title: day.title || `Ngày ${day.day}`,
+          activities: day.activities.filter((a: string) => a.trim() !== ""),
+          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ",
+          images: imageUrls,
+          videos: videoUrls,
+          audios: audioUrls,
+        };
+      }));
 
       // 2. Chuẩn bị payload
       const payload: CreateDiaryPayload = {
@@ -156,12 +261,7 @@ export function WanderCreateDiary() {
         status: privacySetting === "private" ? "draft" : "published",
         tips: ["Hãy chuẩn bị kem chống nắng", "Đặt phòng trước 1 tháng"], // Mock tips
         budget_notes: ["Nên mang theo một ít tiền mặt"],
-        timeline: timeline.map(day => ({
-          day: day.day,
-          title: day.title || `Ngày ${day.day}`,
-          activities: day.activities.filter(a => a.trim() !== ""),
-          budget: day.budget ? `${(parseInt(day.budget) / 1000000).toFixed(1)} tr` : "0đ"
-        })),
+        timeline: timelineWithUrls,
         budget_breakdown: [
           { category: "Di chuyển", amount: "Vừa phải", percentage: 30 },
           { category: "Ăn uống", amount: "Phải chăng", percentage: 40 },
@@ -172,7 +272,17 @@ export function WanderCreateDiary() {
       // 3. Create diary
       await diaryService.createDiary(payload, coverUrl);
 
+      // Create notification
+      addNotification({
+        type: "post",
+        title: language === 'vi' ? "Đăng bài thành công" : "Post published successfully",
+        message: language === 'vi' ? `Bài viết "${formData.title}" của bạn đã được đăng.` : `Your post "${formData.title}" has been published.`,
+        linkTo: "/dashboard",
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
+
       alert(language === 'vi' ? "Đăng nhật ký thành công!" : "Travel journal published successfully!");
+      incrementUsage('create_diary');
       navigate(`/dashboard`);
     } catch (err: any) {
       console.error(err);
@@ -190,8 +300,7 @@ export function WanderCreateDiary() {
   const stepTitles = [
     t("step1", "createDiary"),
     language === 'vi' ? "Ngân Sách & Nhóm Du Lịch" : "Budget & Travel Group",
-    t("step2", "createDiary"),
-    t("step4", "createDiary"),
+    language === 'vi' ? "Lịch Trình & Media" : "Timeline & Media",
     t("step5", "createDiary"),
   ];
 
@@ -200,20 +309,20 @@ export function WanderCreateDiary() {
   const LINE_HEIGHT = `${GRID_HEIGHT}px`; // Text line height matches grid
 
   return (
-    <div className="min-h-screen bg-[#FFF5F3] py-8 px-4">
+    <div className="min-h-screen bg-[#FFF5F3] dark:bg-background transition-colors duration-300 py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-900 rounded-full shadow-sm mb-4 transition-colors">
             <BookOpen className={accentColor} size={18} />
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-neutral-300">
               {language === 'vi' ? "Sổ Tay Du Lịch" : "Travel Notebook"}
             </span>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             {t("title", "createDiary")}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-400">
             {language === 'vi' ? "Ghi lại từng khoảnh khắc đáng nhớ của hành trình" : "Record every memorable moment of your journey"}
           </p>
         </div>
@@ -224,10 +333,10 @@ export function WanderCreateDiary() {
             <div
               key={index}
               className={`h-2 rounded-full transition-all duration-300 ${index + 1 === currentStep
-                  ? "w-12 bg-gradient-to-r from-[#ff3131] to-[#ff914d]"
-                  : index + 1 < currentStep
-                    ? "w-8 bg-[#ff914d]/50"
-                    : "w-8 bg-gray-300"
+                ? "w-12 bg-gradient-to-r from-[#ff3131] to-[#ff914d]"
+                : index + 1 < currentStep
+                  ? "w-8 bg-[#ff914d]/50 dark:bg-[#ff914d]/30"
+                  : "w-8 bg-gray-300 dark:bg-neutral-700"
                 }`}
             />
           ))}
@@ -236,29 +345,31 @@ export function WanderCreateDiary() {
         {/* Notebook Container */}
         <div className="relative">
           {/* Notebook Background Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl transform rotate-1 opacity-30" />
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl transform -rotate-1 opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-neutral-800 dark:to-neutral-900 rounded-2xl transform rotate-1 opacity-30 dark:opacity-80 transition-all" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-neutral-800/50 dark:to-neutral-900/50 rounded-2xl transform -rotate-1 opacity-50 dark:opacity-60 transition-all" />
 
           {/* Main Notebook Page */}
           <div
-            className={`relative bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isFlipping ? "opacity-0 scale-95" : "opacity-100 scale-100"
+            className={`relative bg-white notebook-page rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isFlipping ? "opacity-0 scale-95" : "opacity-100 scale-100"
               }`}
             style={{
-              backgroundImage: `repeating-linear-gradient(transparent, transparent ${GRID_HEIGHT - 1}px, #e5e7eb ${GRID_HEIGHT - 1}px, #e5e7eb ${GRID_HEIGHT}px)`,
+              backgroundImage: isDarkMode
+                ? `repeating-linear-gradient(transparent, transparent ${GRID_HEIGHT - 1}px, rgba(255, 255, 255, 0.08) ${GRID_HEIGHT - 1}px, rgba(255, 255, 255, 0.08) ${GRID_HEIGHT}px)`
+                : `repeating-linear-gradient(transparent, transparent ${GRID_HEIGHT - 1}px, #e5e7eb ${GRID_HEIGHT - 1}px, #e5e7eb ${GRID_HEIGHT}px)`,
               backgroundPosition: "0 0",
             }}
           >
             {/* Red Margin Line (notebook style) */}
-            <div className="absolute left-12 top-0 bottom-0 w-0.5 bg-red-300" />
+            <div className="absolute left-12 top-0 bottom-0 w-0.5 bg-red-300 dark:bg-red-900/50" />
 
             {/* Page Header */}
-            <div className="px-16 py-6 border-b-2 border-gray-200 bg-white/80">
+            <div className="px-16 py-6 border-b-2 border-gray-200 dark:border-neutral-850 bg-white/80 dark:bg-neutral-900/80 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-gray-500 mb-1">
+                  <div className="text-sm text-gray-500 dark:text-neutral-400 mb-1">
                     {language === 'vi' ? 'Trang' : 'Page'} {currentStep} / {totalSteps}
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">{stepTitles[currentStep - 1]}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{stepTitles[currentStep - 1]}</h2>
                 </div>
                 <div className={`text-3xl font-bold ${accentColor}`}>{Math.round(progressPercentage)}%</div>
               </div>
@@ -271,7 +382,7 @@ export function WanderCreateDiary() {
                 <div className="space-y-0">
                   <div style={{ marginBottom: LINE_HEIGHT }}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "✍️ Tiêu Đề Chuyến Đi *" : "✍️ Trip Title *"}
@@ -281,7 +392,7 @@ export function WanderCreateDiary() {
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder={language === 'vi' ? "VD: Khám Phá Vịnh Hạ Long 5 Ngày" : "E.g. Explore Ha Long Bay 5 Days"}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                      className="notebook-input w-full px-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                       style={{
                         lineHeight: LINE_HEIGHT,
                         height: LINE_HEIGHT,
@@ -291,7 +402,7 @@ export function WanderCreateDiary() {
 
                   <div style={{ marginBottom: LINE_HEIGHT }} className="relative" ref={dropdownRef}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "📍 Địa Điểm *" : "📍 Location *"}
@@ -310,7 +421,7 @@ export function WanderCreateDiary() {
                         }}
                         onFocus={() => setIsLocationDropdownOpen(true)}
                         placeholder={language === 'vi' ? "VD: Hội An, Quảng Nam" : "E.g. Hoi An, Quang Nam"}
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
@@ -318,7 +429,7 @@ export function WanderCreateDiary() {
                       />
                     </div>
                     {isLocationDropdownOpen && (
-                      <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl transition-all duration-200">
+                      <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-xl transition-all duration-200">
                         {filteredProvinces.length > 0 ? (
                           filteredProvinces.map((province) => (
                             <button
@@ -328,14 +439,14 @@ export function WanderCreateDiary() {
                                 setFormData({ ...formData, location: province });
                                 setIsLocationDropdownOpen(false);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gradient-to-r hover:from-[#ff3131]/10 hover:to-[#ff914d]/10 hover:text-[#ff3131] font-medium transition-colors border-b border-gray-50 last:border-0 flex items-center gap-2"
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-neutral-300 hover:bg-gradient-to-r hover:from-[#ff3131]/10 hover:to-[#ff914d]/10 dark:hover:from-[#ff3131]/20 dark:hover:to-[#ff914d]/20 hover:text-[#ff3131] dark:hover:text-white font-medium transition-colors border-b border-gray-50 dark:border-neutral-800/50 last:border-0 flex items-center gap-2"
                             >
                               <MapPin size={14} className="text-[#ff3131]" />
                               {province}
                             </button>
                           ))
                         ) : (
-                          <div className="px-4 py-3 text-sm text-gray-500 text-center italic">
+                          <div className="px-4 py-3 text-sm text-gray-500 dark:text-neutral-450 text-center italic">
                             {language === 'vi' ? 'Không tìm thấy tỉnh thành nào khớp' : 'No matching provinces found'}
                           </div>
                         )}
@@ -346,7 +457,7 @@ export function WanderCreateDiary() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ marginBottom: LINE_HEIGHT }}>
                     <div>
                       <label
-                        className="block font-bold text-gray-900 mb-0"
+                        className="block font-bold text-gray-900 dark:text-white mb-0"
                         style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                       >
                         {language === 'vi' ? "📅 Ngày Bắt Đầu *" : "📅 Start Date *"}
@@ -360,7 +471,7 @@ export function WanderCreateDiary() {
                           type="date"
                           value={formData.startDate}
                           onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                          className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                           style={{
                             lineHeight: LINE_HEIGHT,
                             height: LINE_HEIGHT,
@@ -371,7 +482,7 @@ export function WanderCreateDiary() {
 
                     <div>
                       <label
-                        className="block font-bold text-gray-900 mb-0"
+                        className="block font-bold text-gray-900 dark:text-white mb-0"
                         style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                       >
                         {language === 'vi' ? "📅 Ngày Kết Thúc *" : "📅 End Date *"}
@@ -385,7 +496,7 @@ export function WanderCreateDiary() {
                           type="date"
                           value={formData.endDate}
                           onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                          className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                          className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                           style={{
                             lineHeight: LINE_HEIGHT,
                             height: LINE_HEIGHT,
@@ -397,7 +508,7 @@ export function WanderCreateDiary() {
 
                   <div style={{ marginBottom: LINE_HEIGHT }}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "🎨 Phong Cách Du Lịch *" : "🎨 Travel Style *"}
@@ -405,20 +516,64 @@ export function WanderCreateDiary() {
                     <select
                       value={formData.style}
                       onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                      className="notebook-input w-full px-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                       style={{
                         lineHeight: LINE_HEIGHT,
                         height: LINE_HEIGHT,
                       }}
                     >
-                      <option value="" className="bg-white text-gray-500">{language === 'vi' ? "Chọn phong cách" : "Select style"}</option>
-                      <option value="Trekking" className="bg-white text-gray-900">{language === 'vi' ? "Trekking & Leo Núi" : "Trekking & Climbing"}</option>
-                      <option value="Food" className="bg-white text-gray-900">{language === 'vi' ? "Ẩm Thực" : "Culinary"}</option>
-                      <option value="Cultural" className="bg-white text-gray-900">{language === 'vi' ? "Văn Hoá & Di Sản" : "Culture & Heritage"}</option>
-                      <option value="Luxury" className="bg-white text-gray-900">{language === 'vi' ? "Cao Cấp" : "Luxury"}</option>
-                      <option value="Budget" className="bg-white text-gray-900">{language === 'vi' ? "Tiết Kiệm" : "Budget"}</option>
-                      <option value="Beach" className="bg-white text-gray-900">{language === 'vi' ? "Biển & Nghỉ Dưỡng" : "Beach & Resort"}</option>
+                      <option value="" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Chọn phong cách" : "Select style"}</option>
+                      <option value="Trekking" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Trekking & Leo Núi" : "Trekking & Climbing"}</option>
+                      <option value="Food" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Ẩm Thực" : "Culinary"}</option>
+                      <option value="Cultural" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Văn Hoá & Di Sản" : "Culture & Heritage"}</option>
+                      <option value="Luxury" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Cao Cấp" : "Luxury"}</option>
+                      <option value="Budget" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Tiết Kiệm" : "Budget"}</option>
+                      <option value="Beach" className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">{language === 'vi' ? "Biển & Nghỉ Dưỡng" : "Beach & Resort"}</option>
                     </select>
+                  </div>
+
+                  <div style={{ marginBottom: LINE_HEIGHT, marginTop: LINE_HEIGHT }}>
+                    <label
+                      className="block font-bold text-gray-900 dark:text-white mb-2"
+                      style={{ lineHeight: LINE_HEIGHT }}
+                    >
+                      {language === 'vi' ? "🖼️ Ảnh Bìa Chuyến Đi *" : "🖼️ Trip Cover Image *"}
+                    </label>
+                    <div
+                      className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-xl p-6 text-center transition-all cursor-pointer relative`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setCoverFile(file);
+                            setCoverPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      {coverPreview ? (
+                        <div className="flex flex-col items-center">
+                          <img src={coverPreview} alt="Preview" className="h-24 object-cover rounded-lg mb-2 shadow-sm" />
+                          <p className="font-bold text-sm text-green-600 dark:text-green-450">
+                            {coverFile?.name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {language === 'vi' ? 'Nhấn để thay đổi' : 'Click to change'}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                          <p className="text-sm font-semibold text-gray-700 dark:text-neutral-300">
+                            {language === 'vi' ? 'Nhấn để tải ảnh bìa lên' : 'Click to upload cover image'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">JPG, PNG (Max 10MB)</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -428,7 +583,7 @@ export function WanderCreateDiary() {
                 <div className="space-y-0">
                   <div style={{ marginBottom: "3rem" }}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "💰 Tổng Ngân Sách (VND) *" : "💰 Total Budget (VND) *"}
@@ -450,41 +605,15 @@ export function WanderCreateDiary() {
                           }
                         }}
                         placeholder={language === 'vi' ? "VD: 5000000" : "E.g. 5000000"}
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
                         }}
                       />
                     </div>
-                    {/* Budget Suggestions */}
-                    <div className="flex flex-wrap gap-2 mt-2 pt-1">
-                      {[
-                        { value: "3000000", label: "3.000.000đ" },
-                        { value: "5000000", label: "5.000.000đ" },
-                        { value: "10000000", label: "10.000.000đ" },
-                        { value: "15000000", label: "15.000.000đ" },
-                        { value: "20000000", label: "20.000.000đ" }
-                      ].map((sug) => {
-                        const isActive = formData.budget === sug.value;
-                        return (
-                          <button
-                            key={sug.value}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, budget: sug.value })}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                              isActive
-                                ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm scale-105"
-                                : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 border border-gray-200"
-                            }`}
-                          >
-                            {sug.label}
-                          </button>
-                        );
-                      })}
-                    </div>
                     <p
-                      className="text-sm text-gray-600 mt-1"
+                      className="text-sm text-gray-600"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "Bao gồm tất cả chi phí (lưu trú, ăn uống, di chuyển, tham quan)" : "Includes all expenses (accommodation, dining, transport, sightseeing)"}
@@ -493,7 +622,7 @@ export function WanderCreateDiary() {
 
                   <div style={{ marginBottom: LINE_HEIGHT }}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "👥 Số Người *" : "👥 Number of People *"}
@@ -508,7 +637,7 @@ export function WanderCreateDiary() {
                         value={formData.groupSize}
                         onChange={(e) => setFormData({ ...formData, groupSize: e.target.value })}
                         min="1"
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
+                        className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
@@ -519,7 +648,7 @@ export function WanderCreateDiary() {
 
                   <div style={{ marginBottom: `${GRID_HEIGHT}px` }}>
                     <label
-                      className="block font-bold text-gray-900 mb-0"
+                      className="block font-bold text-gray-900 dark:text-white mb-0"
                       style={{ lineHeight: LINE_HEIGHT, height: LINE_HEIGHT }}
                     >
                       {language === 'vi' ? "📝 Mô Tả Chuyến Đi *" : "📝 Trip Description *"}
@@ -529,31 +658,116 @@ export function WanderCreateDiary() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder={language === 'vi' ? "Chia sẻ điều đặc biệt nhất của chuyến đi. Bao gồm điểm nổi bật, trải nghiệm đáng nhớ và đối tượng phù hợp..." : "Share the most special aspects of your trip. Include highlights, memorable experiences and target audience..."}
                       rows={6}
-                      className="w-full px-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] resize-none"
+                      className="notebook-input w-full px-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] resize-none"
                       style={{
                         lineHeight: LINE_HEIGHT,
                       }}
                     />
+
+                    {/* AI Assistant Toolbar */}
+                    {isAiAssistantEnabled && (
+                      <div className="flex items-center justify-between mt-3 py-2 border-t border-dashed border-gray-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-neutral-400">
+                          <Sparkles size={14} className="text-[#ff3131] animate-pulse" />
+                          <span>{language === 'vi' ? "Trợ lý Viết AI:" : "AI Writing Assistant:"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={aiLoading}
+                            onClick={handleAiPolish}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                            {language === 'vi' ? "Tối ưu / Hoàn thiện" : "Polish & Complete"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Suggestions Display Panel */}
+                    {isAiAssistantEnabled && showAiPanel && (
+                      <div className="mt-3 bg-gradient-to-br from-amber-50/90 to-orange-50/90 dark:from-[#2e1d13]/90 dark:to-[#271c14]/90 rounded-xl p-4 border border-orange-200 dark:border-orange-950/60 shadow-sm transition-all duration-300">
+                        <div className="flex items-center justify-between mb-3 border-b border-orange-100 dark:border-orange-950/40 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="text-[#ff3131]" size={16} />
+                            <span className="font-bold text-sm text-gray-900 dark:!text-[#ff914d]">
+                              {language === 'vi' ? "Gợi ý từ Trợ lý AI" : "AI Recommendation"}
+                            </span>
+                          </div>
+                          {aiLoading && (
+                            <div className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400 font-semibold animate-pulse">
+                              <Loader2 className="animate-spin" size={14} />
+                              <span>{language === 'vi' ? "AI đang suy nghĩ..." : "AI is writing..."}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {aiLoading ? (
+                          <div className="space-y-2 py-2">
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-full" />
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-[95%]" />
+                            <div className="h-4 bg-orange-200/50 dark:bg-orange-900/30 rounded animate-pulse w-[80%]" />
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm text-gray-800 dark:text-neutral-200 leading-relaxed italic whitespace-pre-wrap bg-white/60 dark:bg-neutral-900/60 p-3 rounded-lg border border-orange-100 dark:border-orange-950/40">
+                              {aiSuggestion}
+                            </p>
+                            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3">
+                              <button
+                                type="button"
+                                onClick={() => setShowAiPanel(false)}
+                                className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-neutral-300 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 border border-gray-200 dark:border-neutral-700 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Bỏ qua" : "Discard"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleAppendAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/40 hover:bg-orange-200 dark:hover:bg-orange-900/40 rounded-lg transition-colors cursor-pointer"
+                              >
+                                {language === 'vi' ? "Chèn tiếp" : "Insert"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleApplyAiSuggestion}
+                                className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#ff3131] to-[#ff914d] hover:shadow-md rounded-lg transition-all cursor-pointer"
+                              >
+                                {language === 'vi' ? "Áp dụng" : "Apply"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-l-4 border-[#ff3131]">
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-[#2e1d13] dark:to-[#271c14] rounded-xl p-4 border-l-4 border-[#ff3131]">
                     <div className="flex items-start gap-3">
                       <Sparkles className={`${accentColor} flex-shrink-0 mt-1`} size={20} />
-                      <div>
+                      <div className="flex-1">
                         <p
-                          className="font-bold text-gray-900 mb-0"
+                          className="font-bold text-gray-900 dark:!text-[#ff914d] mb-0 flex items-center justify-between"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
-                          {language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}
+                          <span>{language === 'vi' ? "💡 Gợi Ý AI" : "💡 AI Suggestions"}</span>
                         </p>
                         <p
-                          className="text-sm text-gray-600"
+                          className="text-sm text-gray-600 dark:text-neutral-300 mb-2"
                           style={{ lineHeight: LINE_HEIGHT }}
                         >
-                          {language === 'vi' ? "Dựa trên địa điểm và ngày tháng của bạn, AI có thể gợi ý ngân sách hàng ngày và hoạt động tối ưu." : "Based on your location and dates, AI can suggest daily budget and optimal activities."}
+                          {language === 'vi' ? "Dựa trên địa điểm và ngày tháng của bạn, AI có thể gợi ý viết mô tả chuyến đi một cách tự nhiên và sinh động hơn." : "Based on your location and dates, AI can suggest writing a more natural and vivid trip description."}
                         </p>
-                        <button className={`text-sm ${accentColor} font-bold hover:underline`}>
-                          {language === 'vi' ? "Bật Trợ Lý AI →" : "Enable AI Assistant →"}
+
+                        <button
+                          type="button"
+                          onClick={handleToggleAiAssistant}
+                          className={`text-sm ${accentColor} font-bold hover:underline flex items-center gap-1 cursor-pointer`}
+                        >
+                          {isAiAssistantEnabled
+                            ? (language === 'vi' ? "Tắt Trợ Lý AI ←" : "Disable AI Assistant ←")
+                            : (language === 'vi' ? "Bật Trợ Lý AI →" : "Enable AI Assistant →")}
                         </button>
                       </div>
                     </div>
@@ -567,7 +781,7 @@ export function WanderCreateDiary() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Calendar className={accentColor} size={20} />
-                      <span className="font-bold text-gray-900">{language === 'vi' ? "Lịch trình chi tiết" : "Detailed itinerary"}</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{language === 'vi' ? "Lịch trình chi tiết" : "Detailed itinerary"}</span>
                     </div>
                     <button
                       onClick={addTimelineDay}
@@ -589,7 +803,7 @@ export function WanderCreateDiary() {
                           {timeline.length > 1 && (
                             <button
                               onClick={() => removeTimelineDay(dayIndex)}
-                              className="text-red-600 hover:bg-red-50 rounded-lg p-2 transition-colors"
+                              className="text-red-600 dark:text-red-450 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg p-2 transition-colors"
                             >
                               <Trash2 size={18} />
                             </button>
@@ -610,7 +824,7 @@ export function WanderCreateDiary() {
                           />
 
                           <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">{language === 'vi' ? "Hoạt Động" : "Activities"}</label>
+                            <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-2">{language === 'vi' ? "Hoạt Động" : "Activities"}</label>
                             <div className="space-y-2">
                               {day.activities.map((activity, activityIndex) => (
                                 <div key={activityIndex} className="flex gap-2">
@@ -624,7 +838,7 @@ export function WanderCreateDiary() {
                                   {day.activities.length > 1 && (
                                     <button
                                       onClick={() => removeActivity(dayIndex, activityIndex)}
-                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                      className="p-2 text-red-600 dark:text-red-450 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
                                     >
                                       <Trash2 size={18} />
                                     </button>
@@ -641,7 +855,7 @@ export function WanderCreateDiary() {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">{language === 'vi' ? "Ngân Sách Ngày (VND)" : "Daily Budget (VND)"}</label>
+                            <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-2">{language === 'vi' ? "Ngân Sách Ngày (VND)" : "Daily Budget (VND)"}</label>
                             <div className="relative">
                               <Wallet className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                               <input
@@ -657,91 +871,91 @@ export function WanderCreateDiary() {
                               />
                             </div>
                           </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                            <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-3">{language === 'vi' ? "Media (Ảnh/Video/Audio)" : "Media (Image/Video/Audio)"}</label>
+                            <div className="flex flex-wrap gap-4">
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">{language === 'vi' ? 'Ảnh' : 'Image'}</span>
+                                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  if (!files.length) return;
+                                  
+                                  const totalImages = timeline.reduce((acc, curr) => acc + (curr.imageFiles?.length || 0), 0);
+                                  if (!checkMediaLimits(totalImages, files.length, 0, 0)) return;
+
+                                  const newTimeline = [...timeline];
+                                  const currentImages = newTimeline[dayIndex].imageFiles || [];
+                                  newTimeline[dayIndex].imageFiles = [...currentImages, ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Video</span>
+                                <input type="file" multiple accept="video/*" className="hidden" onChange={async (e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  if (!files.length) return;
+
+                                  const totalVideos = timeline.reduce((acc, curr) => acc + (curr.videoFiles?.length || 0), 0);
+                                  if (!checkMediaLimits(0, 0, totalVideos, files.length)) return;
+
+                                  for (const file of files) {
+                                    const isValid = await validateVideoResolution(file);
+                                    if (!isValid) return;
+                                  }
+
+                                  const newTimeline = [...timeline];
+                                  const currentVideos = newTimeline[dayIndex].videoFiles || [];
+                                  newTimeline[dayIndex].videoFiles = [...currentVideos, ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+
+                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                                <Upload size={20} className="text-gray-400 mb-2" />
+                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Audio</span>
+                                <input type="file" multiple accept="audio/*" className="hidden" onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  const newTimeline = [...timeline];
+                                  newTimeline[dayIndex].audioFiles = [...(newTimeline[dayIndex].audioFiles || []), ...files];
+                                  setTimeline(newTimeline);
+                                }} />
+                              </label>
+                            </div>
+                            
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(day.imageFiles || []).map((f: File, i: number) => (
+                                <div key={`img-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-orange-500">📸</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                              {(day.videoFiles || []).map((f: File, i: number) => (
+                                <div key={`vid-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-blue-500">🎬</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                              {(day.audioFiles || []).map((f: File, i: number) => (
+                                <div key={`aud-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                  <span className="text-green-500">🎵</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Step 4: Media Upload */}
+              {/* Step 4: Privacy & Publish */}
               {currentStep === 4 && (
-                <div className="space-y-0">
-                  <div
-                    className={`border-2 border-dashed ${coverFile ? 'border-green-500 bg-green-50' : 'border-gray-400 hover:border-[#ff3131] hover:bg-amber-50/30'} rounded-2xl p-12 text-center transition-all cursor-pointer relative`}
-                    style={{ marginBottom: `${GRID_HEIGHT}px` }}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setCoverFile(file);
-                          setCoverPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    {coverPreview ? (
-                      <div className="flex flex-col items-center">
-                        <img src={coverPreview} alt="Preview" className="h-32 object-cover rounded-xl mb-3 shadow-md" />
-                        <p className="font-bold text-green-600">
-                          {language === 'vi' ? 'Đã chọn ảnh bìa:' : 'Cover image selected:'} {coverFile?.name}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {language === 'vi' ? 'Nhấn để thay đổi' : 'Click to change'}
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-                        <p
-                          className="font-bold text-gray-900"
-                          style={{ lineHeight: LINE_HEIGHT }}
-                        >
-                          {language === 'vi' ? '📸 Nhấn vào đây để tải ảnh bìa lên (Bắt buộc)' : '📸 Click here to upload a cover image (Required)'}
-                        </p>
-                        <p
-                          className="text-sm text-gray-600"
-                          style={{ lineHeight: LINE_HEIGHT }}
-                        >
-                          {language === 'vi' ? 'Tải lên hình ảnh chất lượng cao từ chuyến đi của bạn (JPG, PNG, tối đa 10MB)' : 'Upload high-quality images from your trip (JPG, PNG, max 10MB)'}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500" style={{ marginBottom: `${GRID_HEIGHT}px` }}>
-                    <h3
-                      className="font-bold text-gray-900"
-                      style={{ lineHeight: LINE_HEIGHT }}
-                    >
-                      {language === 'vi' ? '📸 Mẹo Chụp Ảnh' : '📸 Photography Tips'}
-                    </h3>
-                    <ul className="space-y-0 text-sm text-gray-700">
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Sử dụng hình ảnh độ phân giải cao để tăng chất lượng' : '• Use high-resolution images to improve quality'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Kết hợp ảnh phong cảnh, hoạt động và văn hoá địa phương' : '• Combine landscape, activity, and local culture photos'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Chọn một ảnh bìa nổi bật cho nhật ký' : '• Choose a striking cover image for your journal'}
-                      </li>
-                      <li style={{ lineHeight: LINE_HEIGHT }}>
-                        {language === 'vi' ? '• Thêm chú thích để kể câu chuyện đằng sau mỗi bức ảnh' : '• Add captions to tell the story behind each photo'}
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 5: Privacy & Publish */}
-              {currentStep === 5 && (
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-4">
+                    <label className="block text-sm font-bold text-gray-900 dark:text-white mb-4">
                       {language === 'vi' ? "🔒 Ai có thể xem nhật ký này? *" : "🔒 Who can view this journal? *"}
                     </label>
                     <div className="space-y-3">
@@ -754,8 +968,8 @@ export function WanderCreateDiary() {
                           key={value}
                           onClick={() => setPrivacySetting(value as PrivacySetting)}
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${privacySetting === value
-                              ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
-                              : "border-gray-300 hover:border-gray-400 bg-white"
+                            ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
+                            : "border-gray-300 hover:border-gray-400 bg-white"
                             }`}
                         >
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${privacySetting === value ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d]" : "bg-gray-100"
@@ -763,8 +977,8 @@ export function WanderCreateDiary() {
                             <Icon className={privacySetting === value ? "text-white" : "text-gray-400"} size={24} />
                           </div>
                           <div className="text-left flex-1">
-                            <p className="font-bold text-gray-900">{label}</p>
-                            <p className="text-sm text-gray-600">{desc}</p>
+                            <p className="font-bold text-gray-900 dark:text-white">{label}</p>
+                            <p className="text-sm text-gray-600 dark:text-neutral-400">{desc}</p>
                           </div>
                         </button>
                       ))}
@@ -790,9 +1004,9 @@ export function WanderCreateDiary() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-start gap-3 bg-gray-50 dark:bg-neutral-900/50 p-4 rounded-xl transition-colors">
                     <input type="checkbox" id="terms" className="mt-1" />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
+                    <label htmlFor="terms" className="text-sm text-gray-600 dark:text-neutral-300">
                       {language === 'vi'
                         ? 'Tôi xác nhận tất cả thông tin là chính xác và tôi sở hữu bản quyền của nội dung đã tải lên. Tôi đồng ý với '
                         : 'I confirm that all information is accurate and I own the copyright of the uploaded content. I agree to '}
@@ -811,12 +1025,12 @@ export function WanderCreateDiary() {
             </div>
 
             {/* Page Footer / Navigation */}
-            <div className="px-16 py-6 border-t-2 border-gray-200 bg-white/80">
+            <div className="px-16 py-6 border-t-2 border-gray-200 dark:border-neutral-850 bg-white/80 dark:bg-neutral-900/80 transition-colors">
               <div className="flex items-center justify-between">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 1}
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={20} />
                   {t("prev", "createDiary")}
@@ -847,7 +1061,7 @@ export function WanderCreateDiary() {
           </div>
 
           {/* Page Corner Curl Effect */}
-          <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-gray-300 to-transparent rounded-tl-3xl opacity-20" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-gray-300 to-transparent dark:from-neutral-800 rounded-tl-3xl opacity-20 dark:opacity-40" />
         </div>
       </div>
     </div>

@@ -1,480 +1,375 @@
-import { Link } from "react-router";
 import { useState } from "react";
-import {
-  CheckCircle,
-  TrendingUp,
-  Users,
-  BarChart3,
-  MapPin,
-  Star,
-  Zap,
-  Globe,
-  Shield,
-  Target,
-  Briefcase,
-} from "lucide-react";
-import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-import { useLanguageStore } from "@/stores";
+import { Link, useNavigate } from "react-router";
+import { CheckCircle, X, Copy, CreditCard, Smartphone } from "lucide-react";
+import { useLanguageStore, useAuthStore } from "@/stores";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
+import { notificationService } from "@/api/notificationService";
+import { toast } from "sonner";
+import qrAgribankPlus from "@/assets/AgribankPlus.jpg";
+import qrAgribankPro from "@/assets/AgribankPro.jpg";
+import qrMomoPlus from "@/assets/MomoPlus.jpg";
+import qrMomoPro from "@/assets/MomoPro.jpg";
 
 export function WanderPartner() {
-  const { t, language } = useLanguageStore();
-  const [formData, setFormData] = useState({
-    businessName: "",
-    contactName: "",
-    email: "",
-    phone: "",
-    businessType: "",
-    location: "",
-    website: "",
-    message: "",
-  });
+  const { language } = useLanguageStore();
+  const { user, setPlan, updateProfile } = useAuthStore();
+  const { resetUsage } = useUsageLimits();
+  const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'momo'>('bank');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(language === 'vi' ? "Đã sao chép!" : "Copied!");
+  };
+
+  const handleDowngrade = async (plan: any) => {
+    const isConfirmed = window.confirm(
+      language === 'vi' 
+        ? `Bạn có chắc chắn muốn hạ cấp xuống gói ${plan.name}? Các đặc quyền của gói hiện tại sẽ bị hủy bỏ.`
+        : `Are you sure you want to downgrade to the ${plan.name} plan? Your current premium features will be lost.`
+    );
+  
+    if (!isConfirmed) return;
+  
+    setPlan(plan.planKey);
+    try {
+      if (user) {
+        await updateProfile({ plan: plan.planKey });
+        
+        // Create in-app notification for downgrade
+        await notificationService.createNotification(
+          user.id,
+          null, // system notification
+          'plan_downgrade',
+          language === 'vi' 
+            ? `Bạn đã hạ cấp thành công xuống gói ${plan.name}. Các giới hạn sử dụng đã được áp dụng.` 
+            : `Successfully downgraded to ${plan.name} plan. New usage limits are applied.`
+        );
+      }
+      resetUsage();
+      toast.success(
+        language === 'vi' 
+          ? `Đã hạ cấp thành công xuống gói ${plan.name}.`
+          : `Successfully downgraded to ${plan.name} plan.`
+      );
+    } catch (error) {
+      console.error("Failed to downgrade plan in DB", error);
+      resetUsage();
+      toast.success(
+        language === 'vi' 
+          ? `Đã hạ cấp xuống gói ${plan.name} (Local).`
+          : `Downgraded to ${plan.name} (Local).`
+      );
+    }
+  };
 
   const pricingPlans = [
     {
       name: "Free",
-      price: "0₫",
+      price: language === 'vi' ? "0₫" : "$0",
       period: language === 'vi' ? "/tháng" : "/month",
       planKey: "free",
-      description: t("planFreeDesc", "partner"),
-      features: [
-        t("featureFree1", "partner"),
-        t("featureFree2", "partner"),
-        t("featureFree3", "partner"),
-        t("featureFree4", "partner"),
-        t("featureFree5", "partner"),
+      description: language === 'vi' ? "Trải nghiệm cơ bản" : "Basic experience",
+      features: language === 'vi' ? [
+        "Xem, thích & bình luận",
+        "Đăng bài: 4 Nhật ký & 2 Lịch trình / ngày",
+        "Trợ lý AI: 8 Nhật ký & 4 Lịch trình / ngày",
+        "Đính kèm: 5 ảnh & 1 video (720p) / bài",
+      ] : [
+        "View, like & comment",
+        "Post: 4 Journals & 2 Itineraries / day",
+        "AI Assist: 8 Journals & 4 Itineraries / day",
+        "Attach: 5 images & 1 video (720p) / post",
       ],
       color: "bg-[#FFF5F3]",
       popular: false,
-      isCurrent: true,
+      isCurrent: (user?.plan || 'free') === 'free',
+      level: 0,
     },
     {
-      name: "Starter",
-      price: "50.000₫",
+      name: "Plus",
+      price: language === 'vi' ? "19.000₫" : "$0.79",
       period: language === 'vi' ? "/tháng" : "/month",
-      planKey: "starter",
-      description: t("planStarterDesc", "partner"),
-      features: [
-        t("featureStarter1", "partner"),
-        t("featureStarter2", "partner"),
-        t("featureStarter3", "partner"),
-        t("featureStarter4", "partner"),
-        t("featureStarter5", "partner"),
-        t("featureStarter6", "partner"),
+      planKey: "plus",
+      description: language === 'vi' ? "Trải nghiệm tuyệt vời hơn" : "Better experience",
+      features: language === 'vi' ? [
+        "Giới hạn sử dụng gấp 2.5 lần gói Free",
+        "Đính kèm video phân giải cao 1080p",
+        "Trải nghiệm không quảng cáo",
+        "Huy hiệu Plus nổi bật",
+      ] : [
+        "Usage limits 2.5x higher than Free",
+        "Attach high resolution 1080p videos",
+        "Ad-free experience",
+        "Exclusive Plus badge",
       ],
       color: "bg-[#FFE8E0]",
       popular: true,
-      isCurrent: false,
+      isCurrent: (user?.plan || 'free') === 'plus',
+      level: 1,
     },
     {
-      name: "Professional",
-      price: "150.000₫",
+      name: "Pro",
+      price: language === 'vi' ? "29.000₫" : "$1.19",
       period: language === 'vi' ? "/tháng" : "/month",
-      planKey: "professional",
-      description: t("planProfessionalDesc", "partner"),
-      features: [
-        t("featureProfessional1", "partner"),
-        t("featureProfessional2", "partner"),
-        t("featureProfessional3", "partner"),
-        t("featureProfessional4", "partner"),
-        t("featureProfessional5", "partner"),
-        t("featureProfessional6", "partner"),
-        t("featureProfessional7", "partner"),
-        t("featureProfessional8", "partner"),
+      planKey: "pro",
+      description: language === 'vi' ? "Dành cho tín đồ xê dịch" : "For travel enthusiasts",
+      features: language === 'vi' ? [
+        "Giới hạn sử dụng gấp 2.5 lần gói Plus",
+        "Đính kèm video siêu nét 2160p (4K)",
+        "Trải nghiệm không quảng cáo",
+        "Huy hiệu Pro đẳng cấp",
+      ] : [
+        "Usage limits 2.5x higher than Plus",
+        "Attach ultra HD 2160p (4K) videos",
+        "Ad-free experience",
+        "Exclusive Pro badge",
       ],
       color: "bg-gradient-to-br from-[#ff3131] to-[#ff914d]",
       popular: false,
-      isCurrent: false,
+      isCurrent: (user?.plan || 'free') === 'pro',
+      level: 2,
     },
   ];
 
-  const benefits = [
-    {
-      icon: Users,
-      title: t("benefit1Title", "partner"),
-      description: t("benefit1Desc", "partner"),
-    },
-    {
-      icon: Target,
-      title: t("benefit2Title", "partner"),
-      description: t("benefit2Desc", "partner"),
-    },
-    {
-      icon: TrendingUp,
-      title: t("benefit3Title", "partner"),
-      description: t("benefit3Desc", "partner"),
-    },
-    {
-      icon: Shield,
-      title: t("benefit4Title", "partner"),
-      description: t("benefit4Desc", "partner"),
-    },
-    {
-      icon: BarChart3,
-      title: t("benefit5Title", "partner"),
-      description: t("benefit5Desc", "partner"),
-    },
-    {
-      icon: Zap,
-      title: t("benefit6Title", "partner"),
-      description: t("benefit6Desc", "partner"),
-    },
-  ];
-
-  const testimonials: any[] = [];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(t("submitSuccess", "partner"));
-  };
+  const currentPlanLevel = pricingPlans.find(p => p.planKey === (user?.plan || 'free'))?.level || 0;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#ff3131] to-[#ff914d] text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
-                <Briefcase className="text-white" size={18} />
-                <span className="text-sm font-medium">{t("badge", "partner")}</span>
-              </div>
-
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                {t("title", "partner")}
-              </h1>
-
-              <p className="text-xl text-white/90 leading-relaxed">
-                {t("subtitle", "partner")}
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="#pricing"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all shadow-lg"
-                >
-                  {t("viewPricingBtn", "partner")}
-                </a>
-                <a
-                  href="#contact"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-semibold hover:bg-white/10 transition-all"
-                >
-                  {t("bookDemoBtn", "partner")}
-                </a>
-              </div>
-
-              <div className="grid grid-cols-3 gap-6 pt-6">
-                <div>
-                  <p className="text-3xl font-bold">500+</p>
-                  <p className="text-sm text-white/80">{t("partnerCount", "partner")}</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">50k+</p>
-                  <p className="text-sm text-white/80">{t("activeTravelers", "partner")}</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">250%</p>
-                  <p className="text-sm text-white/80">{t("avgRoi", "partner")}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-                  <TrendingUp className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">{t("growthAnalytics", "partner")}</h3>
-                  <p className="text-sm text-white/80">{t("growthAnalyticsDesc", "partner")}</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-                  <Shield className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">{t("trustBadge", "partner")}</h3>
-                  <p className="text-sm text-white/80">{t("trustBadgeDesc", "partner")}</p>
-                </div>
-              </div>
-              <div className="space-y-4 pt-8">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-                  <Users className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">{t("qualityCustomers", "partner")}</h3>
-                  <p className="text-sm text-white/80">{t("qualityCustomersDesc", "partner")}</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-                  <Globe className="text-white mb-3" size={32} />
-                  <h3 className="font-bold mb-2">{t("globalReach", "partner")}</h3>
-                  <p className="text-sm text-white/80">{t("globalReachDesc", "partner")}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
+            {language === 'vi' ? "Nâng cấp trải nghiệm WanderLab" : "Upgrade your WanderLab experience"}
+          </h2>
+          <p className="text-xl text-gray-600">
+            {language === 'vi' ? "Chọn gói phù hợp nhất với nhu cầu khám phá của bạn" : "Choose the plan that best fits your exploration needs"}
+          </p>
         </div>
-      </section>
 
-      {/* Benefits Section */}
-      <section className="py-20 bg-[#FFF5F3]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
-              {t("whyPartnerTitle", "partner")}
-            </h2>
-            <p className="text-xl text-gray-600">{t("whyPartnerSubtitle", "partner")}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {benefits.map((benefit, index) => {
-              const IconComponent = benefit.icon;
-              return (
-                <div key={index} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] rounded-xl flex items-center justify-center mb-4">
-                    <IconComponent className="text-[#ff3131]" size={28} />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{benefit.title}</h3>
-                  <p className="text-gray-600">{benefit.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent mb-4">
-              {t("pricingTitle", "partner")}
-            </h2>
-            <p className="text-xl text-gray-600">{t("pricingSubtitle", "partner")}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div
-                key={index}
-                className={`bg-white rounded-3xl shadow-lg overflow-hidden ${plan.popular ? "ring-4 ring-[#ff3131]" : ""
-                  }`}
-              >
-                {plan.popular && (
-                  <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-center py-2 text-sm font-semibold">
-                    {t("mostPopular", "partner")}
-                  </div>
-                )}
-                <div className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
-                  <div className="mb-6">
-                    <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
-                    {plan.period && <span className="text-gray-600">{plan.period}</span>}
-                  </div>
-                  <button
-                    className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.popular
-                        ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg"
-                        : plan.isCurrent
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-[#FFE8E0] text-gray-900 hover:bg-[#FFF5F3]"
-                      }`}
-                    disabled={plan.isCurrent}
-                  >
-                    {plan.isCurrent ? (
-                      t("currentPlan", "partner")
-                    ) : (
-                      <Link to={`/checkout?plan=${plan.planKey}`}>{t("upgrade", "partner")}</Link>
-                    )}
-                  </button>
-                  <ul className="mt-8 space-y-4">
-                    {plan.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-start gap-3">
-                        <CheckCircle className="text-[#ff3131] flex-shrink-0 mt-1" size={20} />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 bg-[#FFF5F3]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("trustedTitle", "partner")}</h2>
-            <p className="text-xl text-gray-600">{t("trustedSubtitle", "partner")}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-white rounded-2xl p-8">
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} size={20} className="text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.text}"</p>
-                <div className="flex items-center gap-3">
-                  <ImageWithFallback
-                    src={testimonial.image}
-                    alt={testimonial.author}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">{testimonial.author}</p>
-                    <p className="text-sm text-gray-600">{testimonial.role}</p>
-                    <p className="text-sm text-[#ff3131] font-semibold">{testimonial.company}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Form Section */}
-      <section id="contact" className="py-20 bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t("readyTitle", "partner")}</h2>
-            <p className="text-xl text-gray-600">{t("readySubtitle", "partner")}</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelBusinessName", "partner")}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.businessName}
-                  onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelContactName", "partner")}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.contactName}
-                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelEmail", "partner")}
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelPhone", "partner")}
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelBusinessType", "partner")}
-                </label>
-                <select
-                  required
-                  value={formData.businessType}
-                  onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent bg-white"
-                >
-                  <option value="">{t("selectTypePlaceholder", "partner")}</option>
-                  <option value="hotel">{t("typeHotel", "partner")}</option>
-                  <option value="tour">{t("typeTour", "partner")}</option>
-                  <option value="activity">{t("typeActivity", "partner")}</option>
-                  <option value="restaurant">{t("typeRestaurant", "partner")}</option>
-                  <option value="transport">{t("typeTransport", "partner")}</option>
-                  <option value="other">{t("typeOther", "partner")}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  {t("labelLocation", "partner")}
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder={t("placeholderLocation", "partner")}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                {t("labelWebsite", "partner")}
-              </label>
-              <input
-                type="url"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="https://yourwebsite.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                {t("labelIntro", "partner")}
-              </label>
-              <textarea
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                rows={4}
-                placeholder={t("placeholderIntro", "partner")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all text-lg"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {pricingPlans.map((plan, index) => (
+            <div
+              key={index}
+              className={`bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col ${
+                plan.popular ? "ring-4 ring-[#ff3131] transform md:-translate-y-4" : ""
+              }`}
             >
-              {t("submitBtn", "partner")}
-            </button>
+              {plan.popular && (
+                <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white text-center py-2 text-sm font-semibold tracking-wider uppercase">
+                  {language === 'vi' ? "Phổ biến nhất" : "Most popular"}
+                </div>
+              )}
+              <div className="p-8 flex-1 flex flex-col">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <p className="text-gray-600 mb-6">{plan.description}</p>
+                <div className="mb-6">
+                  <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
+                  {plan.period && <span className="text-gray-600 text-lg font-medium ml-1">{plan.period}</span>}
+                </div>
+                
+                <ul className="mt-4 mb-8 space-y-4 flex-1">
+                  {plan.features.map((feature, fIndex) => (
+                    <li key={fIndex} className="flex items-start gap-3">
+                      <CheckCircle className="text-[#ff3131] flex-shrink-0 mt-1" size={20} />
+                      <span className="text-gray-700 font-medium">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-            <p className="text-sm text-gray-600 text-center">
-              {language === 'vi' ? 'Bằng cách gửi, bạn đồng ý với ' : 'By submitting, you agree to our '}
-              <a href="#" className="text-[#ff3131] hover:underline">{t("termsLink", "partner")}</a>
-              {language === 'vi' ? ' và ' : ' and '}
-              <a href="#" className="text-[#ff3131] hover:underline">{t("privacyLink", "partner")}</a>
-              {language === 'vi' ? ' của chúng tôi' : ''}
-            </p>
-          </form>
+                {plan.isCurrent ? (
+                  <button
+                    className="w-full py-4 rounded-xl font-semibold transition-all mt-auto bg-gray-100 text-gray-500 cursor-not-allowed"
+                    disabled
+                  >
+                    {language === 'vi' ? "Gói hiện tại" : "Current plan"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (plan.level < currentPlanLevel) {
+                        handleDowngrade(plan);
+                      } else {
+                        setSelectedPlan(plan);
+                        setPaymentMethod('bank');
+                      }
+                    }}
+                    className={`w-full py-4 rounded-xl font-semibold transition-all mt-auto text-center block shadow-md ${
+                      plan.popular
+                        ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg hover:scale-[1.02]"
+                        : "bg-[#FFE8E0] text-gray-900 hover:bg-[#FFF5F3] hover:scale-[1.02]"
+                    }`}
+                  >
+                    {plan.level < currentPlanLevel 
+                      ? (language === 'vi' ? "Hạ cấp" : "Downgrade") 
+                      : (language === 'vi' ? "Nâng cấp ngay" : "Upgrade now")}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* Payment Modal */}
+      {selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200 scrollbar-hide">
+            <button
+              onClick={() => setSelectedPlan(null)}
+              className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full p-2 transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+            <div className={`${selectedPlan.color.includes('bg-') ? selectedPlan.color : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'} p-6 text-center relative`}>
+              <h3 className={`text-2xl font-bold ${selectedPlan.popular ? 'text-white' : 'text-gray-900'}`}>
+                {language === 'vi' ? "Thanh toán gói" : "Pay for"} {selectedPlan.name}
+              </h3>
+              <p className={`mt-1 font-medium ${selectedPlan.popular ? 'text-white/90' : 'text-gray-600'}`}>
+                {selectedPlan.price}
+              </p>
+            </div>
+            
+            <div className="p-6">
+              {/* Payment Tabs */}
+              <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                <button
+                  onClick={() => setPaymentMethod('bank')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                    paymentMethod === 'bank' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <CreditCard size={18} />
+                  {language === 'vi' ? "Ngân hàng" : "Bank"}
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('momo')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                    paymentMethod === 'momo' ? 'bg-[#a50064] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Smartphone size={18} />
+                  Momo
+                </button>
+              </div>
+
+              {/* QR Display */}
+              <div className="flex flex-col items-center justify-center mb-6">
+                <div className="bg-white p-0 md:p-2 rounded-2xl border-2 border-gray-100 shadow-sm inline-block w-full max-w-[360px]">
+                  <img
+                    src={
+                      paymentMethod === 'bank'
+                        ? (selectedPlan.planKey === 'plus' ? qrAgribankPlus : qrAgribankPro)
+                        : (selectedPlan.planKey === 'plus' ? qrMomoPlus : qrMomoPro)
+                    }
+                    alt="Payment QR"
+                    className="w-full h-auto object-contain rounded-xl"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-4 text-center">
+                  {language === 'vi' ? "Quét mã QR qua ứng dụng ngân hàng hoặc Momo để thanh toán" : "Scan QR code via Bank or Momo app to pay"}
+                </p>
+              </div>
+
+              {/* Account Details for Manual Transfer */}
+              <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">{language === 'vi' ? "Ngân hàng" : "Bank"}</span>
+                  <span className="font-semibold text-gray-900">{paymentMethod === 'bank' ? "Agribank" : "Momo"}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">{language === 'vi' ? "Chủ tài khoản" : "Account Name"}</span>
+                  <span className="font-semibold text-gray-900">VÕ HOÀNG THẮNG</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">{language === 'vi' ? "Số tài khoản" : "Account No."}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900">{paymentMethod === 'bank' ? "8888853382267" : "*******045"}</span>
+                    {paymentMethod === 'bank' && (
+                      <button onClick={() => handleCopy("8888853382267")} className="text-[#ff3131] hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                        <Copy size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">{language === 'vi' ? "Nội dung" : "Message"}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900 text-right">
+                      {selectedPlan.planKey === 'plus' ? 'WANDERLABPLUS' : 'WANDERLABPRO'}
+                    </span>
+                    <button onClick={() => handleCopy(selectedPlan.planKey === 'plus' ? 'WANDERLABPLUS' : 'WANDERLABPRO')} className="text-[#ff3131] hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button
+                  disabled={isProcessing}
+                  onClick={async () => {
+                    setIsProcessing(true);
+                    
+                    // Simulate 2 seconds of bank API verification
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // Simulate upgrading plan for testing and save to DB
+                    setPlan(selectedPlan.planKey);
+                    
+                    try {
+                      if (user) {
+                        await updateProfile({ plan: selectedPlan.planKey });
+                        
+                        // Create in-app notification for upgrade
+                        await notificationService.createNotification(
+                          user.id,
+                          null, // system notification
+                          'plan_upgrade',
+                          language === 'vi' 
+                            ? `Bạn đã nâng cấp thành công lên gói ${selectedPlan.name}. Các đặc quyền và giới hạn sử dụng mới đã được kích hoạt!` 
+                            : `Successfully upgraded to ${selectedPlan.name} plan. Your new perks and usage limits are now active!`
+                        );
+                      }
+                      resetUsage();
+                      toast.success(language === 'vi' ? `Thanh toán thành công! Chào mừng bạn đến với gói ${selectedPlan.name}.` : `Payment successful! Welcome to the ${selectedPlan.name} plan.`);
+                    } catch (error) {
+                      console.error("Failed to update plan in DB", error);
+                      resetUsage();
+                      // Fallback toast if db update fails but local state is set
+                      toast.success(language === 'vi' ? `Đã nâng cấp gói ${selectedPlan.name} (Local).` : `Upgraded to ${selectedPlan.name} (Local).`);
+                    }
+                    
+                    setIsProcessing(false);
+                    setSelectedPlan(null);
+                    
+                    // Navigate back to Dashboard to see the new limits
+                    setTimeout(() => {
+                      navigate("/dashboard");
+                    }, 500);
+                  }}
+                  className={`w-full py-3.5 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 ${
+                    isProcessing ? "bg-gray-400 text-white cursor-wait" : "bg-gray-900 hover:bg-gray-800 text-white"
+                  }`}
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {language === 'vi' ? "Đang xác thực giao dịch..." : "Verifying payment..."}
+                    </>
+                  ) : (
+                    language === 'vi' ? "Tôi đã chuyển khoản" : "I have transferred"
+                  )}
+                </button>
+                <p className="text-xs text-center text-gray-400 mt-3">
+                  {language === 'vi' ? "Tài khoản của bạn sẽ được nâng cấp trong vòng 5-10 phút sau khi xác nhận thanh toán thành công." : "Your account will be upgraded within 5-10 minutes after payment verification."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

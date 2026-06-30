@@ -3,7 +3,7 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interactionService } from "@/api/interactionService";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useNotificationStore } from "@/stores";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -26,18 +26,29 @@ export function CommentsSection({ diaryId }: CommentsSectionProps) {
     enabled: !!diaryId
   });
 
+  const { addNotification } = useNotificationStore();
+
   // 2. Add Comment Mutation
   const addCommentMutation = useMutation({
     mutationFn: (content: string) => {
       if (!user) throw new Error("Vui lòng đăng nhập để bình luận");
       return interactionService.addComment(diaryId, user.id, content);
     },
-    onSuccess: () => {
+    onSuccess: (_, content) => {
       setNewComment("");
       // Refresh comments
       queryClient.invalidateQueries({ queryKey: ['comments', diaryId] });
       // Cũng refresh cả diary để cập nhật lại comments_count (nếu có)
       queryClient.invalidateQueries({ queryKey: ['diary', diaryId] });
+
+      // Create notification
+      addNotification({
+        type: "comment",
+        title: "Bình luận mới",
+        message: `${user?.full_name || 'Bạn'} vừa bình luận: '${content}'`,
+        linkTo: window.location.pathname,
+        avatar: user?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
+      });
     },
     onError: (err: any) => {
       alert(err.message || "Không thể gửi bình luận lúc này.");
