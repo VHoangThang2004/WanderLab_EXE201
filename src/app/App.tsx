@@ -77,7 +77,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <Toaster position="top-right" richColors />
-        {!isChatPage && <AIChatbot />}
+        {showChatbot && <AIChatbot />}
       </QueryClientProvider>
     </ErrorBoundary>
   );
