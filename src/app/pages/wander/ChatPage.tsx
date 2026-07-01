@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, ArrowLeft, RotateCcw, MapPin, Wallet, Compass } from "lucide-react";
+import { sendAIChat, type ChatMessage } from "@/api/aiService";
+import { MarkdownContent } from "@/app/components/wander/MarkdownContent";
 
 type Action = { label: string; href: string };
-type Message = { role: "user" | "assistant"; content: string; actions?: Action[] };
+type UIMessage = { role: "user" | "assistant"; content: string; actions?: Action[] };
 
 const quickSuggestions = [
   { icon: "🗺️", text: "Tạo lịch trình đi Phú Quốc" },
@@ -13,88 +15,76 @@ const quickSuggestions = [
   { icon: "📅", text: "Lịch trình 5 ngày Hà Nội" },
 ];
 
-const PHU_QUOC_RESPONSE: Message = {
+const WELCOME_MESSAGE: UIMessage = {
   role: "assistant",
   content:
-    "🌴 **Phú Quốc – Đảo Ngọc của Việt Nam!**\n\nĐây là gợi ý lịch trình 5 ngày phổ biến nhất:\n\n📅 **Ngày 1** – Đến đảo, nhận phòng, khám phá Dương Đông & chợ đêm\n📅 **Ngày 2** – Tour lặn biển 3 đảo nam, ăn hải sản nổi trên biển\n📅 **Ngày 3** – Cáp treo Hòn Thơm (dài nhất TG) + VinWonders Park\n📅 **Ngày 4** – Rừng quốc gia Phú Quốc, làng nghề nước mắm, spa\n📅 **Ngày 5** – Bãi Sao tắm biển lần cuối, mua quà, bay về\n\n💰 **Chi phí ước tính:** 9–15 triệu₫/người (5 ngày trọn gói)\n🌡️ **Thời điểm đẹp nhất:** Tháng 11 – tháng 4 (mùa khô)\n\n✨ Có nhật ký thực tế từ cộng đồng WanderLab:\n• **\"Thiên Đường Phú Quốc\"** – Hương L. · ⭐ 95% tin cậy · 5 ngày · 22.5 triệu₫\n• **\"Đảo Ngọc 4N3Đ\"** – Minh T. · ⭐ 92% tin cậy · khách sạn 3–4 sao\n\nMuốn lịch trình riêng theo ngân sách & sở thích của bạn không? 👇",
-  actions: [
-    { label: "📋 Xem nhật ký tại trang Khám phá", href: "/explore" },
-    { label: "✨ Cá nhân hóa lịch trình của tôi", href: "/create-itinerary" },
-  ],
+    "Xin chào! Tôi là trợ lý du lịch AI của WanderLab 🌍\n\nTôi có thể giúp bạn:\n\n• Tìm điểm đến phù hợp tại Việt Nam\n• Lập kế hoạch ngân sách chuyến đi\n• Khám phá lộ trình phổ biến\n• Trả lời thắc mắc về du lịch\n\nBạn muốn khám phá điều gì hôm nay?",
 };
-
-const sampleResponses: Record<string, Message> = {
-  default: {
-    role: "assistant",
-    content:
-      "Xin chào! Tôi là trợ lý du lịch AI của WanderLab. Tôi có thể giúp bạn:\n\n• Tìm điểm đến phù hợp tại Việt Nam\n• Lập kế hoạch ngân sách chuyến đi\n• Khám phá lộ trình phổ biến\n• Trả lời thắc mắc về WanderLab\n\nBạn muốn khám phá điều gì hôm nay?",
-  },
-  beach: {
-    role: "assistant",
-    content:
-      "Việt Nam có rất nhiều bãi biển tuyệt đẹp! Đây là những điểm nổi bật:\n\n🏖️ **Phú Quốc** – Đảo Ngọc với bãi cát trắng mịn\n💰 Ngân sách: 1.500.000–2.500.000₫/ngày\n\n🌊 **Nha Trang** – Thành phố biển sôi động, lặn biển cực vui\n💰 Ngân sách: 1.200.000–2.000.000₫/ngày\n\n🏝️ **Côn Đảo** – Đảo hoang sơ, trong lành, ít đông\n💰 Ngân sách: 2.000.000–3.500.000₫/ngày\n\n🌸 **Mũi Né** – Đồi cát hồng, thích hợp thể thao biển\n💰 Ngân sách: 800.000–1.500.000₫/ngày\n\nBạn muốn lộ trình chi tiết cho điểm nào?",
-  },
-  budget: {
-    role: "assistant",
-    content:
-      "Đây là bí quyết du lịch tiết kiệm tại Việt Nam:\n\n💡 **Lưu trú**: 200.000–600.000₫/đêm (hostel/nhà nghỉ)\n🍜 **Ăn uống**: 30.000–80.000₫/bữa tại quán địa phương\n🚌 **Di chuyển**: 150.000–400.000₫ xe khách liên tỉnh\n✈️ **Bay**: Đặt trước 2–3 tháng giá chỉ từ 500.000₫\n\n**Ngân sách 1 ngày lý tưởng**: 500.000–1.000.000₫\n\n📌 Mẹo vàng:\n• Đi vào mùa thấp điểm (tháng 4–6, tháng 9–11)\n• Dùng xe máy thay vì xe ôm công nghệ\n• Ăn sáng bún/phở địa phương chỉ 30–50k\n\nBạn muốn tôi lập ngân sách cho điểm đến cụ thể không?",
-  },
-  trekking: {
-    role: "assistant",
-    content:
-      "Việt Nam là thiên đường trekking! Các cung đường hot nhất:\n\n⛰️ **Sa Pa** – Ruộng bậc thang, bản làng dân tộc\nĐộ khó: Trung bình | Mùa đẹp: Tháng 9–11\n\n🏔️ **Vòng Hà Giang** – Địa hình đá tai mèo hùng vĩ\nĐộ khó: Khó | Mùa đẹp: Tháng 9–12\n\n🌲 **Pù Luông** – Thung lũng xanh ít khách\nĐộ khó: Dễ–Trung bình | Mùa đẹp: Tháng 4–5\n\n🦅 **Fansipan** – Nóc nhà Đông Dương, cáp treo tiện lợi\nĐộ khó: Trung bình–Khó | Mùa đẹp: Quanh năm\n\nBạn ưa thích mức độ khó nào? Tôi sẽ gợi ý lộ trình cụ thể!",
-  },
-  food: {
-    role: "assistant",
-    content:
-      "Ẩm thực Việt Nam là kiệt tác! Hành trình ẩm thực không thể bỏ lỡ:\n\n🍜 **Hà Nội** – Phở, bún chả, bánh cuốn, cà phê trứng\n🥖 **Hội An** – Cao lầu, cơm gà, bánh mì Phượng\n🌮 **Sài Gòn** – Bánh xèo, hủ tiếu Nam Vang, cơm tấm\n🍲 **Huế** – Bún bò, bánh khoái, mì Quảng đậm đà\n\nGợi ý tour ẩm thực:\n• Ăn sáng tại chợ địa phương: 50.000₫\n• Street food tour buổi tối: 300.000₫/người\n• Lớp học nấu ăn tại Hội An: 600.000₫/người\n\nMuốn tôi lập lịch trình ẩm thực cho thành phố nào?",
-  },
-  hanoi: {
-    role: "assistant",
-    content:
-      "Lịch trình 5 ngày Hà Nội hoàn hảo:\n\n📅 **Ngày 1**: Hồ Hoàn Kiếm → Phố Cổ → Bia Hơi Tạ Hiện\n📅 **Ngày 2**: Lăng Chủ Tịch → Văn Miếu → Hoàng Thành\n📅 **Ngày 3**: Bảo tàng Dân Tộc → Hồ Tây → Cafe Trứng\n📅 **Ngày 4**: Đường tàu Phùng Hưng → Phố Bích Họa → Chợ Đồng Xuân\n📅 **Ngày 5**: Đền Quán Thánh → Chùa Một Cột → mua quà về\n\n💰 Ngân sách ước tính: 4.000.000–6.000.000₫/người\n🏨 Khách sạn gợi ý: Khu phố cổ, giá 400.000–800.000₫/đêm\n\nBạn muốn tôi chi tiết hóa ngày nào?",
-  },
-};
-
-function getResponse(message: string): Message {
-  const lower = message.toLowerCase();
-  if (lower.includes("phú quốc") || lower.includes("phu quoc") || lower.includes("lịch trình") || lower.includes("tạo lịch"))
-    return PHU_QUOC_RESPONSE;
-  if (lower.includes("beach") || lower.includes("biển")) return sampleResponses.beach;
-  if (lower.includes("budget") || lower.includes("tiết kiệm") || lower.includes("rẻ")) return sampleResponses.budget;
-  if (lower.includes("trek") || lower.includes("leo núi") || lower.includes("trekking")) return sampleResponses.trekking;
-  if (lower.includes("food") || lower.includes("ăn") || lower.includes("ẩm thực")) return sampleResponses.food;
-  if (lower.includes("hà nội") || lower.includes("hanoi")) return sampleResponses.hanoi;
-  return sampleResponses.default;
-}
 
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    { ...sampleResponses.default },
-  ]);
+  const [messages, setMessages] = useState<UIMessage[]>([WELCOME_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, streamingContent]);
 
-  const handleSend = (message: string) => {
+  const handleSend = async (message: string) => {
     if (!message.trim() || isTyping) return;
-    setMessages((prev) => [...prev, { role: "user", content: message }]);
+
+    const userMessage: UIMessage = { role: "user", content: message };
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, getResponse(message)]);
-      setIsTyping(false);
-    }, 900);
+    setStreamingContent("");
+
+    // Build chat history for context
+    const chatHistory: ChatMessage[] = messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
+    chatHistory.push({ role: "user", content: message });
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const result = await sendAIChat({
+      messages: chatHistory,
+      stream: true,
+      onChunk: (text) => setStreamingContent(text),
+      signal: controller.signal,
+    });
+
+    abortRef.current = null;
+    setIsTyping(false);
+    setStreamingContent("");
+
+    if (result.error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `⚠️ ${result.error}\n\nVui lòng thử lại sau.`,
+        },
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: result.content },
+      ]);
+    }
   };
 
   const handleReset = () => {
-    setMessages([{ ...sampleResponses.default }]);
+    abortRef.current?.abort();
+    setMessages([WELCOME_MESSAGE]);
     setInputMessage("");
+    setIsTyping(false);
+    setStreamingContent("");
     inputRef.current?.focus();
   };
 
@@ -162,7 +152,11 @@ export function ChatPage() {
                     : "bg-white text-gray-800 rounded-bl-sm"
                 }`}
               >
-                <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                {msg.role === "assistant" ? (
+                  <MarkdownContent content={msg.content} />
+                ) : (
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                )}
               </div>
             </div>
 
@@ -187,7 +181,20 @@ export function ChatPage() {
           </div>
         ))}
 
-        {isTyping && (
+        {/* Streaming response */}
+        {isTyping && streamingContent && (
+          <div className="flex items-start gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#ff3131] to-[#ff914d] rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+              <Sparkles size={14} className="text-white" />
+            </div>
+            <div className="max-w-[82%] sm:max-w-[70%] bg-white text-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+              <MarkdownContent content={streamingContent} />
+            </div>
+          </div>
+        )}
+
+        {/* Typing indicator (before stream starts) */}
+        {isTyping && !streamingContent && (
           <div className="flex items-end gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-[#ff3131] to-[#ff914d] rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
               <Sparkles size={14} className="text-white" />

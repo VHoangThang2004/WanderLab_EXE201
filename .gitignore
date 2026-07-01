@@ -1,6 +1,36 @@
+# Dependencies
 node_modules
+
+# Environment variables (contains secrets)
 .env
 .env.local
+.env.*.local
+
+# Build output
 dist
+build
+
+# IDE / Editor
+.vscode/settings.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local data / proxy certs
+.local-data
+
+# Temporary files
+*.tmp
+*.bak
 .agents/skills/
 skills-lock.json

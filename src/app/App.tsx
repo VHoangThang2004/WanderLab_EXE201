@@ -17,11 +17,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Các route KHÔNG hiển thị chatbot
+const CHATBOT_HIDDEN_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/chat', '/guide'];
+
 export default function App() {
   const initDone = useRef(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const [isChatPage, setIsChatPage] = useState(
-    typeof window !== "undefined" && window.location.pathname === "/chat"
+  const [currentPath, setCurrentPath] = useState(
+    typeof window !== "undefined" ? window.location.pathname : "/"
   );
 
   // Initialize auth ONCE on mount
@@ -58,20 +62,22 @@ export default function App() {
     };
   }, []);
 
-  // Track current page for chatbot visibility
+  // Track current path for chatbot visibility
   useEffect(() => {
-    const check = () => setIsChatPage(window.location.pathname === "/chat");
+    const check = () => setCurrentPath(window.location.pathname);
     window.addEventListener("popstate", check);
     const id = setInterval(check, 300);
     return () => { window.removeEventListener("popstate", check); clearInterval(id); };
   }, []);
+
+  const showChatbot = isAuthenticated && !CHATBOT_HIDDEN_PATHS.includes(currentPath);
 
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <Toaster position="top-right" richColors />
-        {!isChatPage && <AIChatbot />}
+        {showChatbot && <AIChatbot />}
       </QueryClientProvider>
     </ErrorBoundary>
   );

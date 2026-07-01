@@ -3,6 +3,27 @@ import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
 import { supabase } from '@/lib/supabase';
 
+// ── Mock mode: khi chưa cấu hình Supabase ──
+const IS_MOCK_MODE = !import.meta.env.VITE_SUPABASE_URL;
+
+const MOCK_USER: User = {
+  id: 'mock-user-001',
+  email: 'demo@wanderlab.vn',
+  full_name: 'WanderLab Demo',
+  avatar_url: null,
+  cover_image_url: null,
+  bio: 'Tài khoản demo để test UI trong dev mode 🧪',
+  location: 'Hồ Chí Minh, Việt Nam',
+  role: 'explorer',
+  status: 'active',
+  reputation_score: 42,
+  diaries_count: 3,
+  followers_count: 12,
+  following_count: 8,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
+
 interface AuthState {
   user: User | null;
   isLoading: boolean;
@@ -97,6 +118,14 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ isLoading: true });
         try {
+          // Mock mode: cho login với bất kỳ credentials nào
+          if (IS_MOCK_MODE) {
+            console.info('🧪 Mock login:', email);
+            const mockUser = { ...MOCK_USER, email, full_name: email.split('@')[0] };
+            set({ user: mockUser, isAuthenticated: true, isLoading: false });
+            return;
+          }
+
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -116,6 +145,13 @@ export const useAuthStore = create<AuthState>()(
       register: async (email, password, fullName) => {
         set({ isLoading: true });
         try {
+          // Mock mode: giả lập đăng ký thành công
+          if (IS_MOCK_MODE) {
+            console.info('🧪 Mock register:', email);
+            set({ user: null, isAuthenticated: false, isLoading: false });
+            return;
+          }
+
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -141,6 +177,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       loginWithGoogle: async () => {
+        // Mock mode: login trực tiếp
+        if (IS_MOCK_MODE) {
+          console.info('🧪 Mock Google login');
+          set({ user: { ...MOCK_USER, full_name: 'Google User' }, isAuthenticated: true, isLoading: false });
+          return;
+        }
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -151,6 +193,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       loginWithFacebook: async () => {
+        // Mock mode: login trực tiếp
+        if (IS_MOCK_MODE) {
+          console.info('🧪 Mock Facebook login');
+          set({ user: { ...MOCK_USER, full_name: 'Facebook User' }, isAuthenticated: true, isLoading: false });
+          return;
+        }
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'facebook',
           options: {
@@ -161,12 +209,20 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        await supabase.auth.signOut();
+        if (!IS_MOCK_MODE) {
+          await supabase.auth.signOut();
+        }
         set({ user: null, isAuthenticated: false, isLoading: false });
       },
 
       refreshSession: async () => {
         try {
+          // Mock mode: giữ nguyên state từ persist
+          if (IS_MOCK_MODE) {
+            set({ isLoading: false });
+            return;
+          }
+
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session?.user) {

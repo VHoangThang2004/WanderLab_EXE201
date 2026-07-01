@@ -3,13 +3,13 @@ import { Link } from "react-router";
 import {
   MapPin, Calendar, Wallet, Users, Sparkles, ChevronRight, ChevronLeft,
   Check, Clock, Utensils, Camera, Waves, Mountain, Building2, Heart,
-  Download, Share2, RefreshCw, Star, ArrowRight, BookmarkCheck, Bookmark,
+  Share2, RefreshCw, Star, ArrowRight, BookmarkCheck, Bookmark,
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
-import { aiService } from "@/api/aiService";
+import { generateItinerary, type GeneratedItinerary, type ItineraryDay, type BudgetItem } from "@/api/itineraryAiService";
 
 const translateItineraryItem = (text: string, lang: string) => {
   if (lang === 'vi') return text;
@@ -138,20 +138,27 @@ const INTERESTS = [
   { label: "Nghỉ dưỡng", icon: <Heart size={16} /> },
 ];
 
-// Pre-generated itineraries for Phú Quốc
-const PHU_QUOC_ITINERARY = {
-  "3 ngày": [
-    { day: 1, title: "Bắc Đảo & Hoàng Hôn", emoji: "🌅", activities: ["Sáng: Đến Phú Quốc, check-in resort", "Trưa: Ăn hải sản tươi tại chợ Dương Đông", "Chiều: Tham quan dinh Cậu ngắm hoàng hôn", "Tối: Chợ đêm Phú Quốc – thưởng thức đặc sản"], budget: "1.800.000₫" },
-    { day: 2, title: "Lặn Biển & Cáp Treo", emoji: "🤿", activities: ["Sáng sớm: Tour lặn biển 3 đảo", "Trưa: Ăn trưa tại nhà hàng nổi", "Chiều: Cáp treo Hòn Thơm – view đỉnh", "Tối: Sunset Sanato Beach Club"], budget: "2.200.000₫" },
-    { day: 3, title: "Nam Đảo & Bay Về", emoji: "🏖️", activities: ["Sáng: Tắm biển Bãi Sao – đẹp nhất đảo", "Trưa: Ăn nhum biển tại bãi biển", "Chiều: Mua quà lưu niệm, check-out", "Tối: Bay về"], budget: "1.500.000₫" },
-  ],
-  "5 ngày": [
+// Pre-generated itineraries for Phú Quốc (fallback khi AI không khả dụng)
+const PHU_QUOC_FALLBACK: GeneratedItinerary = {
+  destination: "Phú Quốc",
+  duration_days: 5,
+  ai_notes: "Lịch trình được tạo từ dữ liệu mẫu",
+  days: [
     { day: 1, title: "Đến Đảo & Khám Phá Bắc", emoji: "✈️", activities: ["Bay đến Phú Quốc, nhận phòng", "Thăm Làng Chài & khu nuôi cấy ngọc trai", "Chiều: Dinh Cậu – ngắm hoàng hôn", "Tối: Bia hơi tươi & hải sản chợ đêm"], budget: "1.600.000₫" },
     { day: 2, title: "Tour 3 Đảo & Lặn Biển", emoji: "🤿", activities: ["7h sáng: Xuất phát tour 3 đảo nam", "Lặn ngắm san hô tại Hòn Mây Rút", "Câu cá & bơi lội tại bãi trống", "Ăn hải sản BBQ ngay trên thuyền"], budget: "1.900.000₫" },
     { day: 3, title: "VinWonders & Cáp Treo", emoji: "🎡", activities: ["Sáng: Cáp treo Hòn Thơm – dài nhất TG", "Trưa: Ăn trưa tại Grand World", "Chiều: VinWonders Park – đủ trò vui", "Tối: Vinpearl Safari nếu thích"], budget: "2.500.000₫" },
     { day: 4, title: "Bắc Đảo & Rừng Nguyên Sinh", emoji: "🌿", activities: ["Sáng: Khám phá rừng quốc gia Phú Quốc", "Trưa: Ăn cơm rừng tại nhà hàng sinh thái", "Chiều: Tham quan làng nghề nước mắm", "Tối: Spa thư giãn tại resort"], budget: "1.700.000₫" },
     { day: 5, title: "Bãi Sao & Về Nhà", emoji: "🌊", activities: ["Sáng: Bãi Sao – tắm biển lần cuối", "Trưa: Ăn bánh mì Phú Quốc, dừa tươi", "Chiều: Check-out, ra sân bay", "Về với hàng ngàn kỷ niệm đẹp 💫"], budget: "1.400.000₫" },
   ],
+  budget_breakdown: [
+    { label: "Vé máy bay (khứ hồi)", amount: "2.400.000₫" },
+    { label: "Khách sạn / Resort", amount: "4.500.000₫" },
+    { label: "Ăn uống", amount: "1.800.000₫" },
+    { label: "Tour & Vui chơi", amount: "2.200.000₫" },
+    { label: "Di chuyển nội đảo", amount: "500.000₫" },
+  ],
+  total_estimate: "~11.400.000₫/người",
+  tips: ["Đặt vé trước 2-3 tháng để có giá tốt", "Tháng 11–4 là mùa khô, thời tiết đẹp nhất"],
 };
 
 const RELATED_FROM_EXPLORE: any[] = [];
@@ -171,6 +178,8 @@ export function CreateItinerary() {
   const [generated, setGenerated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [itineraryData, setItineraryData] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const { saveItinerary } = useSavedItineraries();
 
@@ -187,24 +196,47 @@ export function CreateItinerary() {
 
     setIsGenerating(true);
     setIsSaved(false);
+    setAiError(null);
+    setAiResult(null);
     
     try {
-      const data = await aiService.generateItinerary(
+      const data = await generateItinerary(
         { 
           destination: selectedDest.name, 
-          duration, 
-          budget, 
-          groupSize, 
+          duration_days: parseInt(duration), 
+          budget_level: budget, 
+          group_size: groupSize, 
           interests 
-        }, 
-        language
+        }
       );
-      setItineraryData(data);
+      
+      if (data.error) {
+        setAiError(data.error);
+        setItineraryData(PHU_QUOC_FALLBACK);
+        setAiResult(PHU_QUOC_FALLBACK);
+      } else if (data.itinerary) {
+        setItineraryData({
+          days: data.itinerary.days,
+          budgetBreakdown: data.itinerary.budget_breakdown,
+          totalBudget: data.itinerary.total_estimate
+        });
+        setAiResult(data.itinerary);
+      } else {
+        setAiError("Không nhận được kết quả hợp lệ từ AI");
+        setItineraryData(PHU_QUOC_FALLBACK);
+        setAiResult(PHU_QUOC_FALLBACK);
+      }
+      
       incrementUsage('ai_itinerary');
       setGenerated(true);
       setStep(4);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating itinerary:", error);
+      setAiError(error.message);
+      setItineraryData(PHU_QUOC_FALLBACK);
+      setAiResult(PHU_QUOC_FALLBACK);
+      setGenerated(true);
+      setStep(4);
     } finally {
       setIsGenerating(false);
     }
@@ -471,6 +503,20 @@ export function CreateItinerary() {
         {/* ══════ STEP 4: Generated Itinerary ══════ */}
         {step === 4 && generated && (
           <div className="space-y-6">
+            {/* AI error notice */}
+            {aiError && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
+                ⚠️ AI tạm không khả dụng, đang hiển thị lịch trình mẫu. ({aiError})
+              </div>
+            )}
+
+            {/* AI notes */}
+            {aiResult?.ai_notes && !aiError && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+                🤖 {aiResult.ai_notes}
+              </div>
+            )}
+
             {/* Header */}
             <div className="bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-2xl p-5 text-white">
               <div className="flex items-center gap-2 mb-2">
@@ -537,6 +583,23 @@ export function CreateItinerary() {
               </div>
             </div>
 
+            {/* Tips from AI */}
+            {aiResult?.tips && aiResult.tips.length > 0 && (
+              <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-2xl p-4 border border-red-100">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  💡 Mẹo từ AI
+                </h3>
+                <ul className="space-y-1.5">
+                  {aiResult.tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-[#ff3131] mt-0.5">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Related diaries from Explore */}
             <div>
               <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -587,7 +650,7 @@ export function CreateItinerary() {
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => { setStep(1); setGenerated(false); setIsSaved(false); }}
+                onClick={() => { setStep(1); setGenerated(false); setIsSaved(false); setAiResult(null); setAiError(null); }}
                 className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 font-semibold flex items-center justify-center gap-2 hover:border-[#ff3131] transition-all"
               >
                 <RefreshCw size={16} /> {t("regenerate", "createItinerary")}
