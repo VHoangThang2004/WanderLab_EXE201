@@ -9,7 +9,6 @@ import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
-import { aiService } from "@/api/aiService";
 import { generateItinerary, type GeneratedItinerary, type ItineraryDay, type BudgetItem } from "@/api/itineraryAiService";
 
 const translateItineraryItem = (text: string, lang: string) => {
@@ -179,6 +178,8 @@ export function CreateItinerary() {
   const [generated, setGenerated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [itineraryData, setItineraryData] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const { saveItinerary } = useSavedItineraries();
 
@@ -195,24 +196,47 @@ export function CreateItinerary() {
 
     setIsGenerating(true);
     setIsSaved(false);
+    setAiError(null);
+    setAiResult(null);
     
     try {
-      const data = await aiService.generateItinerary(
+      const data = await generateItinerary(
         { 
           destination: selectedDest.name, 
-          duration, 
-          budget, 
-          groupSize, 
+          duration_days: parseInt(duration), 
+          budget_level: budget, 
+          group_size: groupSize, 
           interests 
-        }, 
-        language
+        }
       );
-      setItineraryData(data);
+      
+      if (data.error) {
+        setAiError(data.error);
+        setItineraryData(PHU_QUOC_FALLBACK);
+        setAiResult(PHU_QUOC_FALLBACK);
+      } else if (data.itinerary) {
+        setItineraryData({
+          days: data.itinerary.days,
+          budgetBreakdown: data.itinerary.budget_breakdown,
+          totalBudget: data.itinerary.total_estimate
+        });
+        setAiResult(data.itinerary);
+      } else {
+        setAiError("Không nhận được kết quả hợp lệ từ AI");
+        setItineraryData(PHU_QUOC_FALLBACK);
+        setAiResult(PHU_QUOC_FALLBACK);
+      }
+      
       incrementUsage('ai_itinerary');
       setGenerated(true);
       setStep(4);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating itinerary:", error);
+      setAiError(error.message);
+      setItineraryData(PHU_QUOC_FALLBACK);
+      setAiResult(PHU_QUOC_FALLBACK);
+      setGenerated(true);
+      setStep(4);
     } finally {
       setIsGenerating(false);
     }
