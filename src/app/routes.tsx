@@ -15,6 +15,7 @@ import { ChatPage } from "./pages/wander/ChatPage";
 import { MessagesPage } from "./pages/wander/Messages";
 import { CreateItinerary } from "./pages/wander/CreateItinerary";
 import { CheckoutPage } from "./pages/wander/Checkout";
+import { PaymentSuccessPage } from "./pages/wander/PaymentSuccess";
 import { AdminDashboard } from "./pages/wander/AdminDashboard";
 import { WanderExplore } from "./pages/wander/Explore";
 import { WanderUserProfile } from "./pages/wander/UserProfile";
@@ -155,6 +156,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CheckoutPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/payment-success",
+        element: (
+          <ProtectedRoute>
+            <PaymentSuccessPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/payment-cancel",
+        element: (
+          <ProtectedRoute>
+            <PaymentSuccessPage />
           </ProtectedRoute>
         ),
       },

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router";
+import { supabase } from "../../../lib/supabase";
+import { toast } from "sonner";
 import { WanderLogo } from "../../components/wander/WanderLogo";
 import {
   CheckCircle2, Lock, ChevronLeft, CreditCard, Smartphone,
@@ -18,36 +20,31 @@ interface PlanDef {
 }
 
 const PLANS: Record<string, PlanDef> = {
-  starter: {
-    name: "Starter",
-    price: "50.000₫",
-    priceNum: 50000,
+  plus: {
+    name: "Plus",
+    price: "19.000₫",
+    priceNum: 19000,
     period: "tháng",
     color: "from-[#ff3131] to-[#ff914d]",
     features: [
-      "Tối đa 5 danh sách nổi bật",
-      "Bảng điều khiển phân tích cơ bản",
-      "Đánh giá cộng đồng",
-      "Hỗ trợ qua email",
-      "Báo cáo hiệu suất hàng tháng",
+      "Giới hạn sử dụng gấp 2.5 lần gói Free",
+      "Đính kèm video phân giải cao 1080p",
+      "Trải nghiệm không quảng cáo",
+      "Huy hiệu Plus nổi bật",
     ],
   },
-  professional: {
-    name: "Professional",
-    price: "150.000₫",
-    priceNum: 150000,
+  pro: {
+    name: "Pro",
+    price: "29.000₫",
+    priceNum: 29000,
     period: "tháng",
     badge: "Phổ Biến Nhất",
     color: "from-[#ff3131] to-[#ff914d]",
     features: [
-      "Danh sách nổi bật không giới hạn",
-      "Phân tích & thông tin nâng cao",
-      "Vị trí ưu tiên trong nhật ký",
-      "Tích hợp đặt chỗ trực tiếp",
-      "Quản lý tài khoản chuyên dụng",
-      "Hỗ trợ ưu tiên 24/7",
-      "Hồ sơ thương hiệu tùy chỉnh",
-      "Truy cập API",
+      "Giới hạn sử dụng gấp 2.5 lần gói Plus",
+      "Đính kèm video siêu nét 2160p (4K)",
+      "Trải nghiệm không quảng cáo",
+      "Huy hiệu Pro đẳng cấp",
     ],
   },
 };
@@ -124,10 +121,10 @@ function SuccessScreen({ plan }: { plan: PlanDef }) {
 // ── Main Checkout ─────────────────────────────────────────────
 export function CheckoutPage() {
   const [params] = useSearchParams();
-  const planKey = params.get("plan") ?? "starter";
-  const plan = PLANS[planKey] ?? PLANS.starter;
+  const planKey = params.get("plan") ?? "plus";
+  const plan = PLANS[planKey] ?? PLANS.plus;
 
-  const [payMethod, setPayMethod] = useState("card");
+  const [payMethod, setPayMethod] = useState("payos");
   const [cardNum, setCardNum] = useState("");
   const [cardName, setCardName] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -152,12 +149,34 @@ export function CheckoutPage() {
     return e;
   };
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
+
+    if (payMethod === "payos") {
+      try {
+        const { data, error } = await supabase.functions.invoke("payos-create", {
+          body: { planKey }
+        });
+        
+        if (error) throw error;
+        if (data?.checkoutUrl) {
+          window.location.href = data.checkoutUrl; // Redirect to PayOS QR page
+        } else {
+          toast.error("Không thể tạo link thanh toán");
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.message || "Đã xảy ra lỗi khi tạo thanh toán");
+        setLoading(false);
+      }
+      return;
+    }
+
     setTimeout(() => { setLoading(false); setDone(true); }, 2000);
   };
 
@@ -165,9 +184,8 @@ export function CheckoutPage() {
   const total = plan.priceNum + tax;
 
   const paymentMethods = [
+    { id: "payos", label: "VietQR (PayOS)", Icon: Smartphone },
     { id: "card", label: "Thẻ tín dụng / Ghi nợ", Icon: CreditCard },
-    { id: "momo", label: "Ví MoMo", Icon: Smartphone },
-    { id: "vnpay", label: "VNPay QR", Icon: Building2 },
   ];
 
   return (
@@ -312,19 +330,16 @@ export function CheckoutPage() {
                 </div>
               )}
 
-              {/* MoMo */}
-              {payMethod === "momo" && (
+              {/* PayOS */}
+              {payMethod === "payos" && (
                 <div className="text-center space-y-4">
-                  <div className="w-40 h-40 mx-auto bg-gradient-to-br from-pink-100 to-pink-200 rounded-2xl flex items-center justify-center border-4 border-pink-300">
+                  <div className="w-40 h-40 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-2xl flex items-center justify-center border-4 border-indigo-300">
                     <div className="text-center">
-                      <Smartphone size={40} className="text-pink-500 mx-auto mb-1" />
-                      <p className="text-xs text-pink-600 font-semibold">QR MoMo</p>
+                      <Smartphone size={40} className="text-indigo-500 mx-auto mb-1" />
+                      <p className="text-xs text-indigo-600 font-semibold">VietQR PayOS</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">Mở ứng dụng MoMo → quét mã QR để thanh toán <span className="font-bold text-gray-900">{total.toLocaleString("vi-VN")}₫</span></p>
-                  <div className="flex items-center gap-2 bg-pink-50 rounded-xl p-3 text-sm text-pink-700">
-                    <Copy size={14} /> <span>Số tài khoản: <strong>0909 123 456</strong></span>
-                  </div>
+                  <p className="text-sm text-gray-600">Bạn sẽ được chuyển hướng sang cổng thanh toán an toàn của PayOS để quét mã QR thực hiện chuyển khoản tự động.</p>
                 </div>
               )}
 

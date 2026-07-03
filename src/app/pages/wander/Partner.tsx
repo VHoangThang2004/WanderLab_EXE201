@@ -5,25 +5,12 @@ import { useLanguageStore, useAuthStore } from "@/stores";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { notificationService } from "@/api/notificationService";
 import { toast } from "sonner";
-import qrAgribankPlus from "@/assets/AgribankPlus.jpg";
-import qrAgribankPro from "@/assets/AgribankPro.jpg";
-import qrMomoPlus from "@/assets/MomoPlus.jpg";
-import qrMomoPro from "@/assets/MomoPro.jpg";
 
 export function WanderPartner() {
   const { language } = useLanguageStore();
   const { user, setPlan, updateProfile } = useAuthStore();
   const { resetUsage } = useUsageLimits();
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'momo'>('bank');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(language === 'vi' ? "Đã sao chép!" : "Copied!");
-  };
-
   const handleDowngrade = async (plan: any) => {
     const isConfirmed = window.confirm(
       language === 'vi' 
@@ -191,8 +178,7 @@ export function WanderPartner() {
                       if (plan.level < currentPlanLevel) {
                         handleDowngrade(plan);
                       } else {
-                        setSelectedPlan(plan);
-                        setPaymentMethod('bank');
+                        navigate("/checkout?plan=" + plan.planKey);
                       }
                     }}
                     className={`w-full py-4 rounded-xl font-semibold transition-all mt-auto text-center block shadow-md ${
@@ -211,165 +197,6 @@ export function WanderPartner() {
           ))}
         </div>
       </div>
-
-      {/* Payment Modal */}
-      {selectedPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200 scrollbar-hide">
-            <button
-              onClick={() => setSelectedPlan(null)}
-              className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full p-2 transition-colors z-10"
-            >
-              <X size={20} />
-            </button>
-            <div className={`${selectedPlan.color.includes('bg-') ? selectedPlan.color : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'} p-6 text-center relative`}>
-              <h3 className={`text-2xl font-bold ${selectedPlan.popular ? 'text-white' : 'text-gray-900'}`}>
-                {language === 'vi' ? "Thanh toán gói" : "Pay for"} {selectedPlan.name}
-              </h3>
-              <p className={`mt-1 font-medium ${selectedPlan.popular ? 'text-white/90' : 'text-gray-600'}`}>
-                {selectedPlan.price}
-              </p>
-            </div>
-            
-            <div className="p-6">
-              {/* Payment Tabs */}
-              <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-                <button
-                  onClick={() => setPaymentMethod('bank')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                    paymentMethod === 'bank' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <CreditCard size={18} />
-                  {language === 'vi' ? "Ngân hàng" : "Bank"}
-                </button>
-                <button
-                  onClick={() => setPaymentMethod('momo')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                    paymentMethod === 'momo' ? 'bg-[#a50064] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Smartphone size={18} />
-                  Momo
-                </button>
-              </div>
-
-              {/* QR Display */}
-              <div className="flex flex-col items-center justify-center mb-6">
-                <div className="bg-white p-0 md:p-2 rounded-2xl border-2 border-gray-100 shadow-sm inline-block w-full max-w-[360px]">
-                  <img
-                    src={
-                      paymentMethod === 'bank'
-                        ? (selectedPlan.planKey === 'plus' ? qrAgribankPlus : qrAgribankPro)
-                        : (selectedPlan.planKey === 'plus' ? qrMomoPlus : qrMomoPro)
-                    }
-                    alt="Payment QR"
-                    className="w-full h-auto object-contain rounded-xl"
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mt-4 text-center">
-                  {language === 'vi' ? "Quét mã QR qua ứng dụng ngân hàng hoặc Momo để thanh toán" : "Scan QR code via Bank or Momo app to pay"}
-                </p>
-              </div>
-
-              {/* Account Details for Manual Transfer */}
-              <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">{language === 'vi' ? "Ngân hàng" : "Bank"}</span>
-                  <span className="font-semibold text-gray-900">{paymentMethod === 'bank' ? "Agribank" : "Momo"}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">{language === 'vi' ? "Chủ tài khoản" : "Account Name"}</span>
-                  <span className="font-semibold text-gray-900">VÕ HOÀNG THẮNG</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">{language === 'vi' ? "Số tài khoản" : "Account No."}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{paymentMethod === 'bank' ? "8888853382267" : "*******045"}</span>
-                    {paymentMethod === 'bank' && (
-                      <button onClick={() => handleCopy("8888853382267")} className="text-[#ff3131] hover:bg-red-50 p-1.5 rounded-lg transition-colors">
-                        <Copy size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">{language === 'vi' ? "Nội dung" : "Message"}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900 text-right">
-                      {selectedPlan.planKey === 'plus' ? 'WANDERLABPLUS' : 'WANDERLABPRO'}
-                    </span>
-                    <button onClick={() => handleCopy(selectedPlan.planKey === 'plus' ? 'WANDERLABPLUS' : 'WANDERLABPRO')} className="text-[#ff3131] hover:bg-red-50 p-1.5 rounded-lg transition-colors">
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  disabled={isProcessing}
-                  onClick={async () => {
-                    setIsProcessing(true);
-                    
-                    // Simulate 2 seconds of bank API verification
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-
-                    // Simulate upgrading plan for testing and save to DB
-                    setPlan(selectedPlan.planKey);
-                    
-                    try {
-                      if (user) {
-                        await updateProfile({ plan: selectedPlan.planKey });
-                        
-                        // Create in-app notification for upgrade
-                        await notificationService.createNotification(
-                          user.id,
-                          null, // system notification
-                          'plan_upgrade',
-                          language === 'vi' 
-                            ? `Bạn đã nâng cấp thành công lên gói ${selectedPlan.name}. Các đặc quyền và giới hạn sử dụng mới đã được kích hoạt!` 
-                            : `Successfully upgraded to ${selectedPlan.name} plan. Your new perks and usage limits are now active!`
-                        );
-                      }
-                      resetUsage();
-                      toast.success(language === 'vi' ? `Thanh toán thành công! Chào mừng bạn đến với gói ${selectedPlan.name}.` : `Payment successful! Welcome to the ${selectedPlan.name} plan.`);
-                    } catch (error) {
-                      console.error("Failed to update plan in DB", error);
-                      resetUsage();
-                      // Fallback toast if db update fails but local state is set
-                      toast.success(language === 'vi' ? `Đã nâng cấp gói ${selectedPlan.name} (Local).` : `Upgraded to ${selectedPlan.name} (Local).`);
-                    }
-                    
-                    setIsProcessing(false);
-                    setSelectedPlan(null);
-                    
-                    // Navigate back to Dashboard to see the new limits
-                    setTimeout(() => {
-                      navigate("/dashboard");
-                    }, 500);
-                  }}
-                  className={`w-full py-3.5 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 ${
-                    isProcessing ? "bg-gray-400 text-white cursor-wait" : "bg-gray-900 hover:bg-gray-800 text-white"
-                  }`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      {language === 'vi' ? "Đang xác thực giao dịch..." : "Verifying payment..."}
-                    </>
-                  ) : (
-                    language === 'vi' ? "Tôi đã chuyển khoản" : "I have transferred"
-                  )}
-                </button>
-                <p className="text-xs text-center text-gray-400 mt-3">
-                  {language === 'vi' ? "Tài khoản của bạn sẽ được nâng cấp trong vòng 5-10 phút sau khi xác nhận thanh toán thành công." : "Your account will be upgraded within 5-10 minutes after payment verification."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
