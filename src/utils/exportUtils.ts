@@ -12,7 +12,7 @@ export const exportToPDF = async (elementId: string, filename: string): Promise<
   const opt = {
     margin:       10,
     filename:     `${filename}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
+    image:        { type: 'jpeg' as const, quality: 0.98 },
     html2canvas:  { 
       scale: 2, 
       useCORS: true, 
@@ -32,7 +32,7 @@ export const exportToPDF = async (elementId: string, filename: string): Promise<
         return false;
       }
     },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
   };
   
   try {
