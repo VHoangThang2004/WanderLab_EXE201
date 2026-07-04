@@ -5,27 +5,42 @@ import html2pdf from 'html2pdf.js';
  * @param elementId ID của HTML element cần xuất
  * @param filename Tên file không có đuôi .pdf
  */
-export const exportToPDF = async (elementId: string, filename: string): Promise<boolean> => {
+export const exportToPDF = async (elementId: string, filename: string): Promise<{ success: boolean; error?: string }> => {
   const element = document.getElementById(elementId);
-  if (!element) return false;
-  
-  // Clone element để tránh ảnh hưởng đến UI gốc khi đang render PDF (tuỳ chọn)
-  // Nhưng html2pdf có tuỳ chọn bỏ qua các class đặc biệt (như nút bấm) bằng html2canvas
+  if (!element) return { success: false, error: "Element not found" };
   
   const opt = {
     margin:       10,
     filename:     `${filename}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+    html2canvas:  { 
+      scale: 2, 
+      useCORS: true, 
+      letterRendering: true,
+      onclone: (document) => {
+        const el = document.getElementById(elementId);
+        if (el && el.parentElement) {
+          el.parentElement.classList.remove('hidden');
+          el.style.display = 'block';
+        }
+      },
+      ignoreElements: (element) => {
+        // Ignore style and link tags to prevent html2canvas from parsing Tailwind v4's oklch colors and crashing
+        if (element.tagName === 'STYLE' || (element.tagName === 'LINK' && element.getAttribute('rel') === 'stylesheet')) {
+          return true;
+        }
+        return false;
+      }
+    },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
   try {
     await html2pdf().set(opt).from(element).save();
-    return true;
-  } catch (error) {
+    return { success: true };
+  } catch (error: any) {
     console.error("Lỗi xuất PDF:", error);
-    return false;
+    return { success: false, error: error?.message || String(error) };
   }
 };
 

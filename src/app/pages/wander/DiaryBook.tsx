@@ -33,11 +33,11 @@ export function DiaryBook() {
   const handleExportPDF = async () => {
     setIsExportingPDF(true);
     toast.info("Đang tạo file PDF, vui lòng đợi...");
-    const success = await exportToPDF("exportable-diary-book", `NhatKy_HanhTrinh_${user?.user_metadata?.full_name || 'WanderLab'}`);
-    if (success) {
+    const result = await exportToPDF("exportable-diary-book", `NhatKy_HanhTrinh_${user?.full_name || 'WanderLab'}`);
+    if (result.success) {
       toast.success("Đã tải xuống file PDF thành công!");
     } else {
-      toast.error("Xuất PDF thất bại.");
+      toast.error(`Xuất PDF thất bại: ${result.error}`);
     }
     setIsExportingPDF(false);
   };
@@ -45,7 +45,7 @@ export function DiaryBook() {
   const handleExportWord = () => {
     setIsExportingWord(true);
     toast.info("Đang tạo file Word...");
-    const success = exportToWord("exportable-diary-book", `NhatKy_HanhTrinh_${user?.user_metadata?.full_name || 'WanderLab'}`);
+    const success = exportToWord("exportable-diary-book", `NhatKy_HanhTrinh_${user?.full_name || 'WanderLab'}`);
     if (success) {
       toast.success("Đã tải xuống file Word thành công!");
     } else {
@@ -124,17 +124,18 @@ export function DiaryBook() {
       </main>
 
       {/* Hidden container for Export (HTML2PDF and Word). This ensures formatting is clean for A4 size export without UI clutter. */}
+      {/* Hidden container for Export (HTML2PDF and Word). This ensures formatting is clean for A4 size export without UI clutter. */}
       <div className="hidden">
-        <div id="exportable-diary-book" className="bg-white text-black p-8" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
+        <div id="exportable-diary-book" style={{ padding: '32px', backgroundColor: '#ffffff', color: '#000000', width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
           {/* Cover Page */}
-          <div className="text-center mb-16" style={{ height: '270mm', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px', height: '270mm', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <h1 style={{ fontSize: '36pt', fontWeight: 'bold', color: '#ea580c', marginBottom: '20px' }}>HÀNH TRÌNH THANH XUÂN</h1>
-            <h2 style={{ fontSize: '24pt', color: '#333' }}>Tác giả: {user?.user_metadata?.full_name || 'Người Dùng WanderLab'}</h2>
+            <h2 style={{ fontSize: '24pt', color: '#333' }}>Tác giả: {user?.full_name || 'Người Dùng WanderLab'}</h2>
             <div style={{ marginTop: '50px', fontSize: '14pt', color: '#666' }}>
               Tổng hợp {diaries.length} chuyến đi đáng nhớ.
             </div>
             <div style={{ marginTop: '100px' }}>
-              <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1" alt="Cover" style={{ width: '80%', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} />
+              <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1" alt="Cover" crossOrigin="anonymous" style={{ width: '80%', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} />
             </div>
           </div>
 
@@ -171,7 +172,7 @@ export function DiaryBook() {
               {/* Cover Image */}
               {diary.image && (
                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                  <img src={diary.image} alt="Diary Cover" style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }} />
+                  <img src={diary.image} alt="Diary Cover" crossOrigin="anonymous" style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }} />
                 </div>
               )}
 
