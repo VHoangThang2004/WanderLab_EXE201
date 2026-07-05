@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { planKey } = await req.json();
+    const { planKey, returnUrl } = await req.json();
 
     // 1. Lấy thông tin user từ JWT (đảm bảo bảo mật)
     const authHeader = req.headers.get("Authorization");
@@ -69,9 +69,7 @@ serve(async (req) => {
     const PAYOS_CLIENT_ID = Deno.env.get("PAYOS_CLIENT_ID");
     const PAYOS_API_KEY = Deno.env.get("PAYOS_API_KEY");
     const PAYOS_CHECKSUM_KEY = Deno.env.get("PAYOS_CHECKSUM_KEY");
-
-    const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "http://localhost:5173";
-
+    const FRONTEND_URL = returnUrl || Deno.env.get("FRONTEND_URL") || "http://localhost:5173";
     // Khởi tạo signature
     // Document PayOS: HmacSHA256 của chuỗi "amount=...&cancelUrl=...&description=...&orderCode=...&returnUrl=..."
     // Trong Deno, ta có thể dùng Web Crypto API hoặc gọi qua API Gateway của PayOS bằng cách dùng API Key

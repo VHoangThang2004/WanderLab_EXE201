@@ -159,7 +159,7 @@ export function CheckoutPage() {
     if (payMethod === "payos") {
       try {
         const { data, error } = await supabase.functions.invoke("payos-create", {
-          body: { planKey }
+          body: { planKey, returnUrl: window.location.origin }
         });
         
         if (error) throw error;
