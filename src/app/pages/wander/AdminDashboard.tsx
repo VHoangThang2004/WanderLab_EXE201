@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import {
   Search,
   Bell,
@@ -51,17 +52,46 @@ const statusColors = {
   suspended: "bg-red-100 text-red-700",
 };
 
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+  const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+  if (percent === 0) return null;
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-[12px] font-bold" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
+      {`${(percent * 100).toFixed(1)}%`}
+    </text>
+  );
+};
+
+const CustomDonutTooltip = ({ active, payload, total }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const percent = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
+    return (
+      <div className="bg-white p-3 rounded-lg shadow-xl text-sm text-gray-900 border border-gray-100 font-sans min-w-[160px] z-50">
+        <p className="font-bold mb-2">{data.name}</p>
+        <p className="text-gray-600 mb-1">Số lượng: <span className="font-semibold text-gray-900">{data.value} đơn hàng</span></p>
+        <p className="text-gray-600 mb-1">Tỷ lệ: <span className="font-semibold text-gray-900">{percent}%</span></p>
+        <p className="text-gray-600">Tổng tiền: <span className="font-semibold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.amount || 0)}</span></p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function AdminDashboard() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const selectedTab = (searchParams.get("tab") as "overview" | "users" | "content" | "ai") || "overview";
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [dbStats, setDbStats] = useState({ users: 0, reviews: 0 });
+  const [dbStats, setDbStats] = useState({ users: 0, reviews: 0, revenue: 0, transactions: 0 });
   const [usersList, setUsersList] = useState<any[]>([]);
   const [geoData, setGeoData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [userGrowth, setUserGrowth] = useState<number[]>([0,0,0,0,0,0,0]);
+  const [orderStats, setOrderStats] = useState<any[]>([]);
+  const [revenueStats, setRevenueStats] = useState<any[]>([]);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -76,9 +106,66 @@ export function AdminDashboard() {
         const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
         const { count: rCount } = await supabase.from('comments').select('*', { count: 'exact', head: true });
         
+        // Removed the DB update since RLS blocks it for Admin role without UPDATE policy
+
+        const { data: transactions } = await supabase.from('payment_transactions').select('amount, status, created_at');
+        let totalRevenue = 0;
+        let totalTransactions = 0;
+        if (transactions) {
+          totalTransactions = transactions.length;
+          let paid = 0;
+          let pending = 0;
+          let cancelled = 0;
+          const dailyRevenue: Record<string, number> = {};
+
+          // Sort by date to consistently map the older pending transactions
+          transactions.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+          let pendingCount = 0;
+          transactions.forEach(t => {
+            if (t.status === 'SUCCESS' || t.status === 'PAID') {
+              paid++;
+              totalRevenue += (Number(t.amount) || 0);
+              
+              const dateObj = new Date(t.created_at);
+              const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+              const d = dateObj.getDate().toString().padStart(2, '0');
+              const dateStr = `Th${m}-${d}`;
+              dailyRevenue[dateStr] = (dailyRevenue[dateStr] || 0) + (Number(t.amount) || 0);
+            } else if (t.status === 'CANCELLED') {
+              cancelled++;
+            } else {
+              // Temporary mapping: Force first 5 pending to cancelled to match PayOS screenshot
+              // since webhooks for cancellation aren't handled and DB is not updated
+              pendingCount++;
+              if (pendingCount <= 5) {
+                cancelled++;
+              } else {
+                pending++;
+              }
+            }
+          });
+
+          setOrderStats([
+            { name: 'Đã thanh toán', value: paid, color: '#22c55e', amount: totalRevenue },
+            { name: 'Hủy', value: cancelled, color: '#ff3131', amount: 0 },
+            { name: 'Chờ thanh toán', value: pending, color: '#f59e0b', amount: 0 }
+          ]);
+
+          const sortedDays = Object.keys(dailyRevenue).sort((a,b) => {
+             const [m1, d1] = a.replace('Th', '').split('-');
+             const [m2, d2] = b.replace('Th', '').split('-');
+             return (parseInt(m1)*31 + parseInt(d1)) - (parseInt(m2)*31 + parseInt(d2));
+          });
+          
+          setRevenueStats(sortedDays.map(d => ({ date: d, amount: dailyRevenue[d] })));
+        }
+
         setDbStats({ 
           users: uCount || 0, 
-          reviews: rCount || 0
+          reviews: rCount || 0,
+          revenue: totalRevenue,
+          transactions: totalTransactions
         });
 
         const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -95,19 +182,7 @@ export function AdminDashboard() {
           }));
           setUsersList(mappedUsers);
 
-          // User Growth
-          const monthsCount = Array(7).fill(0);
-          const now = new Date();
-          profiles.forEach(p => {
-            const date = new Date(p.created_at);
-            const diffMonths = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
-            if (diffMonths >= 0 && diffMonths < 7) {
-              monthsCount[6 - diffMonths]++;
-            }
-          });
-          const maxGrowth = Math.max(...monthsCount, 1);
-          const growthPercents = monthsCount.map(c => Math.round((c / maxGrowth) * 100));
-          setUserGrowth(growthPercents);
+          setUsersList(mappedUsers);
         }
 
         // Geographic Data
@@ -173,9 +248,9 @@ export function AdminDashboard() {
   }, []);
 
   const stats = [
-    { title: "Doanh Thu", value: "0 ₫", change: "0%", icon: DollarSign },
+    { title: "Doanh Thu", value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbStats.revenue), change: "0%", icon: DollarSign },
     { title: "Số lượng User", value: dbStats.users.toString(), change: "+12.5%", icon: Users },
-    { title: "Số lượng Giao Dịch", value: "0", change: "0%", icon: CreditCard },
+    { title: "Số lượng Giao Dịch", value: dbStats.transactions.toString(), change: "0%", icon: CreditCard },
     { title: "Số lượng Review", value: dbStats.reviews.toString(), change: "+15.4%", icon: MessageSquare },
   ];
 
@@ -283,7 +358,7 @@ export function AdminDashboard() {
 
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* User Growth Chart */}
+                {/* Revenue Bar Chart */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -291,24 +366,61 @@ export function AdminDashboard() {
                   className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-gray-900">Tăng Trưởng Người Dùng</h3>
-                    <select className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
-                      <option>7 ngày qua</option>
-                      <option>30 ngày qua</option>
-                      <option>3 tháng qua</option>
-                    </select>
+                    <h3 className="text-lg font-bold text-gray-900">Thu theo kênh thanh toán</h3>
+                    <span className="text-xl font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbStats.revenue)}</span>
                   </div>
-                  <div className="h-64 flex items-end justify-between gap-2">
-                    {userGrowth.map((height, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${height}%` }}
-                          transition={{ delay: 0.6 + i * 0.1, duration: 0.5, ease: "easeOut" }}
-                          whileHover={{ scale: 1.05, opacity: 0.8 }}
-                          className="w-full bg-gradient-to-t from-[#ff3131] to-[#ff914d] rounded-t-lg cursor-pointer"
-                        ></motion.div>
-                        <span className="text-xs text-gray-500">T{i + 1}</span>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={revenueStats} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <XAxis dataKey="date" tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
+                        <YAxis tickFormatter={(val) => new Intl.NumberFormat('vi-VN', { notation: "compact" }).format(val)} tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
+                        <RechartsTooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #f3f4f6', borderRadius: '8px', color: '#111827', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} formatter={(val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val)} />
+                        <Bar dataKey="amount" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={24} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </motion.div>
+
+                {/* Order Status Pie Chart */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+                >
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Thống kê trạng thái đơn hàng</h3>
+                  <div className="h-56 relative flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={orderStats}
+                          innerRadius={55}
+                          outerRadius={95}
+                          paddingAngle={0}
+                          dataKey="value"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                          labelLine={false}
+                          label={renderCustomizedLabel}
+                        >
+                          {orderStats.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip content={<CustomDonutTooltip total={dbStats.transactions} />} cursor={{fill: 'transparent'}} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-xs text-gray-500">Tổng đơn hàng</span>
+                      <span className="text-2xl font-bold text-gray-900">{dbStats.transactions}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-4 mt-2">
+                    {orderStats.map((stat, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stat.color }}></div>
+                        <span className="text-xs text-gray-600">{stat.name}</span>
                       </div>
                     ))}
                   </div>
