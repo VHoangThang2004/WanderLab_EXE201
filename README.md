@@ -14,8 +14,8 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 | 🤖 **AI Trip Planner Cá Nhân Hóa** | Trợ lý ảo WanderBot tư vấn điểm đến và tự động lập lịch trình tối ưu dựa trên sở thích cá nhân |
 | 🔍 **Khám Phá Hyper-local** | Tìm kiếm điểm đến độc đáo, trải nghiệm văn hóa địa phương qua lăng kính cộng đồng du khách |
 | 💬 **Kết Nối Cộng Đồng** | Nhắn tin trực tiếp, theo dõi, kết nối với những người có chung đam mê xê dịch |
-| 💳 **Gói Subscription** | Nâng cấp trải nghiệm (Free / Starter / Professional) tích hợp thanh toán VNPay |
-| 🛡️ **Admin Panel** | Quản lý người dùng, kiểm duyệt nội dung, và giám sát hiệu suất hệ thống AI |
+| 💳 **Gói Subscription** | Nâng cấp trải nghiệm (Free / Plus / Pro) tích hợp tự động qua cổng thanh toán PayOS (VietQR) |
+| 🛡️ **Admin Panel** | Quản lý người dùng, thống kê doanh thu thời gian thực, và giám sát hiệu suất hệ thống AI |
 
 ## 🛠️ Tech Stack
 
@@ -34,7 +34,7 @@ Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyzn
 - Supabase (PostgreSQL + Auth + Storage + Realtime + Edge Functions)
 
 **AI:** Google Gemini API  
-**Payment:** VNPay Sandbox
+**Payment:** PayOS (VietQR) tích hợp Webhook qua Supabase Edge Functions
 
 ## 📂 Cấu Trúc Thư Mục
 
@@ -158,7 +158,7 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
 | [`02_database_schema.txt`](./document/02_database_schema.txt) | 15 bảng PostgreSQL + SQL + ERD |
 | [`03_api_endpoints.txt`](./document/03_api_endpoints.txt) | Tất cả REST, Auth, Storage, AI, Payment APIs |
 | [`04_implementation_roadmap.txt`](./document/04_implementation_roadmap.txt) | Lộ trình 10 sprints chi tiết |
-| [`05_deployment_guide.txt`](./document/05_deployment_guide.txt) | Hướng dẫn setup Supabase, Vercel, VNPay |
+| [`05_deployment_guide.txt`](./document/05_deployment_guide.txt) | Hướng dẫn setup Supabase, Vercel, PayOS |
 
 ## 📋 Tiến Độ Dự Án (Hiện Trạng)
 
@@ -172,8 +172,11 @@ Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ 
   - Đồng bộ trạng thái đã xem (Unread ping).
   - UI Gọi điện Voice/Video call.
 - [x] **Phase 4** — Global Notifications & Admin Panel: Thông báo hệ thống và Dashboard quản trị.
-- [ ] **Phase 5** — Backend Integration & Deploy: Tích hợp VNPay, AI Gemini Trip Planner thực tế, và đưa lên môi trường Production.
-
+- [x] **Phase 5** — Backend Integration & Deploy: 
+  - Tích hợp cổng thanh toán PayOS (VietQR) tự động qua Supabase Edge Functions (Webhook).
+  - Hoàn thiện Admin Dashboard: Tính toán số liệu thực tế, vẽ biểu đồ tương tác khớp 100% với dữ liệu PayOS.
+  - Tối ưu hóa tính năng AI tạo lịch trình và sửa lỗi xuất PDF/in ấn trên môi trường web deploy.
+  - Deploy thành công lên môi trường Production (Vercel).
 ---
 
 **Môn học:** EXE201 — Entrepreneurship | **Trường:** FPT Education
