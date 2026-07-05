@@ -23,8 +23,20 @@ export function ItineraryDetailModal({ itinerary, onClose, onDelete }: Props) {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open("", "_blank", "width=800,height=900");
-    if (!printWindow) return;
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    const printWindow = iframe.contentWindow;
+    if (!printWindow) {
+      document.body.removeChild(iframe);
+      return;
+    }
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -117,7 +129,11 @@ export function ItineraryDetailModal({ itinerary, onClose, onDelete }: Props) {
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
-      printWindow.close();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
     }, 400);
   };
 

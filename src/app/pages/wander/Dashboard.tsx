@@ -648,6 +648,7 @@ export function WanderDashboard() {
         <ItineraryDetailModal
           itinerary={openItinerary}
           onClose={() => setOpenItinerary(null)}
+          onDelete={removeItinerary}
         />
       )}
 
