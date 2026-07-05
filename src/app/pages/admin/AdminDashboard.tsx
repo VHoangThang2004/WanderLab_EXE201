@@ -36,10 +36,27 @@ export function AdminDashboard() {
           .from('comments')
           .select('*', { count: 'exact', head: true });
 
+        // Fetch transactions for revenue and count
+        const { data: transactions } = await supabase
+          .from('payment_transactions')
+          .select('amount, status');
+
+        let totalRevenue = 0;
+        let totalTransactions = 0;
+
+        if (transactions) {
+          totalTransactions = transactions.length;
+          totalRevenue = transactions
+            .filter(t => t.status === 'SUCCESS' || t.status === 'PAID')
+            .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+        }
+
         setStats(prev => ({
           ...prev,
           users: usersCount || 0,
           reviews: reviewsCount || 0,
+          revenue: totalRevenue,
+          transactions: totalTransactions
         }));
       } catch (error) {
         console.error("Error fetching admin stats:", error);
