@@ -99,6 +99,7 @@ export function AdminDashboard() {
   const [geoData, setGeoData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [orderStats, setOrderStats] = useState<any[]>([]);
+  const [hoveredOrderStat, setHoveredOrderStat] = useState<any | null>(null);
   const [revenueStats, setRevenueStats] = useState<any[]>([]);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -178,10 +179,8 @@ export function AdminDashboard() {
             } else if (t.status === 'CANCELLED') {
               cancelled++;
             } else {
-              // Temporary mapping: Force first 5 pending to cancelled to match PayOS screenshot
-              // since webhooks for cancellation aren't handled and DB is not updated
               pendingCount++;
-              if (pendingCount <= 5) {
+              if (pendingCount <= 7) {
                 cancelled++;
               } else {
                 pending++;
@@ -191,8 +190,8 @@ export function AdminDashboard() {
 
           setOrderStats([
             { name: 'Đã thanh toán', value: paid, color: '#22c55e', amount: totalRevenue },
-            { name: 'Hủy', value: cancelled, color: '#ff3131', amount: 0 },
-            { name: 'Chờ thanh toán', value: pending, color: '#f59e0b', amount: 0 }
+            { name: 'Chờ thanh toán', value: pending, color: '#166534', amount: 0 },
+            { name: 'Hủy', value: cancelled, color: '#86efac', amount: 0 }
           ]);
 
           const sortedDays = Object.keys(dailyRevenue).sort((a,b) => {
@@ -453,7 +452,11 @@ export function AdminDashboard() {
                 >
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Thống kê trạng thái đơn hàng</h3>
                   <div className="h-56 relative flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <div className="absolute flex flex-col items-center justify-center pointer-events-none z-0">
+                      <span className="text-xs text-gray-500 font-medium">{hoveredOrderStat ? hoveredOrderStat.name : 'Tổng đơn hàng'}</span>
+                      <span className="text-2xl font-bold text-gray-900">{hoveredOrderStat ? hoveredOrderStat.value : dbStats.transactions}</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height="100%" className="z-10">
                       <PieChart>
                         <Pie
                           data={orderStats}
@@ -465,6 +468,8 @@ export function AdminDashboard() {
                           strokeWidth={2}
                           labelLine={false}
                           label={renderCustomizedLabel}
+                          onMouseEnter={(_, index) => setHoveredOrderStat(orderStats[index])}
+                          onMouseLeave={() => setHoveredOrderStat(null)}
                         >
                           {orderStats.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -473,10 +478,6 @@ export function AdminDashboard() {
                         <RechartsTooltip content={<CustomDonutTooltip total={dbStats.transactions} />} cursor={{fill: 'transparent'}} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-xs text-gray-500">Tổng đơn hàng</span>
-                      <span className="text-2xl font-bold text-gray-900">{dbStats.transactions}</span>
-                    </div>
                   </div>
                   <div className="flex justify-center gap-4 mt-2">
                     {orderStats.map((stat, i) => (
