@@ -9,6 +9,7 @@ import {
   FileText,
   Activity,
   TrendingUp,
+  TrendingDown,
   MapPin,
   CheckCircle,
   XCircle,
@@ -87,6 +88,13 @@ export function AdminDashboard() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [dbStats, setDbStats] = useState({ users: 0, reviews: 0, revenue: 0, transactions: 0 });
+  const [dbChanges, setDbChanges] = useState({ 
+    users: { pct: 0, str: "0%", isPos: true }, 
+    reviews: { pct: 0, str: "0%", isPos: true }, 
+    revenue: { pct: 0, str: "0%", isPos: true }, 
+    transactions: { pct: 0, str: "0%", isPos: true } 
+  });
+  const [aiStats, setAiStats] = useState({ totalItineraries: 0, aiItineraries: 0, totalDiaries: 0 });
   const [usersList, setUsersList] = useState<any[]>([]);
   const [geoData, setGeoData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
@@ -105,12 +113,39 @@ export function AdminDashboard() {
       try {
         const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
         const { count: rCount } = await supabase.from('comments').select('*', { count: 'exact', head: true });
+        const { count: iCount } = await supabase.from('itineraries').select('*', { count: 'exact', head: true });
+        const { count: aiCount } = await supabase.from('itineraries').select('*', { count: 'exact', head: true }).eq('is_ai_generated', true);
+        const { count: dCount } = await supabase.from('diaries').select('*', { count: 'exact', head: true });
+        
+        const now = new Date();
+        const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+        
+        const { count: uThisMonth } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfThisMonth);
+        const { count: uLastMonth } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfLastMonth).lt('created_at', startOfThisMonth);
+
+        const { count: rThisMonth } = await supabase.from('comments').select('*', { count: 'exact', head: true }).gte('created_at', startOfThisMonth);
+        const { count: rLastMonth } = await supabase.from('comments').select('*', { count: 'exact', head: true }).gte('created_at', startOfLastMonth).lt('created_at', startOfThisMonth);
+
+        const getChange = (curr: number, prev: number) => {
+          if (prev === 0) return { pct: curr > 0 ? 100 : 0, str: curr > 0 ? "+100%" : "0%", isPos: curr >= 0 };
+          const pct = ((curr - prev) / prev) * 100;
+          return { pct, str: `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`, isPos: pct >= 0 };
+        };
+
+        const uChange = getChange(uThisMonth || 0, uLastMonth || 0);
+        const rChange = getChange(rThisMonth || 0, rLastMonth || 0);
         
         // Removed the DB update since RLS blocks it for Admin role without UPDATE policy
 
         const { data: transactions } = await supabase.from('payment_transactions').select('amount, status, created_at');
         let totalRevenue = 0;
         let totalTransactions = 0;
+        let revThisMonth = 0;
+        let revLastMonth = 0;
+        let transThisMonth = 0;
+        let transLastMonth = 0;
+
         if (transactions) {
           totalTransactions = transactions.length;
           let paid = 0;
@@ -123,6 +158,14 @@ export function AdminDashboard() {
 
           let pendingCount = 0;
           transactions.forEach(t => {
+            if (t.created_at >= startOfThisMonth) {
+              transThisMonth++;
+              if (t.status === 'SUCCESS' || t.status === 'PAID') revThisMonth += (Number(t.amount) || 0);
+            } else if (t.created_at >= startOfLastMonth && t.created_at < startOfThisMonth) {
+              transLastMonth++;
+              if (t.status === 'SUCCESS' || t.status === 'PAID') revLastMonth += (Number(t.amount) || 0);
+            }
+
             if (t.status === 'SUCCESS' || t.status === 'PAID') {
               paid++;
               totalRevenue += (Number(t.amount) || 0);
@@ -166,6 +209,19 @@ export function AdminDashboard() {
           reviews: rCount || 0,
           revenue: totalRevenue,
           transactions: totalTransactions
+        });
+        
+        setDbChanges({
+          users: uChange,
+          reviews: rChange,
+          revenue: getChange(revThisMonth, revLastMonth),
+          transactions: getChange(transThisMonth, transLastMonth)
+        });
+        
+        setAiStats({
+          totalItineraries: iCount || 0,
+          aiItineraries: aiCount || 0,
+          totalDiaries: dCount || 0,
         });
 
         const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -248,10 +304,10 @@ export function AdminDashboard() {
   }, []);
 
   const stats = [
-    { title: "Doanh Thu", value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbStats.revenue), change: "0%", icon: DollarSign },
-    { title: "Số lượng User", value: dbStats.users.toString(), change: "+12.5%", icon: Users },
-    { title: "Số lượng Giao Dịch", value: dbStats.transactions.toString(), change: "0%", icon: CreditCard },
-    { title: "Số lượng Review", value: dbStats.reviews.toString(), change: "+15.4%", icon: MessageSquare },
+    { title: "Doanh Thu", value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbStats.revenue), changeObj: dbChanges.revenue, icon: DollarSign },
+    { title: "Số lượng User", value: dbStats.users.toString(), changeObj: dbChanges.users, icon: Users },
+    { title: "Số lượng Giao Dịch", value: dbStats.transactions.toString(), changeObj: dbChanges.transactions, icon: CreditCard },
+    { title: "Số lượng Review", value: dbStats.reviews.toString(), changeObj: dbChanges.reviews, icon: MessageSquare },
   ];
 
   return (
@@ -338,8 +394,14 @@ export function AdminDashboard() {
                             {stat.value}
                           </motion.p>
                           <div className="flex items-center gap-1 text-sm">
-                            <TrendingUp size={14} className="text-green-600" />
-                            <span className="text-green-600 font-semibold">{stat.change}</span>
+                            {stat.changeObj?.isPos ? (
+                              <TrendingUp size={14} className="text-green-600" />
+                            ) : (
+                              <TrendingDown size={14} className="text-[#ff3131]" />
+                            )}
+                            <span className={`font-semibold ${stat.changeObj?.isPos ? 'text-green-600' : 'text-[#ff3131]'}`}>
+                              {stat.changeObj?.str || '0%'}
+                            </span>
                             <span className="text-gray-500 ml-1">so với tháng trước</span>
                           </div>
                         </div>
@@ -756,73 +818,52 @@ export function AdminDashboard() {
                     <h3 className="font-bold text-gray-900">Hệ Thống AI</h3>
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                   </div>
-                  <p className="text-3xl font-bold text-green-600 mb-2">Hoạt động bình thường</p>
-                  <p className="text-sm text-gray-600">Uptime: 99.8%</p>
+                  <p className="text-3xl font-bold text-green-600 mb-2">Trực tuyến</p>
+                  <p className="text-sm text-gray-600">Sẵn sàng phục vụ</p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Độ Chính Xác</h3>
+                    <h3 className="font-bold text-gray-900">Tỉ Lệ Dùng AI</h3>
                     <BarChart3 size={20} className="text-[#ff3131]" />
                   </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">94.2%</p>
-                  <p className="text-sm text-gray-600">Gợi ý lịch trình</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">
+                    {aiStats.totalItineraries > 0 
+                      ? ((aiStats.aiItineraries / aiStats.totalItineraries) * 100).toFixed(1) 
+                      : '0.0'}%
+                  </p>
+                  <p className="text-sm text-gray-600">Lịch trình có AI tạo</p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Cảnh Báo</h3>
-                    <AlertTriangle size={20} className="text-yellow-500" />
+                    <h3 className="font-bold text-gray-900">Lịch Trình AI</h3>
+                    <AlertTriangle size={20} className="text-[#ff3131]" />
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600 mb-2">2</p>
-                  <p className="text-sm text-gray-600">Gợi ý quá mainstream</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">{aiStats.aiItineraries}</p>
+                  <p className="text-sm text-gray-600">Đã được tạo tự động</p>
                 </div>
               </div>
 
               {/* Data Flow Visualization */}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Luồng Dữ Liệu AI</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Tổng Quan Dữ Liệu Hệ Thống</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {[
-                    { label: "Nhật ký du lịch", value: "1,247", icon: FileText, color: "blue" },
-                    { label: "Hành vi tìm kiếm", value: "8,392", icon: Search, color: "purple" },
-                    { label: "Sở thích người dùng", value: "12,456", icon: Heart, color: "pink" },
-                    { label: "Dữ liệu ngân sách", value: "3,891", icon: DollarSign, color: "green" },
+                    { label: "Nhật ký chia sẻ", value: aiStats.totalDiaries, icon: FileText, color: "blue" },
+                    { label: "Lịch trình chuyến đi", value: aiStats.totalItineraries, icon: MapPin, color: "purple" },
+                    { label: "Người dùng đăng ký", value: dbStats.users, icon: Users, color: "pink" },
+                    { label: "Bình luận & Tương tác", value: dbStats.reviews, icon: Heart, color: "green" },
                   ].map((item, i) => {
                     const IconComponent = item.icon;
                     return (
                       <div key={i} className="bg-gray-50 rounded-xl p-4">
                         <IconComponent size={24} className={`text-${item.color}-600 mb-3`} />
-                        <p className="text-2xl font-bold text-gray-900 mb-1">{item.value}</p>
+                        <p className="text-2xl font-bold text-gray-900 mb-1">{item.value.toLocaleString('vi-VN')}</p>
                         <p className="text-xs text-gray-600">{item.label}</p>
                       </div>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* AI Activity Logs */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Nhật Ký Hoạt Động AI</h3>
-                <div className="space-y-3">
-                  {[
-                    { time: "14:32", action: "Tạo lịch trình cho Nguyễn Văn An", result: "Thành công", confidence: 94 },
-                    { time: "14:28", action: "Gắn tag tự động cho nhật ký #1247", result: "Thành công", confidence: 88 },
-                    { time: "14:15", action: "Phát hiện nội dung quá mainstream", result: "Cảnh báo", confidence: 76 },
-                    { time: "13:58", action: "Gợi ý điểm đến cho Lê Minh Châu", result: "Thành công", confidence: 92 },
-                    { time: "13:42", action: "Phân tích độ tin cậy nhật ký", result: "Thành công", confidence: 95 },
-                  ].map((log, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                      <span className="text-xs font-mono text-gray-500 w-12">{log.time}</span>
-                      <p className="flex-1 text-sm text-gray-900">{log.action}</p>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        log.result === "Thành công" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {log.result}
-                      </span>
-                      <span className="text-xs text-gray-600">{log.confidence}%</span>
-                    </div>
-                  ))}
                 </div>
               </div>
             </motion.div>
