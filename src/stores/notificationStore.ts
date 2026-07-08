@@ -32,7 +32,7 @@ const initialNotifications: AppNotification[] = [
     message: "Hãy khám phá và chia sẻ hành trình của bạn với cộng đồng nhé!",
     timestamp: "Vừa xong",
     isRead: false,
-    linkTo: "/explore",
+    linkTo: "/",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
   }
 ];

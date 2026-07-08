@@ -301,67 +301,7 @@ export function WanderLanding() {
   // Authenticated user — social feed
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Stories/Reels Section - Facebook Style */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {/* Create Story */}
-          <button
-            onClick={() => setIsCreateStoryOpen(true)}
-            className="flex-shrink-0 group focus:outline-none"
-          >
-            <div className="relative w-28 h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 hover:shadow-lg transition-all cursor-pointer">
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center mb-2">
-                  <Plus className="text-white" size={24} />
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-2 text-center">
-                <p className="text-xs font-semibold text-gray-900">{t("createStory", "landing")}</p>
-              </div>
-            </div>
-          </button>
 
-          {/* Dynamic Stories */}
-          {combinedStories.map((story, index) => (
-            <div
-              key={story.id}
-              onClick={() => setActiveStoryIndex(index)}
-              className="flex-shrink-0 group cursor-pointer"
-            >
-              <div className="relative w-28 h-48 rounded-2xl overflow-hidden hover:shadow-lg transition-all">
-                <div className="absolute inset-0">
-                  <ImageWithFallback
-                    src={story.image_url}
-                    alt={story.caption || "Story"}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
-                </div>
-                <div className="absolute top-2 left-2">
-                  <div className="w-10 h-10 rounded-full border-3 border-[#ff3131] p-0.5 bg-white">
-                    {story.author?.avatar ? (
-                      <ImageWithFallback
-                        src={story.author.avatar}
-                        alt={story.author.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-xs">
-                        {story.author?.name?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-xs font-semibold text-white truncate drop-shadow-lg">
-                    {story.author?.name}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Feed */}
@@ -411,9 +351,8 @@ export function WanderLanding() {
             </div>
             <div className="space-y-3">
               {trendingDestinations.map((dest, index) => (
-                <Link
+                <div
                   key={dest.name}
-                  to={`/explore?destination=${encodeURIComponent(dest.name)}`}
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FFF5F3] transition-all group"
                 >
                   <div className="flex items-center gap-3">
@@ -429,7 +368,7 @@ export function WanderLanding() {
                       </p>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>

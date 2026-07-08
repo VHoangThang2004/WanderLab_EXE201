@@ -19,7 +19,8 @@ import {
   FileText,
   Sparkles,
   Book,
-  Activity
+  Activity,
+  Globe2
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
@@ -117,8 +118,8 @@ export function WanderSidebar() {
       ]
     : [
         { icon: Home, label: t("home"), path: "/", public: true },
-        { icon: Compass, label: t("explore"), path: "/explore", public: false },
         { icon: Users, label: t("friends"), path: "/friends", public: false },
+        { icon: Globe2, label: language === 'vi' ? "Cách Sử Dụng" : "How to Use", path: "/guide", public: true },
         { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
         { icon: Book, label: language === 'vi' ? "Cuốn Nhật Ký" : "Diary Book", path: "/diary-book", public: false },
         { icon: Route, label: t("createItinerary"), path: "/create-itinerary", public: false },

@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { WanderLogo } from "./WanderLogo";
 
 const NAV_LINKS = [
-  { to: "/explore", label: "Khám Phá" },
+  { to: "/", label: "Trang Chủ" },
   { to: "/create", label: "Tạo Nhật Ký" },
   { to: "/create-itinerary", label: "Tạo Lịch Trình" },
-  { to: "/guide", label: "Hướng Dẫn", icon: true },
+  { to: "/guide", label: "Cách Sử Dụng", icon: true },
   { to: "/partner", label: "Chọn Gói" },
 ];
 

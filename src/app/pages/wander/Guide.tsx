@@ -1,18 +1,16 @@
-import { WanderNav } from "../../components/wander/WanderNav";
-import { WanderFooter } from "../../components/wander/WanderFooter";
 import { Link } from "react-router";
 import { Search, BookOpen, Map, PenTool, Users, MessageCircle, Shield, Bell, Star } from "lucide-react";
 
 const guides = [
   {
     icon: Search,
-    title: "Khám Phá Nhật Ký Du Lịch",
-    description: "Duyệt qua những trải nghiệm du lịch xác thực từ những người Việt đã thực sự đặt chân đến",
+    title: "Khám Phá Bảng Tin",
+    description: "Cập nhật những trải nghiệm du lịch mới nhất từ cộng đồng WanderLab ngay tại Trang Chủ",
     steps: [
-      'Nhấn vào "Khám Phá" trên thanh điều hướng',
-      "Dùng bộ lọc để tìm theo địa điểm, ngân sách hoặc phong cách du lịch",
-      "Nhấn vào bất kỳ thẻ nhật ký nào để xem chi tiết và lịch trình",
-      "Lưu nhật ký yêu thích vào bảng điều khiển để tham khảo sau",
+      'Truy cập vào "Trang Chủ" để xem bảng tin các nhật ký mới nhất',
+      "Lướt xem các bài đăng nổi bật và các điểm đến đang thịnh hành",
+      "Nhấn vào bất kỳ thẻ nhật ký nào để đọc toàn bộ lịch trình chi tiết",
+      "Tương tác (thích, bình luận) với những bài viết bạn cảm thấy thú vị",
     ],
   },
   {
@@ -94,8 +92,6 @@ const features = [
 export function WanderGuide() {
   return (
     <div className="min-h-screen bg-white">
-      <WanderNav />
-
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -121,7 +117,7 @@ export function WanderGuide() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { num: "1", label: "Đăng Ký", desc: "Tạo tài khoản và thiết lập sở thích du lịch" },
-              { num: "2", label: "Khám Phá", desc: "Duyệt nhật ký du lịch đã xác minh và lưu yêu thích" },
+              { num: "2", label: "Tìm Cảm Hứng", desc: "Duyệt nhật ký du lịch đã xác minh và lưu yêu thích" },
               { num: "3", label: "Tạo", desc: "Chia sẻ hành trình của bạn và truyền cảm hứng cho người khác" },
             ].map(({ num, label, desc }) => (
               <div key={num} className="text-center">
@@ -229,29 +225,7 @@ export function WanderGuide() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Sẵn Sàng Bắt Đầu Khám Phá?</h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Tham gia hàng nghìn người Việt đang chia sẻ những trải nghiệm du lịch xác thực
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-full font-semibold hover:shadow-lg transition-all"
-            >
-              Tạo Tài Khoản
-            </Link>
-            <Link
-              to="/explore"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#ff3131] border-2 border-[#ff3131] rounded-full font-semibold hover:bg-[#FFF5F3] transition-all"
-            >
-              Duyệt Nhật Ký
-            </Link>
-          </div>
-        </div>
-      </section>
+
 
       {/* FAQ Link */}
       <section className="py-12 bg-[#FFF5F3] border-t border-gray-200">
@@ -262,8 +236,6 @@ export function WanderGuide() {
           </a>
         </div>
       </section>
-
-      <WanderFooter />
     </div>
   );
 }

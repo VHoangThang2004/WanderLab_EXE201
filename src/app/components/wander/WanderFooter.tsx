@@ -60,11 +60,7 @@ export function WanderFooter() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Tài Nguyên</h3>
             <ul className="space-y-2">
-              <li>
-                <Link to="/explore" className="text-gray-600 hover:text-[#ff3131] text-sm transition-colors">
-                  Khám Phá Nhật Ký
-                </Link>
-              </li>
+
               <li>
                 <Link to="/guide" className="text-gray-600 hover:text-[#ff3131] text-sm transition-colors">
                   Hướng Dẫn Sử Dụng
