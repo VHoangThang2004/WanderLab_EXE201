@@ -10,6 +10,7 @@ import { useSavedItineraries } from "../../hooks/useSavedItineraries";
 import { useLanguageStore } from "@/stores";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { generateItinerary, type GeneratedItinerary, type ItineraryDay, type BudgetItem } from "@/api/itineraryAiService";
+import { ALL_VIETNAM_DESTINATIONS } from "../../data/vietnamDestinations";
 
 const translateItineraryItem = (text: string, lang: string) => {
   if (lang === 'vi') return text;
@@ -112,14 +113,7 @@ const translateCategory = (text: string, lang: string) => {
   return dict[text] || text;
 };
 
-const DESTINATIONS = [
-  { id: "pq", name: "Phú Quốc", region: "Kiên Giang", tag: "Biển & Đảo", image: "https://images.unsplash.com/photo-1693282815546-f7eeb0fa909b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-  { id: "hl", name: "Hạ Long", region: "Quảng Ninh", tag: "Kỳ quan", image: "https://images.unsplash.com/photo-1547024842-7c86b2226ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-  { id: "hn", name: "Hà Nội", region: "Miền Bắc", tag: "Thành phố", image: "https://images.unsplash.com/photo-1727860628226-2d545134f8a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-  { id: "hoi", name: "Hội An", region: "Quảng Nam", tag: "Văn hóa", image: "https://images.unsplash.com/photo-1643030080539-b411caf44c37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-  { id: "dn", name: "Đà Nẵng", region: "Miền Trung", tag: "Biển", image: "https://images.unsplash.com/flagged/photo-1583863374731-4224cbbc8c36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-  { id: "sp", name: "Sa Pa", region: "Lào Cai", tag: "Trekking", image: "https://images.unsplash.com/photo-1694152362587-99d77d21793b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400" },
-];
+
 
 const DURATIONS = ["3 ngày", "4 ngày", "5 ngày", "6 ngày", "7 ngày", "10+ ngày"];
 const GROUP_SIZES = ["1 mình", "Cặp đôi", "Nhóm bạn (3–5)", "Gia đình", "Đoàn lớn (6+)"];
@@ -183,7 +177,12 @@ export function CreateItinerary() {
 
   const { saveItinerary } = useSavedItineraries();
 
-  const selectedDest = DESTINATIONS.find((d) => d.id === destination) ?? DESTINATIONS[0];
+  const [selectedRegion, setSelectedRegion] = useState("Tất cả");
+  const filteredDestinations = selectedRegion === "Tất cả" 
+    ? ALL_VIETNAM_DESTINATIONS 
+    : ALL_VIETNAM_DESTINATIONS.filter(d => d.region === selectedRegion);
+
+  const selectedDest = ALL_VIETNAM_DESTINATIONS.find((d) => d.id === destination) ?? ALL_VIETNAM_DESTINATIONS[0];
 
   const toggleInterest = (label: string) => {
     setInterests((prev) =>
@@ -304,8 +303,25 @@ export function CreateItinerary() {
               <h2 className="text-xl font-bold text-gray-900 mb-1">{t("question1", "createItinerary")}</h2>
               <p className="text-sm text-gray-500">{t("selectDestDesc", "createItinerary")}</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {DESTINATIONS.map((dest) => (
+            
+            <div className="flex gap-2 mb-2 overflow-x-auto pb-2 scrollbar-hide">
+              {["Tất cả", "Miền Bắc", "Miền Trung", "Miền Nam"].map((region) => (
+                <button
+                  key={region}
+                  onClick={() => setSelectedRegion(region)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    selectedRegion === region
+                      ? "bg-[#ff3131] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2">
+              {filteredDestinations.map((dest) => (
                 <button
                   key={dest.id}
                   onClick={() => setDestination(dest.id)}
