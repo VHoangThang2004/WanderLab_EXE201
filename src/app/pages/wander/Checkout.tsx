@@ -22,8 +22,8 @@ interface PlanDef {
 const PLANS: Record<string, PlanDef> = {
   plus: {
     name: "Plus",
-    price: "19.000₫",
-    priceNum: 19000,
+    price: "50.000₫",
+    priceNum: 50000,
     period: "tháng",
     color: "from-[#ff3131] to-[#ff914d]",
     features: [
@@ -35,8 +35,8 @@ const PLANS: Record<string, PlanDef> = {
   },
   pro: {
     name: "Pro",
-    price: "29.000₫",
-    priceNum: 29000,
+    price: "150.000₫",
+    priceNum: 150000,
     period: "tháng",
     badge: "Phổ Biến Nhất",
     color: "from-[#ff3131] to-[#ff914d]",

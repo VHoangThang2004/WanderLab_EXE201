@@ -77,7 +77,7 @@ export function WanderPartner() {
     },
     {
       name: "Plus",
-      price: language === 'vi' ? "19.000₫" : "$0.79",
+      price: language === 'vi' ? "50.000₫" : "$1.99",
       period: language === 'vi' ? "/tháng" : "/month",
       planKey: "plus",
       description: language === 'vi' ? "Trải nghiệm tuyệt vời hơn" : "Better experience",
@@ -99,7 +99,7 @@ export function WanderPartner() {
     },
     {
       name: "Pro",
-      price: language === 'vi' ? "29.000₫" : "$1.19",
+      price: language === 'vi' ? "150.000₫" : "$5.99",
       period: language === 'vi' ? "/tháng" : "/month",
       planKey: "pro",
       description: language === 'vi' ? "Dành cho tín đồ xê dịch" : "For travel enthusiasts",

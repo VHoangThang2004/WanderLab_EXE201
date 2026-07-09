@@ -41,9 +41,9 @@ serve(async (req) => {
     // 2. Định nghĩa giá theo plan
     let price = 0;
     if (planKey === "plus") {
-      price = 19000;
+      price = 50000;
     } else if (planKey === "pro") {
-      price = 29000;
+      price = 150000;
     } else {
       throw new Error("Invalid plan key");
     }
