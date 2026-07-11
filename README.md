@@ -1,182 +1,124 @@
-# 🌍 WanderLab
+# Software Requirements Specification (SRS) - WanderLab
 
-> WanderLab là nền tảng web du lịch trải nghiệm tích hợp nhật ký hành trình theo timeline và AI cá nhân hóa, giúp người dùng lưu giữ, chia sẻ trải nghiệm thực tế và khám phá các điểm đến hyper-local phù hợp với sở thích cá nhân.
+## 1. Introduction
+### 1.1 Purpose
+This document provides a complete software requirements specification for the WanderLab system - an AI-integrated experiential travel social network platform. The document details the functional and non-functional requirements, as well as the system architecture, serving the development, testing, and maintenance phases of the project.
 
-Figma Design: [WanderLab Ver5](https://www.figma.com/design/eDaESMChPbgzQvIVEyznxz/WanderLab-Ver5)
+### 1.2 Scope
+WanderLab is a web platform that combines a Travel Journal, an AI Trip Planner (virtual assistant), and a social network for travelers. The product helps users capture their journeys, explore hyper-local destinations authentically, and connect with a community of travel enthusiasts.
 
----
+## 2. Overall Description
+### 2.1 User Classes
+- **Explorer (Guest/Basic User):** Can view other users' travel diaries, search for destinations, and explore public itineraries.
+- **Planner (Registered Member):** Can create and manage diaries, use AI to generate personalized itineraries, engage socially (like, comment, share), chat with other users, and upgrade subscription plans.
+- **Admin:** Has access to the Admin Dashboard to manage users, moderate reported content, track real-time revenue, and monitor AI system performance.
 
-## ✨ Tính Năng Chính
+### 2.2 Operating Environment
+- **Platform:** Web Application, fully responsive and cross-device compatible (Desktop, Tablet, Mobile).
+- **Supported Browsers:** Modern versions of Chrome, Safari, Firefox, Edge.
 
-| Tính năng | Mô tả |
-| --- | --- |
-| 📔 **Nhật Ký Hành Trình (Timeline)** | Lưu giữ và chia sẻ trải nghiệm du lịch thực tế với hình ảnh, lịch trình từng ngày, và ngân sách chi tiết |
-| 🤖 **AI Trip Planner Cá Nhân Hóa** | Trợ lý ảo WanderBot tư vấn điểm đến và tự động lập lịch trình tối ưu dựa trên sở thích cá nhân |
-| 🔍 **Khám Phá Hyper-local** | Tìm kiếm điểm đến độc đáo, trải nghiệm văn hóa địa phương qua lăng kính cộng đồng du khách |
-| 💬 **Kết Nối Cộng Đồng** | Nhắn tin trực tiếp, theo dõi, kết nối với những người có chung đam mê xê dịch |
-| 💳 **Gói Subscription** | Nâng cấp trải nghiệm (Free / Plus / Pro) tích hợp tự động qua cổng thanh toán PayOS (VietQR) |
-| 🛡️ **Admin Panel** | Quản lý người dùng, thống kê doanh thu thời gian thực, và giám sát hiệu suất hệ thống AI |
+## 3. Functional Requirements
 
-## 🛠️ Tech Stack
+### 3.1 Authentication & Profile Module (Auth & Profile)
+- Support registration and login via Email/Password or Social accounts (Google, Facebook).
+- Profile management: Update personal information, change avatars (stored on Supabase Storage), and change passwords.
+- Security features: Secure Forgot Password and Reset Password functionality.
 
-**Frontend:**
+### 3.2 Travel Diary & Social Feed Module
+- Create, edit, and manage travel diaries with a day-by-day timeline format.
+- Support uploading illustrations, tagging locations, and attaching a detailed budget tracking system for each expense.
+- Explore diaries from the community with filters for destination, travel style, and budget.
+- Social interactions: Like, Comment, Bookmark, and Share travel diaries.
 
-- React 18 + TypeScript
-- Vite 6.3
-- TailwindCSS v4 + shadcn/ui
-- React Router v7
-- Zustand (State Management)
-- TanStack React Query (API Caching)
-- Motion / Framer Motion (Animations)
+### 3.3 AI Trip Planner & Virtual Assistant Module (AI Integration)
+- **WanderBot:** An AI chatbot that directly answers travel queries and provides destination consulting.
+- **AI Itinerary Generation:** Automatically generate detailed trip itineraries based on user inputs including: destination, duration, budget, and personal preferences.
+- AI system analyzes data to suggest "hyper-local" destinations that are off the beaten path but rich in local culture.
 
-**Backend:**
+### 3.4 Interaction & Realtime Chat Module
+- 1-1 direct messaging system operating in real-time without requiring page reloads.
+- Support for diverse message types: text, images, and document attachments (Word, Excel, PDF, ZIP...).
+- Chat interaction features: Drop emoji reactions on individual messages.
+- State management: Synchronize read receipts (unread/read status) and display a full-page toast notification for incoming messages.
+- User Interface (UI) prepared and integrated for Voice / Video Call features.
 
-- Supabase (PostgreSQL + Auth + Storage + Realtime + Edge Functions)
+### 3.5 Payment & Subscription Module
+- Offer multiple subscription tiers: Free, Plus, and Pro, unlocking advanced AI capabilities and extended features.
+- Integrate automated VietQR scanning payment gateway via PayOS partner.
+- Handle transaction statuses and activate subscription plans fully automatically via Webhooks (Supabase Edge Functions).
 
-**AI:** Google Gemini API  
-**Payment:** PayOS (VietQR) tích hợp Webhook qua Supabase Edge Functions
+### 3.6 Admin Panel Module
+- Dashboard displaying real-time statistics on revenue (100% synced with PayOS), user growth, and content creation metrics.
+- User account management tools: Ban/Unban user accounts.
+- Content Moderation system for reported travel diaries.
+- Monitoring board for AI system activity and performance.
 
-## 📂 Cấu Trúc Thư Mục
+## 4. Non-Functional Requirements
+- **Performance:** UI response and page load times must be under 3 seconds. Interactions like messaging and system notifications must sync in real-time with latency < 500ms.
+- **Security:** The database is protected via PostgreSQL's Row Level Security (RLS). Payment APIs are authenticated using signature verification to prevent fraud.
+- **UX/UI:** Minimalist and modern interface design enhanced by smooth micro-animations. Fully responsive layout adapting to various screen sizes.
 
+## 5. System Architecture & Tech Stack
+- **Frontend (Client-side):**
+  - Framework: React 18 with TypeScript, built on Vite 6.3.
+  - UI/Styling: TailwindCSS v4, shadcn/ui. Animations via Framer Motion, and icons via Lucide React.
+  - State & Data Management: Zustand (Global State) and TanStack React Query (API Caching).
+  - Routing: React Router v7.
+- **Backend (BaaS):**
+  - Supabase as the core platform managing: PostgreSQL (Database), Authentication, Storage, and Realtime WebSockets (Chat/Notifications).
+  - Background processes: Supabase Edge Functions (Handling PayOS Webhooks).
+- **Third-Party Services:**
+  - Artificial Intelligence (AI): Google Gemini API.
+  - Payment Gateway: PayOS (VietQR Sandbox / Production).
+- **Deployment:** Vercel server (Frontend Hosting).
+
+## 6. Directory Structure
 ```text
 WanderLab/
-├── database/                    # Script và cấu hình SQL về database
-│   ├── table.sql                # (V4.0) Script DUY NHẤT khởi tạo ALL-IN-ONE (Bảng, RLS, Trigger, Realtime)
-│   ├── create_storage.sql       # Script tạo bucket lưu trữ (Storage)
-│   └── update_storage_mime.sql  # Script mở giới hạn loại file đính kèm
-├── document/                    # 📄 Tài liệu dự án (Overview, DB Schema, API, Roadmap)
-├── guidelines/                  # Tài liệu hướng dẫn (code conventions, contribution)
-├── src/                         # 💻 Source code chính
-│   ├── api/                     # Services gọi API (client, diary, friend, message, story)
+├── database/                    # SQL Scripts (init tables, storage, policies, triggers)
+├── document/                    # Detailed documentation folder (Schema, API, Roadmap)
+├── src/
+│   ├── api/                     # API calling services (Chat, User, AI, Payment...)
 │   ├── app/
-│   │   ├── components/          # React components
-│   │   │   ├── auth/            # Các component bảo vệ route (ProtectedRoute)
-│   │   │   ├── common/          # Components dùng chung (ErrorBoundary, Loading, EmptyState)
-│   │   │   ├── figma/           # Các component xuất từ Figma (ImageWithFallback)
-│   │   │   ├── ui/              # shadcn/ui components (button, input, dialog,...)
-│   │   │   └── wander/          # Custom components của WanderLab (WanderNav, ChatBox,...)
-│   │   ├── data/                # Dữ liệu tĩnh và mock data (destinations, vietnamPaths)
-│   │   ├── hooks/               # Custom React hooks (useSavedItineraries)
-│   │   ├── pages/               # Các trang giao diện chính
-│   │   │   ├── admin/           # Trang quản trị (AdminDashboard)
-│   │   │   ├── auth/            # Các trang xác thực (ForgotPassword, ResetPassword)
-│   │   │   └── wander/          # Các trang người dùng (Landing, Dashboard, Explore, Create...)
-│   │   ├── routes.tsx           # Cấu hình React Router định tuyến
-│   │   └── App.tsx              # Root component thiết lập Layout, Providers
-│   ├── assets/                  # 🖼️ Hình ảnh, icons tĩnh (png, svg)
-│   ├── imports/                 # 📝 Tài liệu markdown guidelines bổ sung
-│   ├── lib/                     # Cấu hình thư viện ngoài (Supabase client)
-│   ├── stores/                  # Zustand state management stores
-│   ├── styles/                  # Global CSS, cấu hình Tailwind và Theme
-│   ├── types/                   # TypeScript interfaces (user, diary, chat, itinerary,...)
-│   ├── utils/                   # Utilities & constants (format data, vietnamProvinces)
-│   └── main.tsx                 # Entry point của ứng dụng React
-├── .env                         # Biến môi trường local (chứa API keys)
-├── index.html                   # HTML template chính
-├── package.json                 # Khai báo dependencies và scripts
-├── postcss.config.mjs           # Cấu hình PostCSS
-├── vercel.json                  # Cấu hình deploy Vercel
-├── vite.config.ts               # Cấu hình Vite bundler
-└── README.md                    # (file này)
+│   │   ├── components/          # React components organization (auth, ui, common, wander)
+│   │   ├── data/                # Mock data & Static data
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── pages/               # Page UI breakdown (admin, auth, wander)
+│   │   ├── routes.tsx           # System routing configuration
+│   │   └── App.tsx              # Root entry component
+│   ├── lib/                     # Library integration config (Supabase Client, PayOS)
+│   ├── stores/                  # Application state organization (Zustand)
+│   ├── styles/                  # Global CSS, Tailwind configurations
+│   ├── types/                   # TypeScript Interfaces/Types definitions
+│   └── utils/                   # Utility/Helper functions
+├── .env                         # Environment variables declaration
+└── package.json                 # Project metadata & dependencies configuration
 ```
 
-## 🗺️ Danh Sách Trang
-
-| Route | Trang | Auth | Mô tả |
-| --- | --- | --- | --- |
-| `/` | Landing | ❌ | Trang chủ, feed nhật ký |
-| `/login` | Login | ❌ | Đăng nhập (Email/Google/Facebook) |
-| `/register` | Register | ❌ | Đăng ký tài khoản |
-| `/forgot-password` | ForgotPassword | ❌ | Quên mật khẩu |
-| `/reset-password` | ResetPassword | ❌ | Đặt lại mật khẩu |
-| `/guide` | Guide | ❌ | Hướng dẫn sử dụng |
-| `/dashboard` | Dashboard | ✅ | Hồ sơ cá nhân (Tổng quan) |
-| `/profile/:username` | UserProfile | ✅ | Trang cá nhân người dùng |
-| `/explore` | Explore | ❌ | Khám phá nhật ký |
-| `/create` | CreateDiary | ✅ | Tạo nhật ký mới |
-| `/edit-diary/:id` | EditDiary | ✅ | Chỉnh sửa nhật ký |
-| `/diary/:id` | DiaryDetail | ❌ | Chi tiết nhật ký |
-| `/create-itinerary` | CreateItinerary | ✅ | AI lập lịch trình |
-| `/friends` | Friends | ✅ | Danh sách bạn bè & theo dõi |
-| `/groups/:id` | GroupDetail | ✅ | Chi tiết nhóm |
-| `/chat` | ChatPage | ✅ | Nhắn tin |
-| `/messages` | Messages | ✅ | Quản lý tin nhắn |
-| `/notifications` | Notifications | ✅ | Thông báo |
-| `/settings` | Settings | ✅ | Cài đặt tài khoản |
-| `/partner` | Partner | ❌ | Đối tác & bảng giá |
-| `/checkout` | Checkout | ✅ | Thanh toán subscription |
-| `/admin-dashboard` | AdminDashboard | ✅ (Admin) | Quản trị hệ thống |
-
-## 🚀 Chạy Project
-
-### Yêu cầu
-
+## 7. Setup & Deployment Guide
+### 7.1 Environment Requirements
 - Node.js >= 18
 - npm >= 9
 
-### Cài đặt & chạy
-
+### 7.2 Running Development Environment
 ```bash
-# 1. Cài dependencies
+# 1. Install all dependencies
 npm install
 
-# 2. Tạo file .env
-cp .env
-# Điền credentials Supabase vào .env
+# 2. Initialize environment variables file
+cp .env.example .env
+# Note: Edit the .env file to fill in credentials for Supabase, Gemini API, and PayOS
 
-# 3. Chạy development server
+# 3. Start the local development server
 npm run dev
-
-# 4. Mở trình duyệt tại http://localhost:5173
+# Access the application in your browser at: http://localhost:5173
 ```
 
-### Lệnh khác
+### 7.3 Build & Demo Experience
+- To build for Production: `npm run build`
+- For grading and demonstration purposes (even without setting up environment variables), the project includes mock-data and 2 demo accounts (Shared password: `123456`):
+  - **User Account:** `vohoangthang2004@gmail.com`
+  - **Admin Account:** `adminwanderlab@gmail.com`
 
-```bash
-npm run build      # Build production bundle
-npm run preview    # Preview production build
-```
-
-> **Lưu ý:** Project có thể chạy ở chế độ demo (không cần Supabase credentials) — sử dụng mock data có sẵn.
-
-### 🧪 Trải Nghiệm Demo
-
-Bạn có thể chạy dự án ở chế độ demo và sử dụng 2 tài khoản sau để kiểm tra toàn bộ tính năng (Mật khẩu chung: `123456`):
-
-- **Tài khoản User:** `vohoangthang2004@gmail.com`
-  *(Khám phá tính năng Tạo nhật ký, AI lên lịch trình, Giao lưu cộng đồng, AI Chatbot)*
-- **Tài khoản Admin:** `adminwanderlab@gmail.com`
-  *(Trải nghiệm bảo mật Route, Admin Dashboard với các tính năng Quản lý người dùng, Kiểm duyệt nội dung, Giám sát hệ thống AI)*
-
-## 📖 Tài Liệu
-
-Chi tiết về thiết kế hệ thống, database schema, API endpoints, lộ trình thực hiện và hướng dẫn deployment nằm trong thư mục [`document/`](./document/):
-
-| File | Nội dung |
-| --- | --- |
-| [`01_project_overview.txt`](./document/01_project_overview.txt) | Tổng quan dự án, tính năng, tech stack |
-| [`02_database_schema.txt`](./document/02_database_schema.txt) | 15 bảng PostgreSQL + SQL + ERD |
-| [`03_api_endpoints.txt`](./document/03_api_endpoints.txt) | Tất cả REST, Auth, Storage, AI, Payment APIs |
-| [`04_implementation_roadmap.txt`](./document/04_implementation_roadmap.txt) | Lộ trình 10 sprints chi tiết |
-| [`05_deployment_guide.txt`](./document/05_deployment_guide.txt) | Hướng dẫn setup Supabase, Vercel, PayOS |
-
-## 📋 Tiến Độ Dự Án (Hiện Trạng)
-
-- [x] **Phase 1** — Foundation: Cấu trúc thư mục, Types, Zustand Stores, UI Components (Tailwind + Shadcn).
-- [x] **Phase 2** — Database & Auth: Tích hợp Supabase, RLS Policies, Profile, Social Interactions. Tối ưu database về 1 file `table.sql` duy nhất.
-- [x] **Phase 3** — Messaging & Realtime: Hoàn thiện 100% tính năng Chat như Messenger thực thụ:
-  - Nhắn tin Realtime ngay lập tức không cần tải trang.
-  - Gửi hình ảnh và tài liệu (Word, Excel, PDF, ZIP...).
-  - Thả Emoji (Reactions) lên từng tin nhắn.
-  - Hệ thống thông báo nổi (Chat Bubble Toast) toàn trang khi có tin nhắn tới.
-  - Đồng bộ trạng thái đã xem (Unread ping).
-  - UI Gọi điện Voice/Video call.
-- [x] **Phase 4** — Global Notifications & Admin Panel: Thông báo hệ thống và Dashboard quản trị.
-- [x] **Phase 5** — Backend Integration & Deploy: 
-  - Tích hợp cổng thanh toán PayOS (VietQR) tự động qua Supabase Edge Functions (Webhook).
-  - Hoàn thiện Admin Dashboard: Tính toán số liệu thực tế, vẽ biểu đồ tương tác khớp 100% với dữ liệu PayOS.
-  - Tối ưu hóa tính năng AI tạo lịch trình và sửa lỗi xuất PDF/in ấn trên môi trường web deploy.
-  - Deploy thành công lên môi trường Production (Vercel).
 ---
-
-**Môn học:** EXE201 — Entrepreneurship | **Trường:** FPT Education
+*Course: EXE201 — Entrepreneurship | School: FPT Education | Status: 100% Completed (Phase 1-5)*
