@@ -4,6 +4,7 @@ import { UserAvatar } from "./UserAvatar";
 import { useState, useEffect } from "react";
 import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService, CommentItem } from "@/api/interactionService";
+import { toast } from "sonner";
 
 interface PostModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   };
 
   const handleSave = async () => {
-    if (!user) return alert("Vui lòng đăng nhập để lưu bài viết.");
+    if (!user) return toast.error("Vui lòng đăng nhập để lưu bài viết.");
 
     // Optimistic update
     const previousState = isSaved;
@@ -95,11 +96,18 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
 
     try {
       await interactionService.toggleBookmarkDiary(post.id, user.id);
+      toast.success(!previousState ? "Đã lưu bài viết vào danh mục của bạn!" : "Đã bỏ lưu bài viết");
     } catch (error: any) {
       setIsSaved(previousState);
       console.error("Failed to toggle save:", error);
-      alert("Lỗi khi Lưu: " + (error?.message || JSON.stringify(error)));
+      toast.error("Lỗi khi Lưu: " + (error?.message || "Đã xảy ra lỗi"));
     }
+  };
+
+  const handleShare = () => {
+    const shareUrl = `https://wander-lab.vercel.app/diary/${post.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Đã sao chép liên kết bài viết!");
   };
 
   const handleComment = async () => {
@@ -217,10 +225,16 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                       <p className="text-gray-800 text-sm">{comment.content}</p>
                     </div>
                     <div className="flex items-center gap-4 mt-1 px-2">
-                      <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                      <button 
+                        onClick={() => toast.success("Đã thích bình luận này!")}
+                        className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold"
+                      >
                         Thích
                       </button>
-                      <button className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold">
+                      <button 
+                        onClick={() => document.getElementById('comment-input')?.focus()}
+                        className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold"
+                      >
                         Trả lời
                       </button>
                       <span className="text-xs text-gray-400">
@@ -249,10 +263,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                     className={isLiked ? "fill-[#ff3131] text-[#ff3131]" : "text-gray-700"}
                   />
                 </button>
-                <button className="hover:scale-110 transition-transform">
-                  <MessageCircle size={24} className="text-gray-700" />
-                </button>
-                <button className="hover:scale-110 transition-transform">
+                <button onClick={handleShare} className="hover:scale-110 transition-transform">
                   <Share2 size={24} className="text-gray-700" />
                 </button>
               </div>
@@ -285,6 +296,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                 </div>
               )}
               <input
+                id="comment-input"
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}

@@ -11,8 +11,6 @@ import { storyService } from "@/api/storyService";
 import { useState, useEffect, useRef } from "react";
 
 // Dữ liệu sẽ được fetch từ API trong tương lai
-const suggestedTravelers: any[] = [];
-const trendingDestinations: any[] = [];
 const mockStories: any[] = [];
 
 export function WanderLanding() {
@@ -303,9 +301,9 @@ export function WanderLanding() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-3xl mx-auto">
         {/* Main Feed */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           {/* Feed Header */}
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
@@ -341,54 +339,6 @@ export function WanderLanding() {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Trending Destinations */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="text-[#ff3131]" size={20} />
-              <h3 className="font-bold text-gray-900">{t("trendingDestinations", "landing")}</h3>
-            </div>
-            <div className="space-y-3">
-              {trendingDestinations.map((dest, index) => (
-                <div
-                  key={dest.name}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FFF5F3] transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-gray-900 group-hover:text-[#ff3131] transition-colors">
-                        {translateTrendingDestName(dest.name, language)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {language === 'vi' ? dest.count : dest.count.replace("nhật ký", "journals")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Suggested Travelers */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-gray-900 mb-4">{t("suggestedTravelers", "landing")}</h3>
-            <div className="space-y-3">
-              {suggestedTravelers.map((traveler) => (
-                <UserCard key={traveler.name} {...traveler} />
-              ))}
-            </div>
-            <Link
-              to="/friends"
-              className="block text-center text-sm text-[#ff3131] font-semibold mt-4 hover:text-[#ff914d] transition-colors"
-            >
-              {t("seeMoreTravelers", "landing")}
-            </Link>
-          </div>
-        </div>
       </div>
 
       {/* Create Story Modal */}
