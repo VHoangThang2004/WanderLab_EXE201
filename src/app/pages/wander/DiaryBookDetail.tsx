@@ -6,7 +6,7 @@ import { FlipBook } from "../../components/wander/book/FlipBook";
 import { Button } from "../../components/ui/button";
 import { ArrowLeft, BookOpen, Download, FileText, Pencil, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import { exportToPDF, exportToWord } from "@/utils/exportUtils";
+import { exportToPDF } from "@/utils/exportUtils";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { CreateEditDiaryBookModal } from "../../components/wander/book/CreateEditDiaryBookModal";
@@ -21,7 +21,6 @@ export function DiaryBookDetail() {
   const [availableDiaries, setAvailableDiaries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [isExportingWord, setIsExportingWord] = useState(false);
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -55,18 +54,6 @@ export function DiaryBookDetail() {
       toast.error(`Xuất PDF thất bại: ${result.error}`);
     }
     setIsExportingPDF(false);
-  };
-
-  const handleExportWord = () => {
-    setIsExportingWord(true);
-    toast.info("Đang tạo file Word...");
-    const success = exportToWord("exportable-diary-book", `NhatKy_HanhTrinh_${book?.title || 'WanderLab'}`);
-    if (success) {
-      toast.success("Đã tải xuống file Word thành công!");
-    } else {
-      toast.error("Xuất Word thất bại.");
-    }
-    setIsExportingWord(false);
   };
 
   const handleEditBook = async (payload: any, selectedIds: string[]) => {
@@ -139,15 +126,7 @@ export function DiaryBookDetail() {
               
               <div className="h-8 w-px bg-slate-200 mx-2 self-center"></div>
 
-              <Button 
-                variant="outline" 
-                className="border-gray-300 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                onClick={handleExportWord}
-                disabled={isExportingWord || diaries.length === 0}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                {isExportingWord ? 'Đang xuất...' : 'Xuất file Word'}
-              </Button>
+              <div className="h-8 w-px bg-slate-200 mx-2 self-center"></div>
               <Button 
                 className="bg-orange-600 hover:bg-orange-700 text-white"
                 onClick={handleExportPDF}
@@ -202,9 +181,9 @@ export function DiaryBookDetail() {
 
       {/* Hidden container for Export */}
       <div className="hidden">
-        <div id="exportable-diary-book" style={{ padding: '32px', backgroundColor: '#ffffff', color: '#000000', width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
+        <div id="exportable-diary-book" style={{ padding: '40px', backgroundColor: '#ffffff', color: '#1f2937', maxWidth: '800px', margin: '0 auto', fontFamily: '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', lineHeight: '1.6' }}>
           {/* Cover Page */}
-          <div style={{ textAlign: 'center', marginBottom: '64px', height: '270mm', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px', minHeight: '800px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <h1 style={{ fontSize: '36pt', fontWeight: 'bold', color: '#ea580c', marginBottom: '20px' }}>{book?.title || 'HÀNH TRÌNH THANH XUÂN'}</h1>
             <h2 style={{ fontSize: '24pt', color: '#333' }}>Tác giả: {user?.full_name || 'Người Dùng WanderLab'}</h2>
             <div style={{ marginTop: '50px', fontSize: '14pt', color: '#666' }}>
@@ -212,7 +191,7 @@ export function DiaryBookDetail() {
             </div>
             {book?.cover_image_url && (
               <div style={{ marginTop: '100px' }}>
-                <img src={book.cover_image_url} alt="Cover" crossOrigin="anonymous" style={{ width: '80%', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} />
+                <img src={book.cover_image_url} alt="Cover" crossOrigin="anonymous" style={{ width: '80%', maxHeight: '400px', objectFit: 'cover', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} />
               </div>
             )}
           </div>
@@ -243,7 +222,7 @@ export function DiaryBookDetail() {
               {/* Cover Image */}
               {diary.image && (
                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                  <img src={diary.image} alt="Diary Cover" crossOrigin="anonymous" style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }} />
+                  <img src={diary.image} alt="Diary Cover" crossOrigin="anonymous" style={{ maxWidth: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px' }} />
                 </div>
               )}
 
@@ -312,7 +291,7 @@ export function DiaryBookDetail() {
           ))}
 
           {/* Back Cover */}
-          <div style={{ pageBreakBefore: 'always', height: '270mm', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ pageBreakBefore: 'always', minHeight: '800px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <h1 style={{ fontSize: '24pt', fontWeight: 'bold', color: '#ccc' }}>WanderLab</h1>
             <p style={{ marginTop: '20px', color: '#888', fontSize: '14pt' }}>Khám phá thế giới qua lăng kính của bạn.</p>
           </div>

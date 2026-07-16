@@ -10,13 +10,14 @@ export const exportToPDF = async (elementId: string, filename: string): Promise<
   if (!element) return { success: false, error: "Element not found" };
   
   const opt = {
-    margin:       10,
+    margin:       [10, 10, 10, 10], // top, right, bottom, left
     filename:     `${filename}.pdf`,
     image:        { type: 'jpeg' as const, quality: 0.98 },
     html2canvas:  { 
       scale: 2, 
       useCORS: true, 
       letterRendering: true,
+      windowWidth: 900,
       onclone: (document) => {
         const el = document.getElementById(elementId);
         if (el && el.parentElement) {
@@ -25,7 +26,6 @@ export const exportToPDF = async (elementId: string, filename: string): Promise<
         }
       },
       ignoreElements: (element) => {
-        // Ignore style and link tags to prevent html2canvas from parsing Tailwind v4's oklch colors and crashing
         if (element.tagName === 'STYLE' || (element.tagName === 'LINK' && element.getAttribute('rel') === 'stylesheet')) {
           return true;
         }
@@ -53,13 +53,23 @@ export const exportToWord = (elementId: string, filename: string): boolean => {
   const element = document.getElementById(elementId);
   if (!element) return false;
 
-  // Lấy nội dung HTML và bao bọc bằng tag Word
-  const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
-        "xmlns:w='urn:schemas-microsoft-com:office:word' " +
-        "xmlns='http://www.w3.org/TR/REC-html40'>" +
-        "<head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>";
+  // Lấy nội dung HTML và bao bọc bằng tag Word kèm theo style mặc định
+  const header = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset='utf-8'>
+      <title>Export HTML to Word</title>
+      <style>
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1f2937; line-height: 1.6; }
+        h1, h2, h3, h4 { color: #ea580c; font-weight: bold; }
+        img { max-width: 100%; height: auto; border-radius: 8px; }
+        .page-break { page-break-before: always; }
+      </style>
+    </head>
+    <body>
+  `;
   const footer = "</body></html>";
-  const sourceHTML = header + element.innerHTML + footer;
+  const sourceHTML = header + element.outerHTML + footer;
   
   const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
   const fileDownload = document.createElement("a");
