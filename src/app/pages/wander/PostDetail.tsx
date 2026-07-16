@@ -41,18 +41,18 @@ export function WanderPostDetail() {
   const postData = {
     id: diary.id,
     author: {
-      name: diary.author?.full_name || 'Unknown',
-      avatar: diary.author?.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
+      name: diary.author?.name || 'Unknown',
+      avatar: diary.author?.avatar || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04',
     },
-    image: diary.cover_image_url || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
-    location: diary.location,
-    date: new Date(diary.created_at).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }),
-    caption: diary.description,
-    likes: diary.likes_count || 0,
-    comments: diary.comments_count || 0,
-    isLiked: false, // Could be fetched individually, but for shared view we default to false or fetch interaction
+    image: diary.image || 'https://images.unsplash.com/photo-1547024842-7c86b2226ef5',
+    location: diary.location || '',
+    date: diary.dates || '',
+    caption: diary.description || '',
+    likes: diary.likesCount || 0,
+    comments: diary.commentsCount || 0,
+    isLiked: false,
     isSaved: false,
-    groupSize: diary.group_size || '1 người',
+    groupSize: diary.groupSize || '1 người',
   };
 
   return (
