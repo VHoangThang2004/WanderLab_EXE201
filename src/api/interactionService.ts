@@ -164,6 +164,28 @@ export const interactionService = {
     };
   },
 
+  async updateComment(commentId: string, content: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .update({ content: content })
+      .eq('id', commentId);
+    if (error) throw error;
+  },
+
+  async deleteComment(commentId: string, diaryId: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+    if (error) throw error;
+    
+    // Giảm comment_count trong diaries
+    const { error: rpcError } = await supabase.rpc('decrement_comment', { row_id: diaryId });
+    if (rpcError) {
+      console.warn("RPC decrement_comment failed:", rpcError);
+    }
+  },
+
   // === FOLLOWS ===
   async checkIsFollowing(followerId: string, followingId: string): Promise<boolean> {
     const { data, error } = await supabase

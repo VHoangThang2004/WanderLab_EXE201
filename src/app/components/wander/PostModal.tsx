@@ -1,7 +1,7 @@
-import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon } from "lucide-react";
+import { X, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, MapPin, Calendar, Users as UsersIcon, Pencil, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { UserAvatar } from "./UserAvatar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuthStore, useNotificationStore } from "@/stores";
 import { interactionService, CommentItem } from "@/api/interactionService";
 import { toast } from "sonner";
@@ -32,11 +32,50 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   const [isSaved, setIsSaved] = useState(post.isSaved);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [commentText, setCommentText] = useState("");
+  const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   const { user } = useAuthStore();
   const { addNotification } = useNotificationStore();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+  const groupedComments = useMemo(() => {
+    if (!comments) return [];
+    const ascending = [...comments].reverse();
+    const threads: CommentItem[][] = [];
+
+    for (const comment of ascending) {
+      const isReply = comment.content.trim().startsWith('@');
+      let addedToThread = false;
+      
+      if (isReply) {
+        const taggedUser = ascending.find(c => comment.content.trim().startsWith(`@${c.author.full_name}`));
+        if (taggedUser) {
+          const threadIndex = threads.findIndex(t => t.some(c => c.id === taggedUser.id));
+          if (threadIndex !== -1) {
+            const thread = threads[threadIndex];
+            thread.push(comment);
+            threads.splice(threadIndex, 1);
+            threads.push(thread);
+            addedToThread = true;
+          }
+        }
+      }
+      
+      if (!addedToThread) {
+        threads.push([comment]);
+      }
+    }
+
+    return threads.reverse().flat();
+  }, [comments]);
 
   useEffect(() => {
     if (isOpen && post.id) {
@@ -53,6 +92,43 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
       console.error("Failed to load comments:", error);
     } finally {
       setIsLoadingComments(false);
+    }
+  };
+
+
+  const handleReply = async () => {
+    if (!replyText.trim() || !user) return;
+    try {
+      const newReply = await interactionService.addComment(post.id, user.id, replyText);
+      setComments(prev => [newReply, ...prev]);
+      setReplyText("");
+      setReplyingTo(null);
+      toast.success("Đã trả lời bình luận!");
+    } catch (err: any) {
+      toast.error("Lỗi khi trả lời");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm("Bạn có chắc muốn xóa bình luận này không?")) return;
+    try {
+      await interactionService.deleteComment(commentId, post.id);
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      toast.success("Đã xóa bình luận!");
+    } catch (err) {
+      toast.error("Lỗi khi xóa bình luận");
+    }
+  };
+
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editCommentText.trim()) return;
+    try {
+      await interactionService.updateComment(commentId, editCommentText);
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, content: editCommentText } : c));
+      setEditingCommentId(null);
+      toast.success("Đã cập nhật bình luận!");
+    } catch (err) {
+      toast.error("Lỗi khi cập nhật bình luận");
     }
   };
 
@@ -187,7 +263,10 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
               <div>
                 <p className="text-gray-900">
                   <span className="font-bold mr-2">{post.author.name}</span>
-                  {post.caption}
+                  {post.caption.length > 150 && !isCaptionExpanded 
+                    ? <>{post.caption.substring(0, 150)}... <button onClick={() => setIsCaptionExpanded(true)} className="text-gray-500 hover:text-gray-700 font-semibold text-sm ml-1">Xem thêm</button></>
+                    : <>{post.caption} {post.caption.length > 150 && <button onClick={() => setIsCaptionExpanded(false)} className="text-gray-500 hover:text-gray-700 font-semibold text-sm ml-1">Ẩn bớt</button>}</>
+                  }
                 </p>
               </div>
             </div>
@@ -209,30 +288,101 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {isLoadingComments ? (
               <div className="text-center text-sm text-gray-500 py-4">Đang tải bình luận...</div>
-            ) : comments.length === 0 ? (
+            ) : groupedComments.length === 0 ? (
               <div className="text-center text-sm text-gray-500 py-4">Chưa có bình luận nào. Hãy là người đầu tiên!</div>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="flex items-start gap-3">
+              groupedComments.map((comment) => {
+                const isReply = comment.content.trim().startsWith('@');
+                let tag = '';
+                let restOfContent = comment.content;
+
+                if (isReply) {
+                  // Try to find the tagged user by matching the prefix
+                  const taggedUser = comments.find(c => comment.content.trim().startsWith(`@${c.author.full_name}`));
+                  if (taggedUser) {
+                    tag = `@${taggedUser.author.full_name}`;
+                    restOfContent = comment.content.trim().substring(tag.length);
+                  } else {
+                    // Fallback if user not found (e.g. they changed name or it's a manual tag)
+                    const parts = comment.content.trim().split(' ');
+                    tag = parts[0];
+                    restOfContent = parts.slice(1).join(' ');
+                  }
+                }
+
+                return (
+                <div key={comment.id} className={`flex items-start gap-3 ${isReply ? 'ml-12' : ''}`}>
                   <UserAvatar
                     src={comment.author.avatar_url}
                     name={comment.author.full_name}
                     className="w-8 h-8 flex-shrink-0 text-xs"
                   />
                   <div className="flex-1">
-                    <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                    <div className="bg-gray-100 rounded-2xl px-4 py-2 relative group">
                       <p className="font-bold text-sm text-gray-900">{comment.author.full_name}</p>
-                      <p className="text-gray-800 text-sm">{comment.content}</p>
+                      
+                      {editingCommentId === comment.id ? (
+                        <div className="mt-1">
+                          <input 
+                            value={editCommentText}
+                            onChange={(e) => setEditCommentText(e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[#ff3131]"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdateComment(comment.id);
+                              if (e.key === 'Escape') setEditingCommentId(null);
+                            }}
+                          />
+                          <div className="flex gap-2 mt-1">
+                            <button onClick={() => handleUpdateComment(comment.id)} className="text-xs text-[#ff3131] font-semibold">Lưu</button>
+                            <button onClick={() => setEditingCommentId(null)} className="text-xs text-gray-500 font-semibold">Hủy</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-800 text-sm whitespace-pre-wrap">
+                          {isReply && <span className="text-[#ff3131] font-semibold mr-1">{tag}</span>}
+                          {restOfContent.length > 150 && !expandedComments[comment.id]
+                            ? <>{restOfContent.substring(0, 150).trimStart()}... <button onClick={() => setExpandedComments(prev => ({...prev, [comment.id]: true}))} className="text-gray-500 hover:text-gray-700 font-semibold text-xs ml-1">Xem thêm</button></>
+                            : <>{restOfContent.trimStart()} {restOfContent.length > 150 && <button onClick={() => setExpandedComments(prev => ({...prev, [comment.id]: false}))} className="text-gray-500 hover:text-gray-700 font-semibold text-xs ml-1">Ẩn bớt</button>}</>
+                          }
+                        </p>
+                      )}
+                      
+                      {/* Delete/Edit Icon */}
+                      {user?.id === comment.user_id && editingCommentId !== comment.id && (
+                        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                           <button onClick={() => {
+                             setEditingCommentId(comment.id);
+                             setEditCommentText(comment.content);
+                           }} className="text-gray-500 hover:text-blue-500 bg-white p-1 rounded-full shadow-sm">
+                             <Pencil size={14} />
+                           </button>
+                           <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-500 hover:text-red-500 bg-white p-1 rounded-full shadow-sm">
+                             <Trash2 size={14} />
+                           </button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 mt-1 px-2">
                       <button 
-                        onClick={() => toast.success("Đã thích bình luận này!")}
-                        className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold"
+                        onClick={() => {
+                          setLikedComments(prev => ({ ...prev, [comment.id]: !prev[comment.id] }));
+                          if (!likedComments[comment.id]) toast.success("Đã thích bình luận này!");
+                        }}
+                        className={`text-xs font-semibold ${likedComments[comment.id] ? 'text-[#ff3131]' : 'text-gray-500 hover:text-[#ff3131]'}`}
                       >
                         Thích
                       </button>
                       <button 
-                        onClick={() => document.getElementById('comment-input')?.focus()}
+                        onClick={() => {
+                          if (replyingTo === comment.id) {
+                            setReplyingTo(null);
+                          } else {
+                            setReplyingTo(comment.id);
+                            setReplyText(`@${comment.author.full_name} `);
+                            setTimeout(() => document.getElementById(`reply-input-${comment.id}`)?.focus(), 50);
+                          }
+                        }}
                         className="text-xs text-gray-500 hover:text-[#ff3131] font-semibold"
                       >
                         Trả lời
@@ -244,10 +394,33 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
                         <span className="text-xs text-gray-500">{comment.likes_count} thích</span>
                       )}
                     </div>
+                    {/* Inline Reply Input */}
+                    {replyingTo === comment.id && (
+                      <div className="mt-2 ml-2 flex items-center gap-2">
+                        <input
+                          id={`reply-input-${comment.id}`}
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && handleReply()}
+                          placeholder="Viết trả lời..."
+                          className="flex-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#ff3131]"
+                        />
+                        {replyText.trim() && (
+                          <button
+                            onClick={handleReply}
+                            className="text-[#ff3131] font-bold text-xs hover:text-[#ff914d]"
+                          >
+                            Đăng
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
+              );
+            })
+          )}
           </div>
 
           {/* Actions Bar */}

@@ -35,7 +35,7 @@ export function WanderDashboard() {
   const { limits, getUsage } = useUsageLimits();
   const { itineraries: savedItineraries, removeItinerary } = useSavedItineraries();
   const [openItinerary, setOpenItinerary] = useState(null);
-  const [activeTab, setActiveTab] = useState<"posts" | "saved_itineraries" | "trips">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "saved_posts" | "saved_itineraries" | "trips">("posts");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [isUpdatingCover, setIsUpdatingCover] = useState(false);
@@ -228,57 +228,59 @@ export function WanderDashboard() {
 
         {/* Profile Info */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative pb-6">
-            {/* Avatar */}
-            <div className="absolute -top-16 md:-top-20 group/avatar cursor-pointer">
-              <input
-                type="file"
-                id="avatar-upload"
-                className="hidden"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                disabled={isUpdatingAvatar}
-              />
-              <div
-                onClick={() => setShowAvatarOptions(true)}
-                className="cursor-pointer block relative"
-              >
-                {userProfile.avatar ? (
-                  <ImageWithFallback
-                    src={userProfile.avatar}
-                    alt={userProfile.name}
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
-                  />
-                ) : (
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
-                    {userProfile.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                {/* Hover overlay with Camera Icon */}
-                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  {isUpdatingAvatar ? (
-                    <span className="text-xs font-semibold animate-pulse">{t("loading")}</span>
+          <div className="relative pb-6 flex flex-col md:flex-row gap-8 justify-between">
+            {/* Left Column: Avatar & Profile Details */}
+            <div className="flex-1">
+              {/* Avatar */}
+              <div className="absolute -top-16 md:-top-20 group/avatar cursor-pointer">
+                <input
+                  type="file"
+                  id="avatar-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  disabled={isUpdatingAvatar}
+                />
+                <div
+                  onClick={() => setShowAvatarOptions(true)}
+                  className="cursor-pointer block relative"
+                >
+                  {userProfile.avatar ? (
+                    <ImageWithFallback
+                      src={userProfile.avatar}
+                      alt={userProfile.name}
+                      className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-6 border-white shadow-xl"
+                    />
                   ) : (
-                    <Image size={24} />
+                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-6 border-white shadow-xl bg-gradient-to-r from-[#ff3131] to-[#ff914d] flex items-center justify-center text-white font-bold text-5xl">
+                      {userProfile.name.charAt(0).toUpperCase()}
+                    </div>
                   )}
+                  {/* Hover overlay with Camera Icon */}
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    {isUpdatingAvatar ? (
+                      <span className="text-xs font-semibold animate-pulse">{t("loading")}</span>
+                    ) : (
+                      <Image size={24} />
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Profile Actions */}
-            <div className="flex justify-end pt-4 gap-3">
-              <button
-                onClick={openEditModal}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center gap-2"
-              >
-                <Settings size={16} />
-                {t("edit")}
-              </button>
-            </div>
+              {/* Profile Actions (Mobile) */}
+              <div className="flex justify-end pt-4 gap-3 md:hidden">
+                <button
+                  onClick={openEditModal}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center gap-2"
+                >
+                  <Settings size={16} />
+                  {t("edit")}
+                </button>
+              </div>
 
-            {/* Name & Bio */}
-            <div className="mt-4">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{userProfile.name}</h1>
+              {/* Name & Bio */}
+              <div className="mt-4 md:mt-24">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{userProfile.name}</h1>
               {user?.email && (
                 <p className="text-sm text-gray-500 mb-1">{user.email}</p>
               )}
@@ -313,22 +315,20 @@ export function WanderDashboard() {
               {/* Usage Plan Status */}
               {!isAdmin && (
                 <div className="mt-6 max-w-2xl flex flex-col sm:flex-row gap-4">
-                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${
-                    user?.plan === 'pro' 
+                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${user?.plan === 'pro'
                       ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
                       : user?.plan === 'plus'
                         ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
                         : 'bg-white border-gray-100'
-                  }`}>
+                    }`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <Wallet size={18} className={user?.plan === 'pro' ? 'text-orange-500' : 'text-gray-500'} />
                         <span className="font-bold text-gray-900">
-                          {language === 'vi' ? 'Gói hiện tại:' : 'Current Plan:'} 
-                          <span className={`ml-2 uppercase tracking-wide font-extrabold ${
-                            user?.plan === 'pro' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ff3131] to-[#ff914d]' 
-                            : user?.plan === 'plus' ? 'text-[#ff3131]' : 'text-gray-700'
-                          }`}>
+                          {language === 'vi' ? 'Gói hiện tại:' : 'Current Plan:'}
+                          <span className={`ml-2 uppercase tracking-wide font-extrabold ${user?.plan === 'pro' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ff3131] to-[#ff914d]'
+                              : user?.plan === 'plus' ? 'text-[#ff3131]' : 'text-gray-700'
+                            }`}>
                             {user?.plan || 'Free'}
                           </span>
                         </span>
@@ -339,7 +339,7 @@ export function WanderDashboard() {
                         </Link>
                       )}
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-xs text-gray-600 font-medium">
                       <div className="flex flex-col">
                         <div className="flex justify-between mb-1.5">
@@ -384,14 +384,77 @@ export function WanderDashboard() {
             </div>
           </div>
 
+          {/* Right Column: Sidebar (Quick Actions & Activity) */}
+            {!isAdmin && (
+              <div className="w-full md:w-[320px] lg:w-[350px] flex-shrink-0 pt-4 md:pt-6 space-y-6">
+                {/* Desktop Edit Button */}
+                <div className="hidden md:flex justify-end mb-4">
+                  <button
+                    onClick={openEditModal}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center gap-2"
+                  >
+                    <Settings size={16} />
+                    {t("edit")}
+                  </button>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
+                  <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
+                  <Link
+                    to="/create"
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md transition-all text-center"
+                  >
+                    {t("createJournal")}
+                  </Link>
+                  <Link
+                    to="/create-itinerary"
+                    className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
+                  >
+                    <Route size={16} />
+                    {t("aiPlanner")}
+                  </Link>
+                </div>
+
+                {/* Activity Summary */}
+                <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
+                  <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Heart size={14} className="text-[#ff3131]" />
+                        <span>{t("totalLikes")}</span>
+                      </div>
+                      <span className="font-bold text-gray-900">{totalLikes.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MessageCircle size={14} className="text-[#ff3131]" />
+                        <span>{t("comments")}</span>
+                      </div>
+                      <span className="font-bold text-gray-900">{totalComments.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Bookmark size={14} className="text-[#ff3131]" />
+                        <span>{t("bookmarks")}</span>
+                      </div>
+                      <span className="font-bold text-gray-900">{totalBookmarks.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Tabs */}
           {!isAdmin && (
-            <div className="flex gap-8 border-t border-gray-100">
+            <div className="flex w-full border-t border-gray-100">
               <button
                 onClick={() => setActiveTab("posts")}
-                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "posts"
+                className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "posts"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 {t("myJournals")}
@@ -400,10 +463,22 @@ export function WanderDashboard() {
                 )}
               </button>
               <button
-                onClick={() => setActiveTab("saved_itineraries")}
-                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "saved_itineraries"
+                onClick={() => setActiveTab("saved_posts")}
+                className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "saved_posts"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+              >
+                {language === 'vi' ? 'Bài Viết Đã Lưu' : 'Saved Posts'}
+                {activeTab === "saved_posts" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("saved_itineraries")}
+                className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "saved_itineraries"
+                  ? "text-[#ff3131]"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 {t("savedItineraries")}
@@ -414,9 +489,9 @@ export function WanderDashboard() {
 
               <button
                 onClick={() => setActiveTab("trips")}
-                className={`px-4 py-4 font-semibold transition-all relative ${activeTab === "trips"
+                className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "trips"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 {t("itineraryStats")}
@@ -431,11 +506,8 @@ export function WanderDashboard() {
 
       {/* Content */}
       {!isAdmin && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              {activeTab === "posts" && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {activeTab === "posts" && (
                 <div className="space-y-6">
                   {/* Create Post Card */}
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
@@ -490,6 +562,30 @@ export function WanderDashboard() {
                 </div>
               )}
 
+              {activeTab === "saved_posts" && (
+                <div className="space-y-6">
+                  {isLoadingSaved ? (
+                    <div className="text-center py-10 text-gray-500">
+                      {language === 'vi' ? 'Đang tải bài viết đã lưu...' : 'Loading saved posts...'}
+                    </div>
+                  ) : savedDiaries.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+                      <Bookmark className="mx-auto text-gray-300 mb-4" size={48} />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {language === 'vi' ? 'Chưa có bài viết nào được lưu' : 'No saved posts yet'}
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        {language === 'vi' ? 'Hãy lưu các bài viết thú vị để xem lại sau!' : 'Save interesting posts to read them later!'}
+                      </p>
+                    </div>
+                  ) : (
+                    savedDiaries.map((post) => (
+                      <JournalPostCard key={post.id} {...post} />
+                    ))
+                  )}
+                </div>
+              )}
+
               {activeTab === "saved_itineraries" && (
                 <div className="space-y-6">
                   <div>
@@ -523,8 +619,8 @@ export function WanderDashboard() {
                               <div className="absolute bottom-4 left-5 right-5">
                                 <h4 className="text-white font-bold text-xl mb-1">{itinerary.destination}</h4>
                                 <div className="flex flex-wrap gap-2 text-xs text-white/90">
-                                  <span className="flex items-center gap-1"><Users size={12}/> {itinerary.groupSize}</span>
-                                  <span className="flex items-center gap-1"><Wallet size={12}/> {itinerary.budget}</span>
+                                  <span className="flex items-center gap-1"><Users size={12} /> {itinerary.groupSize}</span>
+                                  <span className="flex items-center gap-1"><Wallet size={12} /> {itinerary.budget}</span>
                                 </div>
                               </div>
                             </div>
@@ -583,63 +679,6 @@ export function WanderDashboard() {
                   <VietnamMap visitedProvinces={visitedProvinces} />
                 </div>
               )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
-                <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
-                <Link
-                  to="/create"
-                  className="block w-full px-4 py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-md transition-all text-center"
-                >
-                  {t("createJournal")}
-                </Link>
-                <Link
-                  to="/create-itinerary"
-                  className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
-                >
-                  <Route size={16} />
-                  {t("aiPlanner")}
-                </Link>
-                <Link
-                  to="/explore"
-                  className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center"
-                >
-                  {t("searchExplore")}
-                </Link>
-              </div>
-
-              {/* Activity Summary */}
-              <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
-                <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Heart size={14} className="text-[#ff3131]" />
-                      <span>{t("totalLikes")}</span>
-                    </div>
-                    <span className="font-bold text-gray-900">{totalLikes.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MessageCircle size={14} className="text-[#ff3131]" />
-                      <span>{t("comments")}</span>
-                    </div>
-                    <span className="font-bold text-gray-900">{totalComments.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Bookmark size={14} className="text-[#ff3131]" />
-                      <span>{t("bookmarks")}</span>
-                    </div>
-                    <span className="font-bold text-gray-900">{totalBookmarks.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
