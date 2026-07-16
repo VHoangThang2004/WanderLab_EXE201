@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { friendService } from "@/api/friendService";
 
 export function WanderFriends() {
-  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups" | "suggested">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "friends" | "groups" | "suggested">("friends");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
@@ -226,6 +226,18 @@ export function WanderFriends() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
+          onClick={() => setActiveTab("friends")}
+          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "friends"
+              ? "text-[#ff3131]"
+              : "text-gray-600 hover:text-gray-900"
+            }`}
+        >
+          Bạn bè ({filteredFriends.length})
+          {activeTab === "friends" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab("requests")}
           className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "requests"
               ? "text-[#ff3131]"
@@ -239,18 +251,6 @@ export function WanderFriends() {
             </span>
           )}
           {activeTab === "requests" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("friends")}
-          className={`px-6 py-3 font-semibold transition-all relative ${activeTab === "friends"
-              ? "text-[#ff3131]"
-              : "text-gray-600 hover:text-gray-900"
-            }`}
-        >
-          Bạn bè ({filteredFriends.length})
-          {activeTab === "friends" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#ff3131] to-[#ff914d]" />
           )}
         </button>

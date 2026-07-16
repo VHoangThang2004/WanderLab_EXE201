@@ -297,18 +297,7 @@ export function WanderDashboard() {
                     <span className="font-bold text-gray-900">{userProfile.diariesCount}</span>
                     <span className="text-gray-600 ml-1">{t("diariesInfo")}</span>
                   </div>
-                  <div>
-                    <button className="hover:text-[#ff3131] transition-colors">
-                      <span className="font-bold text-gray-900">{userProfile.followersCount.toLocaleString("vi-VN")}</span>
-                      <span className="text-gray-600 ml-1">{t("followInfo")}</span>
-                    </button>
-                  </div>
-                  <div>
-                    <button className="hover:text-[#ff3131] transition-colors">
-                      <span className="font-bold text-gray-900">{userProfile.followingCount}</span>
-                      <span className="text-gray-600 ml-1">{t("followingInfo")}</span>
-                    </button>
-                  </div>
+
                 </div>
               )}
 

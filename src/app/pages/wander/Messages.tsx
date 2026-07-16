@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore, useLanguageStore } from '@/stores';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { UserAvatar } from '../../components/wander/UserAvatar';
-import { Search, Phone, Video, Info, MoreVertical, Send, Image as ImageIcon, Smile, Paperclip, Check, CheckCheck, MessageCircle, PhoneMissed, PhoneCall } from 'lucide-react';
+import { Search, Phone, Video, Info, MoreVertical, Send, Image as ImageIcon, Smile, Paperclip, Check, CheckCheck, MessageCircle, PhoneMissed, PhoneCall, Edit2, Trash2, Plus, X, Palette, Type } from 'lucide-react';
 import { CallModal } from '../../components/wander/CallModal';
 import { useSearchParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { messageService, ChatContact, ChatMessage } from '@/api/messageService';
+import { friendService } from '@/api/friendService';
 import { supabase } from '@/lib/supabase';
 
 const EMOJI_LIST = [
@@ -44,6 +45,8 @@ export function MessagesPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(userIdParam || null);
   const [searchQuery, setSearchQuery] = useState("");
   const [inputMessage, setInputMessage] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
   
   // Set first chat as active if none selected and chats are loaded
   useEffect(() => {
@@ -68,6 +71,39 @@ export function MessagesPage() {
       queryClient.invalidateQueries({ queryKey: ['recentChats', user?.id] });
     }
   });
+
+  const updateMessageMutation = useMutation({
+    mutationFn: ({ messageId, content }: { messageId: string, content: string }) => 
+      messageService.updateMessage(messageId, user?.id || '', content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', user?.id, activeChatId] });
+      setEditingMessageId(null);
+      setInputMessage("");
+    }
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: (messageId: string) => 
+      messageService.deleteMessage(messageId, user?.id || ''),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', user?.id, activeChatId] });
+    }
+  });
+
+  const deleteChatMutation = useMutation({
+    mutationFn: () => messageService.deleteChat(user?.id || '', activeChatId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recentChats', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['messages', user?.id] });
+      setActiveChatId(null);
+    }
+  });
+
+  const handleDeleteChat = () => {
+    if (window.confirm(language === 'vi' ? 'Bạn có chắc chắn muốn xóa toàn bộ đoạn chat này?' : 'Are you sure you want to delete this entire chat?')) {
+      deleteChatMutation.mutate();
+    }
+  };
   
   const { data: targetProfile } = useQuery({
     queryKey: ['profile', activeChatId],
@@ -139,8 +175,12 @@ export function MessagesPage() {
     if (!inputMessage.trim() && !isUploading) return;
     if (!activeChatId) return;
 
-    sendMessageMutation.mutate({ content: inputMessage });
-    setInputMessage("");
+    if (editingMessageId) {
+      updateMessageMutation.mutate({ messageId: editingMessageId, content: inputMessage.trim() });
+    } else {
+      sendMessageMutation.mutate({ content: inputMessage });
+      setInputMessage("");
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,14 +213,48 @@ export function MessagesPage() {
 
   const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
+  const { data: friendsData } = useQuery({
+    queryKey: ['friends', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const data = await friendService.fetchFriendData(user.id);
+      return data.friends.map(f => ({
+        id: f.id,
+        name: f.full_name || 'Người dùng',
+        avatar: f.avatar_url || '',
+        username: `@${(f.full_name || 'user').toLowerCase().replace(/\s+/g, '')}`
+      }));
+    },
+    enabled: !!user?.id && isNewChatModalOpen
+  });
+  
+  const handleEditMessage = (msg: ChatMessage) => {
+    setEditingMessageId(msg.id);
+    setInputMessage(msg.content);
+  };
+  
+  const handleDeleteMessage = (msgId: string) => {
+    if (window.confirm(language === 'vi' ? 'Bạn có chắc chắn muốn xóa tin nhắn này?' : 'Are you sure you want to delete this message?')) {
+      deleteMessageMutation.mutate(msgId);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-0px)] bg-white dark:bg-black rounded-tl-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-white/10 m-2 lg:m-4">
       {/* ── Left Sidebar (Chat List) ── */}
       <div className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-card ${activeChatId ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-200 dark:border-white/10">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            {language === 'vi' ? 'Đoạn chat' : 'Chats'}
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {language === 'vi' ? 'Đoạn chat' : 'Chats'}
+            </h1>
+            <button 
+              onClick={() => setIsNewChatModalOpen(true)}
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -348,8 +422,26 @@ export function MessagesPage() {
                           )}
                         </div>
                         
-                        {/* Reaction Buttons on Hover */}
-                        <div className={`absolute top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? '-left-20' : '-right-20'}`}>
+                        {/* Reaction and Edit/Delete Buttons on Hover */}
+                        <div className={`absolute top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? '-left-32' : '-right-20'}`}>
+                          {isMe && (
+                            <>
+                              <button
+                                onClick={() => handleEditMessage(msg)}
+                                className="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-700 rounded-full shadow hover:scale-110 transition-transform text-gray-600 dark:text-gray-300"
+                                title={language === 'vi' ? "Chỉnh sửa" : "Edit"}
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-700 rounded-full shadow hover:scale-110 transition-transform text-red-500"
+                                title={language === 'vi' ? "Xóa" : "Delete"}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </>
+                          )}
                           {['❤️', '👍', '😂'].map((emoji) => (
                             <button
                               key={emoji}
@@ -414,10 +506,22 @@ export function MessagesPage() {
                     type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder={language === 'vi' ? "Aa" : "Message..."}
+                    placeholder={editingMessageId ? (language === 'vi' ? "Sửa tin nhắn..." : "Edit message...") : (language === 'vi' ? "Aa" : "Message...")}
                     className="flex-1 bg-transparent px-4 py-3 focus:outline-none text-sm text-gray-900 dark:text-white max-h-32"
                     autoComplete="off"
                   />
+                  {editingMessageId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingMessageId(null);
+                        setInputMessage("");
+                      }}
+                      className="p-1 mr-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
                   <div className="relative">
                     <button 
                       type="button" 
@@ -455,62 +559,20 @@ export function MessagesPage() {
                   </div>
                 </div>
                 
-                {inputMessage.trim() || isUploading ? (
-                  <button 
-                    type="submit" 
-                    disabled={isUploading}
-                    className="p-3 mb-0.5 bg-[#ff3131] text-white hover:bg-[#ff1f1f] rounded-full transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50"
-                  >
-                    {isUploading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={20} />}
-                  </button>
-                ) : (
-                  <button 
-                    type="button" 
-                    onClick={() => sendMessageMutation.mutate({ content: '👍' })}
-                    className="p-3 mb-0.5 text-[#ff3131] hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-all"
-                  >
-                    <span className="text-xl leading-none">👍</span>
-                  </button>
-                )}
+                <button 
+                  type="submit" 
+                  disabled={isUploading || (!inputMessage.trim() && !isUploading)}
+                  className={`p-3 mb-0.5 rounded-full transition-all transform hover:scale-105 active:scale-95 ${
+                    inputMessage.trim() || isUploading 
+                      ? "bg-[#ff3131] text-white hover:bg-[#ff1f1f]" 
+                      : "bg-gray-200 text-gray-400 dark:bg-gray-700 cursor-not-allowed"
+                  }`}
+                >
+                  {isUploading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={20} />}
+                </button>
               </form>
             </div>
-            {/* Right Info Panel */}
-            {showInfoPanel && (
-              <div className="w-64 md:w-80 border-l border-gray-200 dark:border-white/10 flex flex-col bg-white dark:bg-card">
-                <div className="p-6 flex flex-col items-center border-b border-gray-200 dark:border-white/10">
-                  <UserAvatar src={activeChat.avatar} name={activeChat.name} className="w-24 h-24 mb-4 text-3xl" />
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white text-center">{activeChat.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">{activeChat.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</p>
-                  
-                  <div className="flex gap-4">
-                    <button onClick={() => handleStartCall(false)} className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                      <Phone size={18} />
-                    </button>
-                    <button onClick={() => handleStartCall(true)} className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                      <Video size={18} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="p-4 flex-1 overflow-y-auto">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Tùy chỉnh đoạn chat</h4>
-                  <div className="space-y-2">
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">Đổi chủ đề</button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">Thay đổi biểu tượng cảm xúc</button>
-                    <button className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">Chỉnh sửa biệt danh</button>
-                  </div>
-                  
-                  <h4 className="font-semibold text-gray-900 dark:text-white mt-6 mb-2">File phương tiện & File</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {messages.filter(m => m.media_url && m.media_type === 'image').slice(0, 6).map(m => (
-                      <div key={m.id} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                        <img src={m.media_url} alt="Media" className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 dark:bg-black/50 text-gray-500">
@@ -525,6 +587,60 @@ export function MessagesPage() {
         )}
       </div>
 
+      {/* Right Info Panel */}
+      {showInfoPanel && activeChat && (
+        <div className="absolute right-0 top-0 bottom-0 z-30 shadow-2xl xl:static xl:shadow-none xl:z-0 w-72 md:w-80 shrink-0 border-l border-gray-200 dark:border-white/10 flex flex-col bg-white dark:bg-card">
+          <div className="p-4 flex justify-between items-center xl:hidden border-b border-gray-200 dark:border-white/10">
+            <h3 className="font-bold text-gray-900 dark:text-white">{language === 'vi' ? 'Thông tin' : 'Details'}</h3>
+            <button onClick={() => setShowInfoPanel(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full">
+              <X size={20} className="text-gray-500" />
+            </button>
+          </div>
+          <div className="p-6 flex flex-col items-center border-b border-gray-200 dark:border-white/10">
+            <UserAvatar src={activeChat.avatar} name={activeChat.name} className="w-24 h-24 mb-4 text-3xl" />
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white text-center">{activeChat.name}</h3>
+            <p className="text-sm text-gray-500 mb-4">{activeChat.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</p>
+            
+            <div className="flex gap-4">
+              <button onClick={() => handleStartCall(false)} className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <Phone size={18} />
+              </button>
+              <button onClick={() => handleStartCall(true)} className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <Video size={18} />
+              </button>
+            </div>
+          </div>
+          
+          <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">{language === 'vi' ? 'Tùy chỉnh đoạn chat' : 'Chat Settings'}</h4>
+            <div className="space-y-1 mb-6">
+              <button className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+                <span className="flex items-center gap-3"><Palette size={18} className="text-gray-400" /> {language === 'vi' ? 'Đổi chủ đề' : 'Change theme'}</span>
+              </button>
+              <button className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+                <span className="flex items-center gap-3"><Smile size={18} className="text-gray-400" /> {language === 'vi' ? 'Biểu tượng cảm xúc' : 'Emoji'}</span>
+                <span className="text-xl">👍</span>
+              </button>
+              <button className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors">
+                <span className="flex items-center gap-3"><Type size={18} className="text-gray-400" /> {language === 'vi' ? 'Chỉnh sửa biệt danh' : 'Edit nicknames'}</span>
+              </button>
+              <button onClick={handleDeleteChat} className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors">
+                <span className="flex items-center gap-3"><Trash2 size={18} /> {language === 'vi' ? 'Xóa đoạn chat' : 'Delete chat'}</span>
+              </button>
+            </div>
+            
+            <h4 className="font-semibold text-gray-900 dark:text-white mt-6 mb-3">{language === 'vi' ? 'File phương tiện' : 'Media files'}</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {messages.filter(m => m.media_url && m.media_type === 'image').slice(0, 6).map(m => (
+                <div key={m.id} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <img src={m.media_url} alt="Media" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Call Modal Overlay */}
       {activeChat && (
         <CallModal 
@@ -535,6 +651,44 @@ export function MessagesPage() {
           isVideoCall={isVideoCall}
           targetId={activeChat.id}
         />
+      )}
+
+      {/* New Chat Modal */}
+      {isNewChatModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white">{language === 'vi' ? 'Tạo tin nhắn mới' : 'New Message'}</h3>
+              <button onClick={() => setIsNewChatModalOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+              {!friendsData || friendsData.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">{language === 'vi' ? 'Chưa có bạn bè nào để nhắn tin.' : 'No friends available.'}</p>
+              ) : (
+                <div className="space-y-2">
+                  {friendsData.map(friend => (
+                    <button
+                      key={friend.id}
+                      onClick={() => {
+                        setActiveChatId(friend.id);
+                        setIsNewChatModalOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                    >
+                      <UserAvatar src={friend.avatar} name={friend.name} className="w-12 h-12" />
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{friend.name}</p>
+                        <p className="text-xs text-gray-500">{friend.username}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

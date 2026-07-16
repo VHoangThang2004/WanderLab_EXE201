@@ -123,6 +123,68 @@ export const messageService = {
   },
 
   /**
+   * Update a message
+   */
+  async updateMessage(messageId: string, senderId: string, newContent: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('messages')
+      .update({ content: newContent })
+      .match({ id: messageId, sender_id: senderId }); // Ensure only sender can edit
+
+    if (error) {
+      console.error("Error updating message:", error);
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * Delete a message
+   */
+  async deleteMessage(messageId: string, senderId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .match({ id: messageId, sender_id: senderId }); // Ensure only sender can delete
+
+    if (error) {
+      console.error("Error deleting message:", error);
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * Delete entire chat with a user
+   */
+  async deleteChat(userId: string, otherUserId: string): Promise<boolean> {
+    try {
+      // Delete messages sent by user
+      const { error: err1 } = await supabase
+        .from('messages')
+        .delete()
+        .eq('sender_id', userId)
+        .eq('receiver_id', otherUserId);
+        
+      if (err1) console.error("Error deleting sent messages:", err1);
+
+      // Delete messages received by user (might fail if RLS restricts it)
+      const { error: err2 } = await supabase
+        .from('messages')
+        .delete()
+        .eq('sender_id', otherUserId)
+        .eq('receiver_id', userId);
+        
+      if (err2) console.error("Error deleting received messages:", err2);
+
+      return true;
+    } catch (err) {
+      console.error("Exception deleting chat:", err);
+      return false;
+    }
+  },
+
+  /**
    * Upload media to storage
    */
   async uploadChatMedia(file: File): Promise<{ url: string; type: string } | null> {

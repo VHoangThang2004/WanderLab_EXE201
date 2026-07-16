@@ -599,29 +599,12 @@ export function WanderDiaryDetail() {
                   <p className="text-sm text-gray-600">{t("creator", "diaryDetail")}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-4">
                 <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
                   <p className="font-bold text-[#ff3131] text-lg">{diary.author.diariesCount}</p>
                   <p className="text-xs text-gray-600">{t("myJournals", "common")}</p>
                 </div>
-                <div className="text-center bg-[#FFF5F3] rounded-xl p-3">
-                  <p className="font-bold text-[#ff3131] text-lg">{diary.author.followersCount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-600">{language === 'vi' ? 'Người Theo Dõi' : 'Followers'}</p>
-                </div>
               </div>
-              {(!user || user.id !== diary.author.id) && (
-                <button 
-                  onClick={() => followMutation.mutate()}
-                  disabled={followMutation.isPending}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                    isFollowing 
-                      ? "bg-gray-100 text-gray-800 hover:bg-gray-200" 
-                      : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-lg"
-                  }`}
-                >
-                  {isFollowing ? (language === 'vi' ? 'Đang theo dõi' : 'Following') : t("follow", "diaryDetail")}
-                </button>
-              )}
             </div>
 
             {/* Quick Info */}

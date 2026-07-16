@@ -1,5 +1,8 @@
 import { useParams, Link } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores";
 import { motion, AnimatePresence } from "motion/react";
 import {
   MapPin,
@@ -155,10 +158,82 @@ const userData = {
 };
 
 export function WanderUserProfile() {
-  const { userId } = useParams<{ userId: string }>();
-  const user = userData[userId as keyof typeof userData];
-  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || false);
+  const { username: userId } = useParams<{ username: string }>();
+  const currentUser = useAuthStore(state => state.user);
+  
+  const { data: dbUser, isLoading } = useQuery({
+    queryKey: ['userProfile', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      // If it's a mock data ID (1, 2, 3), fallback to mock
+      if (userData[userId as keyof typeof userData]) {
+        return userData[userId as keyof typeof userData];
+      }
+
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+      }
+      if (!profile) return null;
+
+      const { data: diaries, error: diariesError } = await supabase.from('diaries').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+      if (diariesError) {
+        console.error("Diaries fetch error:", diariesError);
+      }
+
+      const uniqueCities = new Set(diaries?.map(d => d.location).filter(Boolean));
+      const citiesVisited = uniqueCities.size > 0 ? uniqueCities.size : 0;
+      const countriesVisited = citiesVisited > 0 ? 1 : 0; // Simple estimation
+
+      return {
+        id: profile.id,
+        name: profile.full_name || 'Người dùng',
+        username: `@${profile.username || profile.full_name?.toLowerCase().replace(/\s+/g, '')}`,
+        avatar: profile.avatar_url,
+        coverImage: profile.cover_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
+        location: profile.location || "Chưa cập nhật",
+        bio: profile.bio || "Thích đi du lịch và khám phá những vùng đất mới 🌏",
+        joinDate: "Tham gia từ " + new Date(profile.created_at).toLocaleDateString('vi-VN'),
+        stats: {
+          diaries: diaries?.length || 0,
+          followers: profile.followers_count || 0,
+          following: profile.following_count || 0,
+          countriesVisited: countriesVisited,
+          citiesVisited: citiesVisited
+        },
+        isFollowing: false, // Could be checked with friendService
+        diaries: diaries?.map(d => ({
+          id: d.id,
+          title: d.title,
+          coverImage: (d.images && d.images.length > 0) ? d.images[0] : "https://images.unsplash.com/photo-1583417319070-4a69db38a482?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800",
+          location: d.location || "Không rõ",
+          date: new Date(d.created_at).toLocaleDateString('vi-VN'),
+          likes: d.likes_count || 0,
+          comments: d.comments_count || 0,
+          destination: d.location || "Không rõ"
+        })) || []
+      };
+    },
+    enabled: !!userId,
+  });
+
+  const user = dbUser;
+  const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<"diaries" | "saved" | "stats">("diaries");
+
+  useEffect(() => {
+    if (user) {
+      setIsFollowing(user.isFollowing || false);
+    }
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Đang tải thông tin...</h2>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -232,36 +307,14 @@ export function WanderUserProfile() {
 
               {/* Action Buttons */}
               <div className="flex gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsFollowing(!isFollowing)}
-                  className={`px-6 py-2.5 rounded-full font-semibold transition-all shadow-sm flex items-center gap-2 ${
-                    isFollowing
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white hover:shadow-md"
-                  }`}
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserMinus size={18} />
-                      Đang theo dõi
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus size={18} />
-                      Theo dõi
-                    </>
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+
+                <Link
+                  to="/messages"
                   className="px-6 py-2.5 bg-[#FFF5F3] text-[#ff3131] rounded-full font-semibold hover:bg-[#FFE5E0] transition-all flex items-center gap-2"
                 >
                   <Mail size={18} />
                   Nhắn tin
-                </motion.button>
+                </Link>
               </div>
             </div>
 
@@ -279,15 +332,7 @@ export function WanderUserProfile() {
                   <p className="text-xs text-gray-500">Nhật ký</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#ff3131] to-[#ff914d] rounded-xl flex items-center justify-center">
-                  <Heart className="text-white" size={20} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{user.stats.followers.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">Người theo dõi</p>
-                </div>
-              </div>
+
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#ff3131] to-[#ff914d] rounded-xl flex items-center justify-center">
                   <Globe className="text-white" size={20} />
@@ -494,14 +539,7 @@ export function WanderUserProfile() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <span className="text-gray-700">Người theo dõi</span>
-                  <span className="text-2xl font-bold text-[#ff3131]">{user.stats.followers.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <span className="text-gray-700">Đang theo dõi</span>
-                  <span className="text-2xl font-bold text-[#ff3131]">{user.stats.following.toLocaleString()}</span>
-                </div>
+
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                   <span className="text-gray-700">Tỷ lệ tương tác</span>
                   <span className="text-2xl font-bold text-[#ff3131]">12.5%</span>

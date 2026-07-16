@@ -39,10 +39,10 @@ const guides = [
   {
     icon: Users,
     title: "Kết Nối Với Người Du Lịch",
-    description: "Theo dõi các tác giả và tương tác với cộng đồng",
+    description: "Kết bạn và tương tác với cộng đồng",
     steps: [
       "Ghé thăm trang cá nhân của bất kỳ tác giả nhật ký nào",
-      'Nhấn "Theo Dõi" để nhận cập nhật nhật ký mới của họ',
+      'Gửi "Lời mời kết bạn" để kết nối với họ',
       "Thích và bình luận về những nhật ký bạn thấy hữu ích",
       "Đặt câu hỏi trong phần bình luận",
     ],
@@ -80,7 +80,7 @@ const features = [
   {
     icon: Bell,
     title: "Thông Báo",
-    description: "Nhận cập nhật khi các tác giả bạn theo dõi đăng nhật ký mới",
+    description: "Nhận cập nhật khi có tương tác mới hoặc khi bạn bè đăng nhật ký",
   },
   {
     icon: Star,
