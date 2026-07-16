@@ -105,7 +105,7 @@ export function PostModal({ isOpen, onClose, post }: PostModalProps) {
   };
 
   const handleShare = () => {
-    const shareUrl = `https://wander-lab.vercel.app/diary/${post.id}`;
+    const shareUrl = `https://wander-lab.vercel.app/post/${post.id}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success("Đã sao chép liên kết bài viết!");
   };

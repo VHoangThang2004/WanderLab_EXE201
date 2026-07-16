@@ -8,6 +8,7 @@ import { WanderGuide } from "./pages/wander/Guide";
 import { WanderDashboard } from "./pages/wander/Dashboard";
 import { WanderFriends } from "./pages/wander/Friends";
 import { WanderDiaryDetail } from "./pages/wander/DiaryDetail";
+import { WanderPostDetail } from "./pages/wander/PostDetail";
 import { WanderCreateDiary } from "./pages/wander/CreateDiary";
 import { WanderEditDiary } from "./pages/wander/EditDiary";
 import { WanderPartner } from "./pages/wander/Partner";
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
       {
         path: "/diary/:id",
         Component: WanderDiaryDetail,
+      },
+      {
+        path: "/post/:id",
+        Component: WanderPostDetail,
       },
       {
         path: "/partner",
