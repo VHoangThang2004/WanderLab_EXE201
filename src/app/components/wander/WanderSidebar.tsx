@@ -337,7 +337,7 @@ export function WanderSidebar() {
               
               {/* APK Button */}
               <a 
-                href="/assets/WanderLab.apk" 
+                href="https://github.com/VHoangThang2004/WanderLab_EXE201/releases/download/v1.0.0/WanderLab.apk" 
                 download
                 className="flex items-center gap-3 w-full py-2 px-3 bg-black dark:bg-black text-white rounded-xl border border-gray-800 hover:bg-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
               >
