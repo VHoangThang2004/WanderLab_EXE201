@@ -183,7 +183,7 @@ export function WanderLanding() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="space-y-8"
               >
-                <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
                   {t("heroTitle", "landing")}<br />
                   <span className="text-white">{t("heroHighlight", "landing")}</span>
                 </h1>
