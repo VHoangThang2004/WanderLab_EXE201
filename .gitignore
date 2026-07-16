@@ -34,3 +34,6 @@ npm-debug.log*
 *.bak
 .agents/skills/
 skills-lock.json
+
+# Large files
+*.apk

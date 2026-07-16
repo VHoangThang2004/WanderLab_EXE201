@@ -20,7 +20,9 @@ import {
   Sparkles,
   Book,
   Activity,
-  Globe2
+  Globe2,
+  Download,
+  Smartphone
 } from "lucide-react";
 import { useState } from "react";
 import { WanderLogo } from "./WanderLogo";
@@ -211,6 +213,8 @@ export function WanderSidebar() {
               );
             })}
           </nav>
+          
+
 
           {/* User & Settings Section */}
           <div className="p-4 border-t border-sidebar-border">
@@ -300,6 +304,56 @@ export function WanderSidebar() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* App Download Banner */}
+          <div className="mx-4 mb-4 p-4 bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-800/80 dark:to-gray-900 rounded-2xl border border-orange-100 dark:border-gray-700 shadow-sm relative overflow-hidden group mt-auto">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-gradient-to-br from-[#ff3131]/20 to-[#ff914d]/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
+            <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-1 flex items-center gap-1.5">
+              <Smartphone size={16} className="text-[#ff3131]" />
+              {language === 'vi' ? 'Trải nghiệm mượt mà hơn' : 'Better experience'}
+            </h4>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-tight">
+              {language === 'vi' ? 'Tải ứng dụng WanderLab trên điện thoại' : 'Download WanderLab app on your phone'}
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {/* Google Play Button */}
+              <a 
+                href="https://play.google.com/store/apps/details?id=com.wanderlab.mobile" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 w-full py-2 px-3 bg-black dark:bg-black text-white rounded-xl border border-gray-800 hover:bg-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Google_Play_Arrow_logo.svg" alt="Google Play" className="w-6 h-6 object-contain" />
+                <div className="flex flex-col items-start justify-center">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-300 font-medium leading-[1]">
+                    {language === 'vi' ? 'Tải ứng dụng trên' : 'Get it on'}
+                  </span>
+                  <span className="text-[15px] font-semibold leading-tight tracking-tight font-sans">
+                    Google Play
+                  </span>
+                </div>
+              </a>
+              
+              {/* APK Button */}
+              <a 
+                href="/assets/WanderLab.apk" 
+                download
+                className="flex items-center gap-3 w-full py-2 px-3 bg-black dark:bg-black text-white rounded-xl border border-gray-800 hover:bg-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
+              >
+                <div className="w-6 h-6 flex items-center justify-center bg-[#3DDC84] rounded-full shrink-0">
+                  <Download size={14} className="text-black stroke-[3]" />
+                </div>
+                <div className="flex flex-col items-start justify-center">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-300 font-medium leading-[1]">
+                    {language === 'vi' ? 'Tải file cài đặt' : 'Download file'}
+                  </span>
+                  <span className="text-[15px] font-semibold leading-tight tracking-tight font-sans">
+                    Android APK
+                  </span>
+                </div>
+              </a>
+            </div>
           </div>
         </div>
       </aside>
