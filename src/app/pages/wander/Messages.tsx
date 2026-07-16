@@ -91,11 +91,27 @@ export function MessagesPage() {
   });
 
   const deleteChatMutation = useMutation({
-    mutationFn: () => messageService.deleteChat(user?.id || '', activeChatId!),
+    mutationFn: async () => {
+      if (!user?.id || !activeChatId) throw new Error("Missing IDs");
+      const success = await messageService.deleteChat(user.id, activeChatId);
+      if (!success) throw new Error("Failed to delete chat");
+      return success;
+    },
     onSuccess: () => {
+      // Update cache immediately to prevent useEffect from re-selecting the deleted chat
+      queryClient.setQueryData(['recentChats', user?.id], (old: ChatContact[] | undefined) => {
+        if (!old) return [];
+        return old.filter(c => c.id !== activeChatId);
+      });
+      
+      setActiveChatId(null);
+      setShowInfoPanel(false);
+      
       queryClient.invalidateQueries({ queryKey: ['recentChats', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['messages', user?.id] });
-      setActiveChatId(null);
+    },
+    onError: () => {
+      alert(language === 'vi' ? 'Có lỗi xảy ra khi xóa đoạn chat.' : 'Error deleting chat.');
     }
   });
 

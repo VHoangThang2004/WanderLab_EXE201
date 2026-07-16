@@ -47,6 +47,11 @@ export const messageService = {
     }
 
     const contactsMap = new Map<string, ChatContact>();
+    
+    // Get local deleted timestamps
+    const deletedChatsStr = localStorage.getItem('deleted_chats');
+    const deletedChats = deletedChatsStr ? JSON.parse(deletedChatsStr) : {};
+    const userDeleted = deletedChats[userId] || {};
 
     messages?.forEach((msg: any) => {
       const isSender = msg.sender_id === userId;
@@ -56,6 +61,12 @@ export const messageService = {
       const profile = Array.isArray(otherUser) ? otherUser[0] : otherUser;
       
       if (!profile) return;
+      
+      // Skip if message was created before the chat was deleted locally
+      const msgTime = new Date(msg.created_at).getTime();
+      if (userDeleted[profile.id] && msgTime <= userDeleted[profile.id]) {
+        return;
+      }
 
       if (!contactsMap.has(profile.id)) {
         // Parse time nicely
@@ -97,7 +108,12 @@ export const messageService = {
       return [];
     }
 
-    return data as ChatMessage[];
+    // Filter out messages that were sent before the chat was locally deleted
+    const deletedChatsStr = localStorage.getItem('deleted_chats');
+    const deletedChats = deletedChatsStr ? JSON.parse(deletedChatsStr) : {};
+    const deletedTimestamp = (deletedChats[userId] && deletedChats[userId][otherUserId]) || 0;
+
+    return (data as ChatMessage[]).filter(msg => new Date(msg.created_at).getTime() > deletedTimestamp);
   },
 
   async sendMessage(senderId: string, receiverId: string, content: string, mediaUrl?: string, mediaType?: string): Promise<ChatMessage | null> {
@@ -159,23 +175,29 @@ export const messageService = {
    */
   async deleteChat(userId: string, otherUserId: string): Promise<boolean> {
     try {
-      // Delete messages sent by user
-      const { error: err1 } = await supabase
+      // 1. Try to delete messages from DB (this might only delete sent messages due to RLS)
+      await supabase
         .from('messages')
         .delete()
         .eq('sender_id', userId)
         .eq('receiver_id', otherUserId);
         
-      if (err1) console.error("Error deleting sent messages:", err1);
-
-      // Delete messages received by user (might fail if RLS restricts it)
-      const { error: err2 } = await supabase
+      await supabase
         .from('messages')
         .delete()
         .eq('sender_id', otherUserId)
         .eq('receiver_id', userId);
-        
-      if (err2) console.error("Error deleting received messages:", err2);
+
+      // 2. Implement local soft-delete to hide the chat completely on this device
+      const deletedChatsStr = localStorage.getItem('deleted_chats');
+      const deletedChats = deletedChatsStr ? JSON.parse(deletedChatsStr) : {};
+      
+      if (!deletedChats[userId]) {
+        deletedChats[userId] = {};
+      }
+      deletedChats[userId][otherUserId] = Date.now();
+      
+      localStorage.setItem('deleted_chats', JSON.stringify(deletedChats));
 
       return true;
     } catch (err) {
