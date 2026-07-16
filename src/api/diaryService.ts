@@ -90,7 +90,7 @@ export const diaryService = {
         .from('diaries')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url, diaries_count, followers_count),
+          author:profiles!diaries_user_id_fkey(id, full_name, avatar_url, diaries_count, followers_count),
           timeline:diary_days(*),
           budget_breakdown:diary_budget_breakdown(*)
         `)
