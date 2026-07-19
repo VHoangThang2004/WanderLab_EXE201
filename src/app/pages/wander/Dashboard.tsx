@@ -304,11 +304,12 @@ export function WanderDashboard() {
               {/* Usage Plan Status */}
               {!isAdmin && (
                 <div className="mt-6 max-w-2xl flex flex-col sm:flex-row gap-4">
-                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${user?.plan === 'pro'
-                      ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
+                  <div className={`flex-1 px-5 py-4 rounded-2xl border shadow-sm ${
+                      user?.plan === 'pro'
+                      ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 dark:from-[#2a1a0f] dark:to-[#1a0f0a] dark:border-orange-900/40'
                       : user?.plan === 'plus'
-                        ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-                        : 'bg-white border-gray-100'
+                        ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 dark:from-[#1e1e2a] dark:to-[#18181f] dark:border-white/10'
+                        : 'bg-white border-gray-100 dark:bg-[var(--card)] dark:border-white/10'
                     }`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
@@ -388,7 +389,7 @@ export function WanderDashboard() {
                 </div>
                 
                 {/* Quick Actions */}
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
+                <div className="bg-white dark:bg-[var(--card)] rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 p-6 space-y-3">
                   <h3 className="font-bold text-gray-900 mb-4">{t("quickActions")}</h3>
                   <Link
                     to="/create"
@@ -398,7 +399,7 @@ export function WanderDashboard() {
                   </Link>
                   <Link
                     to="/create-itinerary"
-                    className="block w-full px-4 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
+                    className="block w-full px-4 py-3 bg-white dark:bg-white/5 border-2 border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:border-[#ff3131] dark:hover:border-[#ff3131] transition-all text-center flex items-center justify-center gap-2"
                   >
                     <Route size={16} />
                     {t("aiPlanner")}
@@ -406,7 +407,7 @@ export function WanderDashboard() {
                 </div>
 
                 {/* Activity Summary */}
-                <div className="bg-gradient-to-br from-[#FFF5F3] to-white rounded-3xl border border-red-100 p-6">
+                <div className="bg-gradient-to-br from-[#FFF5F3] to-white dark:from-[#1f1418] dark:to-[var(--background)] rounded-3xl border border-red-100 dark:border-red-900/30 p-6">
                   <h3 className="font-bold text-gray-900 mb-4">{t("recentActivity")}</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between">
@@ -438,12 +439,12 @@ export function WanderDashboard() {
 
           {/* Tabs */}
           {!isAdmin && (
-            <div className="flex w-full border-t border-gray-100">
+            <div className="flex w-full border-t border-gray-100 dark:border-white/10">
               <button
                 onClick={() => setActiveTab("posts")}
                 className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "posts"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:text-white"
                   }`}
               >
                 {t("myJournals")}
@@ -455,7 +456,7 @@ export function WanderDashboard() {
                 onClick={() => setActiveTab("saved_posts")}
                 className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "saved_posts"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:text-white"
                   }`}
               >
                 {language === 'vi' ? 'Bài Viết Đã Lưu' : 'Saved Posts'}
@@ -467,7 +468,7 @@ export function WanderDashboard() {
                 onClick={() => setActiveTab("saved_itineraries")}
                 className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "saved_itineraries"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:text-white"
                   }`}
               >
                 {t("savedItineraries")}
@@ -480,7 +481,7 @@ export function WanderDashboard() {
                 onClick={() => setActiveTab("trips")}
                 className={`flex-1 px-4 py-4 font-semibold transition-all relative text-center ${activeTab === "trips"
                   ? "text-[#ff3131]"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:text-white"
                   }`}
               >
                 {t("itineraryStats")}
