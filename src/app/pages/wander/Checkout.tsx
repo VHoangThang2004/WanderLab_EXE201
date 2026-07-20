@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router";
 import { supabase } from "../../../lib/supabase";
 import { toast } from "sonner";
 import { WanderLogo } from "../../components/wander/WanderLogo";
-import { useAuth } from "../../../stores/authStore";
+import { useAuthStore } from "../../../stores/authStore";
 import {
   CheckCircle2, Lock, ChevronLeft, CreditCard, Smartphone,
   Building2, Shield, Check, Sparkles, ArrowRight, Copy,
@@ -137,7 +137,7 @@ export function CheckoutPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Auth check
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   if (done) return <SuccessScreen plan={plan} />;
 
