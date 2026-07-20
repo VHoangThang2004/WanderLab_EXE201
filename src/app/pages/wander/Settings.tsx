@@ -709,15 +709,6 @@ export function Settings() {
       ],
     },
     {
-      title: t("secPrivacy", "settings"),
-      icon: Shield,
-      items: [
-        { label: t("itemPrivacy", "settings"), icon: Eye, action: "privacy" },
-        { label: t("itemSecurity", "settings"), icon: Shield, action: "security" },
-        { label: t("itemProfileVisibility", "settings"), icon: Eye, action: "profile-visibility" },
-      ],
-    },
-    {
       title: t("secNotifications", "settings"),
       icon: Bell,
       items: [
@@ -739,7 +730,6 @@ export function Settings() {
       icon: Info,
       items: [
         { label: t("itemTerms", "settings"), icon: Info, action: "terms" },
-        { label: t("itemPolicy", "settings"), icon: Shield, action: "policy" },
         { label: t("itemVersion", "settings"), icon: Info, value: "1.0.0" },
       ],
     },

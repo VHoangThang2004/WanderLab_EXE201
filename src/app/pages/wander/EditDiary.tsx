@@ -474,15 +474,12 @@ export function WanderEditDiary() {
                       <input
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={formData.budget}
+                        value={formData.budget ? Number(formData.budget).toLocaleString('vi-VN') : ""}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "" || /^[0-9]+$/.test(val)) {
-                            setFormData({ ...formData, budget: val });
-                          }
+                          const val = e.target.value.replace(/\./g, "").replace(/[^0-9]/g, "");
+                          setFormData({ ...formData, budget: val });
                         }}
-                        placeholder={language === 'vi' ? "VD: 5000000" : "E.g. 5000000"}
+                        placeholder={language === 'vi' ? "VD: 5.000.000" : "E.g. 5,000,000"}
                         className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
@@ -493,11 +490,11 @@ export function WanderEditDiary() {
                     {/* Budget Suggestions */}
                     <div className="flex flex-wrap gap-2 mt-2 pt-1">
                       {[
-                        { value: "3000000", label: "3.000.000đ" },
-                        { value: "5000000", label: "5.000.000đ" },
-                        { value: "10000000", label: "10.000.000đ" },
-                        { value: "15000000", label: "15.000.000đ" },
-                        { value: "20000000", label: "20.000.000đ" }
+                        { value: "2000000", label: "2.000.000 ₫", desc: language === 'vi' ? "Tiết kiệm" : "Budget" },
+                        { value: "5000000", label: "5.000.000 ₫", desc: language === 'vi' ? "Phổ thông" : "Standard" },
+                        { value: "10000000", label: "10.000.000 ₫", desc: language === 'vi' ? "Thoải mái" : "Comfortable" },
+                        { value: "15000000", label: "15.000.000 ₫", desc: language === 'vi' ? "Cao cấp" : "Premium" },
+                        { value: "30000000", label: "30.000.000 ₫", desc: language === 'vi' ? "Sang trọng" : "Luxury" },
                       ].map((sug) => {
                         const isActive = formData.budget === sug.value;
                         return (
@@ -505,13 +502,14 @@ export function WanderEditDiary() {
                             key={sug.value}
                             type="button"
                             onClick={() => setFormData({ ...formData, budget: sug.value })}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                            className={`flex flex-col items-center px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer border ${
                               isActive
-                                ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm scale-105"
-                                : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 border border-gray-200"
+                                ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm scale-105 border-transparent"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 border-gray-200"
                             }`}
                           >
-                            {sug.label}
+                            <span>{sug.label}</span>
+                            <span className={`text-[10px] font-normal ${isActive ? "text-white/80" : "text-gray-400"}`}>{sug.desc}</span>
                           </button>
                         );
                       })}
@@ -531,22 +529,63 @@ export function WanderEditDiary() {
                     >
                       {language === 'vi' ? "👥 Số Người *" : "👥 Number of People *"}
                     </label>
-                    <div className="relative" style={{ height: LINE_HEIGHT }}>
-                      <Users
-                        className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <input
-                        type="number"
-                        value={formData.groupSize}
-                        onChange={(e) => setFormData({ ...formData, groupSize: e.target.value })}
-                        min="1"
-                        className="w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 bg-transparent text-gray-900 focus:outline-none focus:border-[#ff3131] transition-colors"
-                        style={{
-                          lineHeight: LINE_HEIGHT,
-                          height: LINE_HEIGHT,
+                    {/* Stepper UI */}
+                    <div className="flex items-center gap-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Math.max(1, Number(formData.groupSize) - 1);
+                          setFormData({ ...formData, groupSize: String(cur) });
                         }}
-                      />
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#ff3131] hover:text-[#ff3131] transition-all font-bold text-lg leading-none select-none"
+                      >
+                        −
+                      </button>
+                      <div className="flex flex-col items-center min-w-[48px]">
+                        <span className="text-2xl font-extrabold text-gray-900 leading-none">
+                          {formData.groupSize || "1"}
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">
+                          {language === 'vi' ? 'người' : 'people'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Math.min(99, Number(formData.groupSize) + 1);
+                          setFormData({ ...formData, groupSize: String(cur) });
+                        }}
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#ff3131] hover:text-[#ff3131] transition-all font-bold text-lg leading-none select-none"
+                      >
+                        +
+                      </button>
+                      <div className="h-6 w-px bg-gray-200 mx-1" />
+                      {/* Quick group chips */}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { n: 1, icon: "🧍", label: language === 'vi' ? "Solo" : "Solo" },
+                          { n: 2, icon: "👫", label: language === 'vi' ? "Đôi" : "Couple" },
+                          { n: 4, icon: "👨‍👩‍👧‍👦", label: language === 'vi' ? "Gia đình" : "Family" },
+                          { n: 6, icon: "🎉", label: language === 'vi' ? "Nhóm" : "Group" },
+                        ].map(({ n, icon, label }) => {
+                          const isActive = Number(formData.groupSize) === n;
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, groupSize: String(n) })}
+                              className={`flex flex-col items-center px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                                isActive
+                                  ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm scale-105"
+                                  : "bg-gray-100 text-gray-600 border-gray-200 hover:border-[#ff3131]"
+                              }`}
+                            >
+                              <span className="text-base leading-none">{icon}</span>
+                              <span className="text-[10px] mt-0.5">{label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 

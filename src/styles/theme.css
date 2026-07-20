@@ -231,7 +231,10 @@ html.dark .bg-gray-50 {
 /* Warm & Cool gradient overrides */
 html.dark .bg-gradient-to-br.from-\[\#FFF5F3\].to-\[\#FFE8E0\],
 html.dark .bg-gradient-to-r.from-\[\#FFF5F3\].to-white,
-html.dark .bg-gradient-to-br.from-blue-50.to-indigo-50 {
+html.dark .bg-gradient-to-br.from-\[\#FFF5F3\].to-white,
+html.dark .bg-gradient-to-br.from-blue-50.to-indigo-50,
+html.dark .bg-gradient-to-br.from-orange-50.to-red-50,
+html.dark .bg-gradient-to-br.from-gray-50.to-gray-100 {
   background: linear-gradient(135deg, oklch(0.22 0.01 25), var(--background)) !important;
 }
 
@@ -240,6 +243,15 @@ html.dark .bg-gray-100,
 html.dark .bg-gray-200,
 html.dark .bg-muted {
   background-color: var(--muted) !important;
+}
+
+/* Tab hover state in dark mode */
+html.dark .hover\:bg-gray-50:hover {
+  background-color: oklch(0.22 0.02 260) !important;
+}
+
+html.dark .hover\:text-gray-900:hover {
+  color: var(--foreground) !important;
 }
 
 /* Text color overrides */

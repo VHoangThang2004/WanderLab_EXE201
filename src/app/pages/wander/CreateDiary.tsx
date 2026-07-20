@@ -350,7 +350,7 @@ export function WanderCreateDiary() {
 
           {/* Main Notebook Page */}
           <div
-            className={`relative bg-white notebook-page rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isFlipping ? "opacity-0 scale-95" : "opacity-100 scale-100"
+            className={`relative bg-white dark:bg-neutral-900 notebook-page rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isFlipping ? "opacity-0 scale-95" : "opacity-100 scale-100"
               }`}
             style={{
               backgroundImage: isDarkMode
@@ -596,21 +596,44 @@ export function WanderCreateDiary() {
                       <input
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={formData.budget}
+                        value={formData.budget ? Number(formData.budget).toLocaleString('vi-VN') : ""}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "" || /^[0-9]+$/.test(val)) {
-                            setFormData({ ...formData, budget: val });
-                          }
+                          const val = e.target.value.replace(/\./g, "").replace(/[^0-9]/g, "");
+                          setFormData({ ...formData, budget: val });
                         }}
-                        placeholder={language === 'vi' ? "VD: 5000000" : "E.g. 5000000"}
+                        placeholder={language === 'vi' ? "VD: 5.000.000" : "E.g. 5,000,000"}
                         className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
                         style={{
                           lineHeight: LINE_HEIGHT,
                           height: LINE_HEIGHT,
                         }}
                       />
+                    </div>
+                    {/* Budget Suggestions */}
+                    <div className="flex flex-wrap gap-2 mt-2 pt-1">
+                      {[
+                        { value: "1000000", label: "1.000.000 ₫", desc: language === 'vi' },
+                        { value: "3000000", label: "3.000.000 ₫", desc: language === 'vi' },
+                        { value: "5000000", label: "5.000.000 ₫", desc: language === 'vi' },
+                        { value: "10000000", label: "10.000.000 ₫", desc: language === 'vi' },
+                        { value: "12000000", label: "12.000.000 ₫", desc: language === 'vi' },
+                      ].map((sug) => {
+                        const isActive = formData.budget === sug.value;
+                        return (
+                          <button
+                            key={sug.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, budget: sug.value })}
+                            className={`flex flex-col items-center px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer border ${isActive
+                              ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white shadow-sm scale-105 border-transparent"
+                              : "bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-800 border-gray-200 dark:border-white/10"
+                              }`}
+                          >
+                            <span>{sug.label}</span>
+                            <span className={`text-[10px] font-normal ${isActive ? "text-white/80" : "text-gray-400"}`}>{sug.desc}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                     <p
                       className="text-sm text-gray-600"
@@ -627,22 +650,62 @@ export function WanderCreateDiary() {
                     >
                       {language === 'vi' ? "👥 Số Người *" : "👥 Number of People *"}
                     </label>
-                    <div className="relative" style={{ height: LINE_HEIGHT }}>
-                      <Users
-                        className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={20}
-                      />
-                      <input
-                        type="number"
-                        value={formData.groupSize}
-                        onChange={(e) => setFormData({ ...formData, groupSize: e.target.value })}
-                        min="1"
-                        className="notebook-input w-full pl-8 pr-0 py-0 border-0 border-b-2 border-gray-300 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-[#ff3131] dark:focus:border-[#ff3131] transition-colors"
-                        style={{
-                          lineHeight: LINE_HEIGHT,
-                          height: LINE_HEIGHT,
+                    {/* Stepper UI */}
+                    <div className="flex items-center gap-4 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Math.max(1, Number(formData.groupSize) - 1);
+                          setFormData({ ...formData, groupSize: String(cur) });
                         }}
-                      />
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 dark:border-neutral-600 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:border-[#ff3131] hover:text-[#ff3131] transition-all font-bold text-lg leading-none select-none"
+                      >
+                        −
+                      </button>
+                      <div className="flex flex-col items-center min-w-[48px]">
+                        <span className="text-2xl font-extrabold text-gray-900 dark:text-white leading-none">
+                          {formData.groupSize || "1"}
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">
+                          {language === 'vi' ? 'người' : 'people'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Math.min(99, Number(formData.groupSize) + 1);
+                          setFormData({ ...formData, groupSize: String(cur) });
+                        }}
+                        className="w-9 h-9 rounded-full border-2 border-gray-300 dark:border-neutral-600 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:border-[#ff3131] hover:text-[#ff3131] transition-all font-bold text-lg leading-none select-none"
+                      >
+                        +
+                      </button>
+                      <div className="h-6 w-px bg-gray-200 dark:bg-neutral-700 mx-1" />
+                      {/* Quick group chips */}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { n: 1, icon: "🧍", label: language === 'vi' ? "Solo" : "Solo" },
+                          { n: 2, icon: "👫", label: language === 'vi' ? "Đôi" : "Couple" },
+                          { n: 4, icon: "👨‍👩‍👧‍👦", label: language === 'vi' ? "Gia đình" : "Family" },
+                          { n: 6, icon: "🎉", label: language === 'vi' ? "Nhóm" : "Group" },
+                        ].map(({ n, icon, label }) => {
+                          const isActive = Number(formData.groupSize) === n;
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, groupSize: String(n) })}
+                              className={`flex flex-col items-center px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${isActive
+                                  ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white border-transparent shadow-sm scale-105"
+                                  : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-[#ff3131] dark:hover:border-[#ff3131]"
+                                }`}
+                            >
+                              <span className="text-base leading-none">{icon}</span>
+                              <span className="text-[10px] mt-0.5">{label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
@@ -794,7 +857,7 @@ export function WanderCreateDiary() {
 
                   <div className="space-y-4">
                     {timeline.map((day, dayIndex) => (
-                      <div key={day.day} className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-l-4 border-[#ff914d]">
+                      <div key={day.day} className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-neutral-800/90 dark:to-neutral-900/90 rounded-xl p-5 border-l-4 border-[#ff914d] dark:border-[#ff914d]/70">
                         <div className="flex items-center justify-between mb-4">
                           <div className={`inline-flex items-center gap-2 ${primaryBg} text-white px-4 py-1.5 rounded-full font-bold text-sm`}>
                             <Calendar size={14} />
@@ -820,7 +883,7 @@ export function WanderCreateDiary() {
                               setTimeline(newTimeline);
                             }}
                             placeholder={language === 'vi' ? "Tiêu đề ngày (VD: Đến Hà Nội – Thăm Phố Cổ)" : "Day title (E.g. Arrive in Hanoi - Visit Old Quarter)"}
-                            className={`w-full px-4 py-2.5 border-b-2 border-gray-300 bg-white/60 focus:outline-none focus:border-[#ff3131] transition-colors rounded-t-lg font-semibold`}
+                            className={`w-full px-4 py-2.5 border-b-2 border-gray-300 dark:border-neutral-600 bg-white/60 dark:bg-neutral-800/60 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:border-[#ff3131] transition-colors rounded-t-lg font-semibold`}
                           />
 
                           <div>
@@ -833,7 +896,7 @@ export function WanderCreateDiary() {
                                     value={activity}
                                     onChange={(e) => updateActivity(dayIndex, activityIndex, e.target.value)}
                                     placeholder={language === 'vi' ? `Hoạt động ${activityIndex + 1}` : `Activity ${activityIndex + 1}`}
-                                    className={`flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
+                                    className={`flex-1 px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
                                   />
                                   {day.activities.length > 1 && (
                                     <button
@@ -867,85 +930,85 @@ export function WanderCreateDiary() {
                                   setTimeline(newTimeline);
                                 }}
                                 placeholder={language === 'vi' ? "Ngân sách ngày" : "Daily budget"}
-                                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
+                                className={`w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent`}
                               />
                             </div>
                           </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
+                          <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-3">{language === 'vi' ? "Media (Ảnh/Video/Audio)" : "Media (Image/Video/Audio)"}</label>
+                          <div className="flex flex-wrap gap-4">
+                            <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                              <Upload size={20} className="text-gray-400 mb-2" />
+                              <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">{language === 'vi' ? 'Ảnh' : 'Image'}</span>
+                              <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (!files.length) return;
+
+                                const totalImages = timeline.reduce((acc, curr) => acc + (curr.imageFiles?.length || 0), 0);
+                                if (!checkMediaLimits(totalImages, files.length, 0, 0)) return;
+
+                                const newTimeline = [...timeline];
+                                const currentImages = newTimeline[dayIndex].imageFiles || [];
+                                newTimeline[dayIndex].imageFiles = [...currentImages, ...files];
+                                setTimeline(newTimeline);
+                              }} />
+                            </label>
+
+                            <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                              <Upload size={20} className="text-gray-400 mb-2" />
+                              <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Video</span>
+                              <input type="file" multiple accept="video/*" className="hidden" onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (!files.length) return;
+
+                                const totalVideos = timeline.reduce((acc, curr) => acc + (curr.videoFiles?.length || 0), 0);
+                                if (!checkMediaLimits(0, 0, totalVideos, files.length)) return;
+
+                                for (const file of files) {
+                                  const isValid = await validateVideoResolution(file);
+                                  if (!isValid) return;
+                                }
+
+                                const newTimeline = [...timeline];
+                                const currentVideos = newTimeline[dayIndex].videoFiles || [];
+                                newTimeline[dayIndex].videoFiles = [...currentVideos, ...files];
+                                setTimeline(newTimeline);
+                              }} />
+                            </label>
+
+                            <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
+                              <Upload size={20} className="text-gray-400 mb-2" />
+                              <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Audio</span>
+                              <input type="file" multiple accept="audio/*" className="hidden" onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                const newTimeline = [...timeline];
+                                newTimeline[dayIndex].audioFiles = [...(newTimeline[dayIndex].audioFiles || []), ...files];
+                                setTimeline(newTimeline);
+                              }} />
+                            </label>
                           </div>
 
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-800">
-                            <label className="block text-sm font-bold text-gray-900 dark:text-neutral-250 mb-3">{language === 'vi' ? "Media (Ảnh/Video/Audio)" : "Media (Image/Video/Audio)"}</label>
-                            <div className="flex flex-wrap gap-4">
-                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
-                                <Upload size={20} className="text-gray-400 mb-2" />
-                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">{language === 'vi' ? 'Ảnh' : 'Image'}</span>
-                                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
-                                  const files = Array.from(e.target.files || []);
-                                  if (!files.length) return;
-                                  
-                                  const totalImages = timeline.reduce((acc, curr) => acc + (curr.imageFiles?.length || 0), 0);
-                                  if (!checkMediaLimits(totalImages, files.length, 0, 0)) return;
-
-                                  const newTimeline = [...timeline];
-                                  const currentImages = newTimeline[dayIndex].imageFiles || [];
-                                  newTimeline[dayIndex].imageFiles = [...currentImages, ...files];
-                                  setTimeline(newTimeline);
-                                }} />
-                              </label>
-
-                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
-                                <Upload size={20} className="text-gray-400 mb-2" />
-                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Video</span>
-                                <input type="file" multiple accept="video/*" className="hidden" onChange={async (e) => {
-                                  const files = Array.from(e.target.files || []);
-                                  if (!files.length) return;
-
-                                  const totalVideos = timeline.reduce((acc, curr) => acc + (curr.videoFiles?.length || 0), 0);
-                                  if (!checkMediaLimits(0, 0, totalVideos, files.length)) return;
-
-                                  for (const file of files) {
-                                    const isValid = await validateVideoResolution(file);
-                                    if (!isValid) return;
-                                  }
-
-                                  const newTimeline = [...timeline];
-                                  const currentVideos = newTimeline[dayIndex].videoFiles || [];
-                                  newTimeline[dayIndex].videoFiles = [...currentVideos, ...files];
-                                  setTimeline(newTimeline);
-                                }} />
-                              </label>
-
-                              <label className="cursor-pointer border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-[#ff3131] hover:bg-amber-50/10 transition-all w-24">
-                                <Upload size={20} className="text-gray-400 mb-2" />
-                                <span className="text-xs font-bold text-gray-600 dark:text-neutral-400">Audio</span>
-                                <input type="file" multiple accept="audio/*" className="hidden" onChange={(e) => {
-                                  const files = Array.from(e.target.files || []);
-                                  const newTimeline = [...timeline];
-                                  newTimeline[dayIndex].audioFiles = [...(newTimeline[dayIndex].audioFiles || []), ...files];
-                                  setTimeline(newTimeline);
-                                }} />
-                              </label>
-                            </div>
-                            
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {(day.imageFiles || []).map((f: File, i: number) => (
-                                <div key={`img-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
-                                  <span className="text-orange-500">📸</span> <span className="truncate max-w-[100px]">{f.name}</span>
-                                </div>
-                              ))}
-                              {(day.videoFiles || []).map((f: File, i: number) => (
-                                <div key={`vid-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
-                                  <span className="text-blue-500">🎬</span> <span className="truncate max-w-[100px]">{f.name}</span>
-                                </div>
-                              ))}
-                              {(day.audioFiles || []).map((f: File, i: number) => (
-                                <div key={`aud-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
-                                  <span className="text-green-500">🎵</span> <span className="truncate max-w-[100px]">{f.name}</span>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(day.imageFiles || []).map((f: File, i: number) => (
+                              <div key={`img-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                <span className="text-orange-500">📸</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                              </div>
+                            ))}
+                            {(day.videoFiles || []).map((f: File, i: number) => (
+                              <div key={`vid-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                <span className="text-blue-500">🎬</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                              </div>
+                            ))}
+                            {(day.audioFiles || []).map((f: File, i: number) => (
+                              <div key={`aud-${i}`} className="bg-white/60 dark:bg-neutral-800 text-xs px-2 py-1.5 rounded-lg text-gray-700 dark:text-neutral-300 shadow-sm border border-gray-100 dark:border-neutral-700 flex items-center gap-1">
+                                <span className="text-green-500">🎵</span> <span className="truncate max-w-[100px]">{f.name}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -953,75 +1016,127 @@ export function WanderCreateDiary() {
 
               {/* Step 4: Privacy & Publish */}
               {currentStep === 4 && (
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-white mb-4">
-                      {language === 'vi' ? "🔒 Ai có thể xem nhật ký này? *" : "🔒 Who can view this journal? *"}
-                    </label>
-                    <div className="space-y-3">
-                      {[
-                        { value: "public", icon: Globe, label: t("privacyPublic", "createDiary"), desc: t("privacyPublicDesc", "createDiary") },
-                        { value: "friends", icon: Users, label: t("privacyFriends", "createDiary"), desc: t("privacyFriendsDesc", "createDiary") },
-                        { value: "private", icon: Lock, label: t("privacyPrivate", "createDiary"), desc: t("privacyPrivateDesc", "createDiary") },
-                      ].map(({ value, icon: Icon, label, desc }) => (
-                        <button
-                          key={value}
-                          onClick={() => setPrivacySetting(value as PrivacySetting)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${privacySetting === value
-                            ? "border-[#ff3131] bg-gradient-to-br from-orange-50 to-amber-50"
-                            : "border-gray-300 hover:border-gray-400 bg-white"
-                            }`}
-                        >
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${privacySetting === value ? "bg-gradient-to-r from-[#ff3131] to-[#ff914d]" : "bg-gray-100"
-                            }`}>
-                            <Icon className={privacySetting === value ? "text-white" : "text-gray-400"} size={24} />
-                          </div>
-                          <div className="text-left flex-1">
-                            <p className="font-bold text-gray-900 dark:text-white">{label}</p>
-                            <p className="text-sm text-gray-600 dark:text-neutral-400">{desc}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <div className="space-y-5">
 
+                  {/* Hero Banner */}
                   <div className={`${primaryBg} rounded-2xl p-6 text-white`}>
-                    <h3 className="font-bold mb-2">
-                      {language === 'vi' ? '🎉 Sẵn Sàng Truyền Cảm Hứng!' : '🎉 Ready to Inspire!'}
+                    <h3 className="font-bold text-lg mb-1">
+                      {language === 'vi' ? '🚀 Sẵn Sàng Đăng Nhật Ký!' : '🚀 Ready to Publish Your Journal!'}
                     </h3>
-                    <p className="text-white/90 mb-4">
+                    <p className="text-white/85 text-sm mb-3">
                       {language === 'vi'
-                        ? 'Nhật ký của bạn sẽ được xem xét về tính xác thực và có thể được đề xuất trên trang chủ.'
-                        : 'Your journal will be reviewed for authenticity and may be featured on the homepage.'}
+                        ? 'Hãy kiểm tra lại thông tin trước khi đăng. Nhật ký của bạn sẽ xuất hiện trên cộng đồng WanderLab ngay sau khi đăng.'
+                        : 'Review your information before publishing. Your journal will appear on the WanderLab community right after posting.'}
                     </p>
                     <div className="flex items-center gap-2 text-sm text-white/80">
-                      <Eye size={16} />
+                      <Eye size={14} />
                       <span>
                         {language === 'vi'
-                          ? 'Ước tính 500+ người dùng sẽ xem nhật ký của bạn trong tuần đầu tiên'
-                          : 'Estimated 500+ users will view your journal in the first week'}
+                          ? 'Ước tính 100+ người dùng sẽ xem nhật ký của bạn trong tuần đầu tiên'
+                          : 'Estimated 100+ users will view your journal in the first week'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 bg-gray-50 dark:bg-neutral-900/50 p-4 rounded-xl transition-colors">
-                    <input type="checkbox" id="terms" className="mt-1" />
-                    <label htmlFor="terms" className="text-sm text-gray-600 dark:text-neutral-300">
-                      {language === 'vi'
-                        ? 'Tôi xác nhận tất cả thông tin là chính xác và tôi sở hữu bản quyền của nội dung đã tải lên. Tôi đồng ý với '
-                        : 'I confirm that all information is accurate and I own the copyright of the uploaded content. I agree to '}
-                      <a href="#" className={`${accentColor} hover:underline font-semibold`}>
-                        {language === 'vi' ? 'Điều Khoản Dịch Vụ' : 'Terms of Service'}
-                      </a>
-                      {language === 'vi' ? ' và ' : ' and '}
-                      <a href="#" className={`${accentColor} hover:underline font-semibold`}>
-                        {language === 'vi' ? 'Chính Sách Nội Dung' : 'Content Policy'}
-                      </a>
-                      {language === 'vi' ? ' của WanderLab.' : ' of WanderLab.'}
-                    </label>
+                  {/* Summary Preview Card */}
+                  <div className="bg-gray-50 dark:bg-neutral-900/60 rounded-2xl p-5 border border-gray-200 dark:border-neutral-800">
+                    <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-3 flex items-center gap-2">
+                      <span>📋</span>
+                      {language === 'vi' ? 'Tóm tắt nhật ký của bạn' : 'Your journal summary'}
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      {formData.title && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#ff3131] font-bold min-w-[80px]">{language === 'vi' ? 'Tiêu đề:' : 'Title:'}</span>
+                          <span className="text-gray-700 dark:text-gray-300 line-clamp-1">{formData.title}</span>
+                        </div>
+                      )}
+                      {formData.location && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#ff3131] font-bold min-w-[80px]">{language === 'vi' ? 'Địa điểm:' : 'Location:'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{formData.location}</span>
+                        </div>
+                      )}
+                      {formData.budget && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#ff3131] font-bold min-w-[80px]">{language === 'vi' ? 'Ngân sách:' : 'Budget:'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Number(formData.budget).toLocaleString('vi-VN')} ₫</span>
+                        </div>
+                      )}
+                      {formData.groupSize && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#ff3131] font-bold min-w-[80px]">{language === 'vi' ? 'Số người:' : 'Group:'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{formData.groupSize} {language === 'vi' ? 'người' : 'people'}</span>
+                        </div>
+                      )}
+                      {timeline.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-[#ff3131] font-bold min-w-[80px]">{language === 'vi' ? 'Lịch trình:' : 'Timeline:'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{timeline.length} {language === 'vi' ? 'ngày' : 'days'}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Tips for a great post */}
+                  <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-5">
+                    <h4 className="font-bold text-amber-800 dark:text-amber-400 text-sm mb-3 flex items-center gap-2">
+                      <span>💡</span>
+                      {language === 'vi' ? 'Mẹo để nhật ký của bạn nổi bật' : 'Tips to make your journal stand out'}
+                    </h4>
+                    <ul className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
+                      {(language === 'vi' ? [
+                        '📸 Ảnh bìa rõ nét, đẹp sẽ thu hút nhiều lượt xem hơn',
+                        '✍️ Mô tả chi tiết giúp người đọc hình dung chuyến đi',
+                        '📍 Địa điểm chính xác giúp người khác dễ tìm kiếm',
+                        '💰 Ngân sách thực tế giúp mọi người lên kế hoạch tốt hơn',
+                      ] : [
+                        '📸 A clear, beautiful cover photo attracts more views',
+                        '✍️ Detailed descriptions help readers visualize the trip',
+                        '📍 Accurate location helps others search easily',
+                        '💰 Realistic budget helps people plan better',
+                      ]).map((tip, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="flex-shrink-0">{tip.slice(0, 2)}</span>
+                          <span>{tip.slice(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Checklist trước khi đăng */}
+                  <div className="rounded-2xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 p-5">
+                    <h4 className="font-bold text-green-800 dark:text-green-400 text-sm mb-3 flex items-center gap-2">
+                      <span>✅</span>
+                      {language === 'vi' ? 'Kiểm tra trước khi đăng' : 'Pre-publish checklist'}
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      {[
+                        { done: !!formData.title, label: language === 'vi' ? 'Đã có tiêu đề nhật ký' : 'Journal title added' },
+                        { done: !!formData.location, label: language === 'vi' ? 'Đã chọn địa điểm' : 'Location selected' },
+                        { done: !!coverFile, label: language === 'vi' ? 'Đã tải ảnh bìa' : 'Cover photo uploaded' },
+                        { done: !!formData.budget, label: language === 'vi' ? 'Đã nhập ngân sách' : 'Budget entered' },
+                        { done: timeline.length > 0 && timeline.some(d => d.activities?.some((a: string) => a.trim())), label: language === 'vi' ? 'Đã có lịch trình hoạt động' : 'Activities added' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
+                            item.done
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 dark:bg-neutral-700 text-gray-400'
+                          }`}>
+                            {item.done ? '✓' : '○'}
+                          </span>
+                          <span className={item.done ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-neutral-500'}>
+                            {item.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
               )}
+
             </div>
 
             {/* Page Footer / Navigation */}
