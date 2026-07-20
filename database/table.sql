@@ -122,8 +122,19 @@ CREATE POLICY "Users update own diaries" ON diaries FOR UPDATE USING (auth.uid()
 CREATE POLICY "Users delete own diaries" ON diaries FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "Diary days viewable" ON diary_days FOR SELECT USING (true);
+CREATE POLICY "Users insert own diary days" ON diary_days FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users update own diary days" ON diary_days FOR UPDATE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users delete own diary days" ON diary_days FOR DELETE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+
 CREATE POLICY "Diary budget viewable" ON diary_budget_breakdown FOR SELECT USING (true);
+CREATE POLICY "Users insert own diary budget" ON diary_budget_breakdown FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users update own diary budget" ON diary_budget_breakdown FOR UPDATE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users delete own diary budget" ON diary_budget_breakdown FOR DELETE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+
 CREATE POLICY "Diary images viewable" ON diary_images FOR SELECT USING (true);
+CREATE POLICY "Users insert own diary images" ON diary_images FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users update own diary images" ON diary_images FOR UPDATE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
+CREATE POLICY "Users delete own diary images" ON diary_images FOR DELETE USING (EXISTS (SELECT 1 FROM diaries WHERE id = diary_id AND user_id = auth.uid()));
 
 -- Policy Tương tác xã hội
 CREATE POLICY "Comments viewable" ON comments FOR SELECT USING (true);
@@ -142,6 +153,22 @@ CREATE POLICY "Users delete own bookmarks" ON diary_bookmarks FOR DELETE USING (
 CREATE POLICY "Follows viewable" ON follows FOR SELECT USING (true);
 CREATE POLICY "Users insert own follows" ON follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
 CREATE POLICY "Users delete own follows or follows targeting them" ON follows FOR DELETE USING (auth.uid() = follower_id OR auth.uid() = following_id);
+
+-- Policy Itineraries
+CREATE POLICY "Itineraries viewable" ON itineraries FOR SELECT USING (true);
+CREATE POLICY "Users insert own itineraries" ON itineraries FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own itineraries" ON itineraries FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users delete own itineraries" ON itineraries FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Itinerary days viewable" ON itinerary_days FOR SELECT USING (true);
+CREATE POLICY "Users insert own itinerary days" ON itinerary_days FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
+CREATE POLICY "Users update own itinerary days" ON itinerary_days FOR UPDATE USING (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
+CREATE POLICY "Users delete own itinerary days" ON itinerary_days FOR DELETE USING (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
+
+CREATE POLICY "Itinerary budget viewable" ON itinerary_budget_breakdown FOR SELECT USING (true);
+CREATE POLICY "Users insert own itinerary budget" ON itinerary_budget_breakdown FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
+CREATE POLICY "Users update own itinerary budget" ON itinerary_budget_breakdown FOR UPDATE USING (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
+CREATE POLICY "Users delete own itinerary budget" ON itinerary_budget_breakdown FOR DELETE USING (EXISTS (SELECT 1 FROM itineraries WHERE id = itinerary_id AND user_id = auth.uid()));
 
 
 -- ==========================================
