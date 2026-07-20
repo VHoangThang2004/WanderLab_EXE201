@@ -22,6 +22,7 @@ const MOCK_USER: User = {
   following_count: 8,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
+  phone: null,
 };
 
 interface AuthState {
@@ -33,7 +34,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<{ requiresVerification: boolean }>;
   loginWithGoogle: () => Promise<void>;
   loginWithFacebook: () => Promise<void>;
   logout: () => Promise<void>;
@@ -149,7 +150,7 @@ export const useAuthStore = create<AuthState>()(
           if (IS_MOCK_MODE) {
             console.info('🧪 Mock register:', email);
             set({ user: null, isAuthenticated: false, isLoading: false });
-            return;
+            return { requiresVerification: false };
           }
 
           const { data, error } = await supabase.auth.signUp({
@@ -167,9 +168,25 @@ export const useAuthStore = create<AuthState>()(
             throw new Error("This email is already registered. Please log in or use another email.");
           }
 
-          // Sign out immediately — user must verify email before login
-          await supabase.auth.signOut();
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          if (data.session) {
+            // Auto login successful
+            let profile = null;
+            try {
+              const { data: pData } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single();
+              profile = pData;
+            } catch (err) {
+              console.warn("Could not fetch profile for newly registered user", err);
+            }
+            
+            const user = buildUser(data.user!, profile);
+            set({ user, isAuthenticated: true, isLoading: false });
+            return { requiresVerification: false };
+          } else {
+            // Sign out immediately — user must verify email before login
+            await supabase.auth.signOut();
+            set({ user: null, isAuthenticated: false, isLoading: false });
+            return { requiresVerification: true };
+          }
         } catch (error) {
           set({ isLoading: false });
           throw error;

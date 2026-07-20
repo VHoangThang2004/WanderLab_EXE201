@@ -1,17 +1,18 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, User, Loader2, CheckCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { WanderLogo } from "../../components/wander/WanderLogo";
 import { useAuthStore, useLanguageStore } from "@/stores";
 
 export function WanderRegister() {
   const { t, language } = useLanguageStore();
   const { register: registerUser, isLoading } = useAuthStore();
+  const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -34,8 +35,15 @@ export function WanderRegister() {
     }
 
     try {
-      await registerUser(formData.email, formData.password, formData.fullName);
-      setIsSuccess(true); // Show success screen
+      const result = await registerUser(formData.email, formData.password, formData.fullName);
+      
+      if (result?.requiresVerification === false) {
+        toast.success(language === 'vi' ? "Đăng ký thành công! Đang chuyển hướng..." : "Registration successful! Redirecting...");
+        navigate("/dashboard");
+      } else {
+        toast.success(language === 'vi' ? "Đăng ký thành công! Vui lòng xác thực email." : "Registration successful! Please verify your email.");
+        navigate("/login");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Đăng ký thất bại";
       if (message.includes("already registered") || message.includes("already been registered")) {
@@ -49,45 +57,6 @@ export function WanderRegister() {
       }
     }
   };
-
-
-  // Success screen after registration
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-8">
-            <WanderLogo size="lg" />
-          </div>
-          <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="text-green-500" size={40} />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              {language === 'vi' ? 'Đăng Ký Thành Công!' : 'Registration Successful!'}
-            </h1>
-            <p className="text-gray-600 mb-2">
-              {language === 'vi' ? 'Chúng tôi đã gửi email xác minh đến:' : 'We have sent a verification email to:'}
-            </p>
-            <p className="font-semibold text-[#ff3131] text-lg mb-6">{formData.email}</p>
-            <div className="bg-[#FFF5F3] rounded-2xl p-4 mb-6">
-              <p className="text-sm text-gray-700">
-                {language === 'vi'
-                  ? '📧 Vui lòng kiểm tra hộp thư (cả thư rác) và nhấn link xác minh. Sau khi xác minh, bạn có thể đăng nhập.'
-                  : '📧 Please check your inbox (including spam folder) and click the verification link. Once verified, you can log in.'}
-              </p>
-            </div>
-            <Link
-              to="/login"
-              className="inline-block w-full py-3 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-xl font-semibold hover:shadow-lg transition-all text-center"
-            >
-              {language === 'vi' ? 'Đi Đến Trang Đăng Nhập' : 'Go to Login Page'}
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF5F3] to-[#FFE8E0] flex items-center justify-center p-4">
