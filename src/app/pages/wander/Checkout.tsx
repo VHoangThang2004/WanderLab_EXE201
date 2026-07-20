@@ -3,6 +3,7 @@ import { useSearchParams, Link } from "react-router";
 import { supabase } from "../../../lib/supabase";
 import { toast } from "sonner";
 import { WanderLogo } from "../../components/wander/WanderLogo";
+import { useAuth } from "../../../stores/authStore";
 import {
   CheckCircle2, Lock, ChevronLeft, CreditCard, Smartphone,
   Building2, Shield, Check, Sparkles, ArrowRight, Copy,
@@ -135,6 +136,9 @@ export function CheckoutPage() {
   const [done, setDone] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Auth check
+  const { user } = useAuth();
+
   if (done) return <SuccessScreen plan={plan} />;
 
   const validate = () => {
@@ -151,6 +155,12 @@ export function CheckoutPage() {
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thanh toán.");
+      return;
+    }
+
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
@@ -162,7 +172,21 @@ export function CheckoutPage() {
           body: { planKey, returnUrl: window.location.origin }
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error("Invoke Error:", error);
+          let errMsg = error.message;
+          // Cố gắng parse nội dung lỗi thực tế từ Edge Function
+          if (error.context && typeof error.context.json === 'function') {
+            try {
+              const errBody = await error.context.json();
+              if (errBody.error) errMsg = errBody.error;
+            } catch (e) {
+              // Ignore parse error
+            }
+          }
+          throw new Error(errMsg);
+        }
+
         if (data?.checkoutUrl) {
           window.location.href = data.checkoutUrl; // Redirect to PayOS QR page
         } else {
@@ -170,7 +194,7 @@ export function CheckoutPage() {
           setLoading(false);
         }
       } catch (err: any) {
-        console.error(err);
+        console.error("PayOS Error:", err);
         toast.error(err.message || "Đã xảy ra lỗi khi tạo thanh toán");
         setLoading(false);
       }
