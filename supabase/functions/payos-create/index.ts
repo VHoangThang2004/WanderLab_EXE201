@@ -125,8 +125,12 @@ serve(async (req) => {
       throw new Error(`PayOS Error: ${payosData.desc}`);
     }
 
-    // 6. Trả về checkoutUrl
-    return new Response(JSON.stringify({ checkoutUrl: payosData.data.checkoutUrl }), {
+    // 6. Trả về checkoutUrl, orderCode và amount
+    return new Response(JSON.stringify({ 
+      checkoutUrl: payosData.data.checkoutUrl,
+      orderCode: orderCode,
+      amount: price
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
