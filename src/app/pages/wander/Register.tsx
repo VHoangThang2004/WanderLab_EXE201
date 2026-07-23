@@ -178,14 +178,7 @@ export function WanderRegister() {
                 className="mt-1 w-4 h-4 text-[#ff3131] border-gray-300 rounded focus:ring-[#ff3131]"
               />
               <span className="text-sm text-gray-600">
-                {language === 'vi' ? 'Tôi đồng ý với ' : 'I agree to the '}
-                <a href="#" className="text-[#ff3131] hover:underline font-semibold">
-                  {language === 'vi' ? 'Điều Khoản' : 'Terms'}
-                </a>
-                {language === 'vi' ? ' và ' : ' and '}
-                <a href="#" className="text-[#ff3131] hover:underline font-semibold">
-                  {language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}
-                </a>
+                {language === 'vi' ? 'Tôi xác nhận đăng ký tài khoản' : 'I confirm my account registration'}
               </span>
             </label>
 

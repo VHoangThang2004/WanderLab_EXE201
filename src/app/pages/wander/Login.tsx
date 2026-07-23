@@ -11,7 +11,7 @@ export function WanderLogin() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loginType, setLoginType] = useState<"user" | "admin">("user");
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -28,20 +28,10 @@ export function WanderLogin() {
       // Get fresh user from store state after successful login
       const currentUser = useAuthStore.getState().user;
       
-      if (loginType === 'admin') {
-        if (currentUser?.role === 'admin') {
-          navigate("/admin-dashboard");
-        } else {
-          await logout();
-          throw new Error("Bạn không có quyền quản trị viên (Admin)");
-        }
+      if (currentUser?.role === 'admin') {
+        navigate("/admin-dashboard");
       } else {
-        if (currentUser?.role === 'admin') {
-          // You can also restrict admins from logging in as user, or redirect them
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/dashboard");
-        }
+        navigate("/dashboard");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
@@ -83,20 +73,7 @@ export function WanderLogin() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                {language === 'vi' ? 'Loại tài khoản' : 'Account Type'}
-              </label>
-              <select
-                value={loginType}
-                onChange={(e) => setLoginType(e.target.value as "user" | "admin")}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent bg-gray-50 font-medium text-gray-800"
-                disabled={isLoading}
-              >
-                <option value="user">{language === 'vi' ? 'Người dùng (User)' : 'User'}</option>
-                <option value="admin">{language === 'vi' ? 'Quản trị viên (Admin)' : 'Administrator'}</option>
-              </select>
-            </div>
+
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -186,17 +163,7 @@ export function WanderLogin() {
 
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          {language === 'vi' ? 'Bằng cách đăng nhập, bạn đồng ý với' : 'By signing in, you agree to our'}{" "}
-          <a href="#" className="text-[#ff3131] hover:underline">
-            {language === 'vi' ? 'Điều Khoản' : 'Terms'}
-          </a>{" "}
-          {language === 'vi' ? 'và' : 'and'}{" "}
-          <a href="#" className="text-[#ff3131] hover:underline">
-            {language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}
-          </a>{" "}
-          {language === 'vi' ? 'của chúng tôi' : ''}
-        </p>
+
       </div>
     </div>
   );

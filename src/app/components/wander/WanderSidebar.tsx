@@ -120,6 +120,7 @@ export function WanderSidebar() {
       ]
     : [
         { icon: Home, label: t("home"), path: "/", public: true },
+        { icon: Compass, label: "Landing Page", path: "/landing", public: true },
         { icon: Users, label: t("friends"), path: "/friends", public: false },
         { icon: Globe2, label: language === 'vi' ? "Cách Sử Dụng" : "How to Use", path: "/guide", public: true },
         { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },

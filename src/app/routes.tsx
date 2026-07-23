@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { WanderLanding } from "./pages/wander/Landing";
+import { MarketingLanding } from "./pages/wander/MarketingLanding";
 import { WanderLogin } from "./pages/wander/Login";
 import { WanderRegister } from "./pages/wander/Register";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
@@ -56,6 +57,14 @@ export const router = createBrowserRouter([
   {
     path: "/reset-password",
     element: <ResetPassword />,
+  },
+  {
+    path: "/landing",
+    element: (
+      <GuestRoute>
+        <MarketingLanding />
+      </GuestRoute>
+    ),
   },
   // Public standalone routes
   {

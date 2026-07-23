@@ -679,10 +679,7 @@ export function Settings() {
   const { language, setLanguage, t } = useLanguageStore();
   const { isDarkMode, toggleDarkMode } = useUIStore();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+
 
   // Modal states
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -704,17 +701,7 @@ export function Settings() {
       items: [
         { label: t("itemPersonalInfo", "settings"), icon: User, action: "profile" },
         { label: t("itemContact", "settings"), icon: Mail, action: "contact" },
-        { label: t("itemAddress", "settings"), icon: MapPin, action: "address" },
         { label: t("itemPassword", "settings"), icon: Lock, action: "password" },
-      ],
-    },
-    {
-      title: t("secNotifications", "settings"),
-      icon: Bell,
-      items: [
-        { label: t("itemPushNav", "settings"), icon: Bell, toggle: true, value: pushNotifications, onChange: setPushNotifications },
-        { label: t("itemEmailNav", "settings"), icon: Mail, toggle: true, value: emailNotifications, onChange: setEmailNotifications },
-        { label: t("itemSound", "settings"), icon: Volume2, toggle: true, value: soundEnabled, onChange: setSoundEnabled },
       ],
     },
     {
@@ -729,7 +716,6 @@ export function Settings() {
       title: t("secAbout", "settings"),
       icon: Info,
       items: [
-        { label: t("itemTerms", "settings"), icon: Info, action: "terms" },
         { label: t("itemVersion", "settings"), icon: Info, value: "1.0.0" },
       ],
     },
