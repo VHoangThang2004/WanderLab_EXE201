@@ -72,7 +72,7 @@ const CustomDonutTooltip = ({ active, payload, total }: any) => {
     const data = payload[0].payload;
     const percent = total > 0 ? ((data.value / total) * 100).toFixed(1) : 0;
     return (
-      <div className="bg-white p-3 rounded-lg shadow-xl text-sm text-gray-900 border border-gray-100 font-sans min-w-[160px] z-50">
+      <div className="bg-white p-3 rounded-lg shadow-xl text-sm text-gray-900 border border-gray-100 font-sans min-w-[160px] z-[9999]">
         <p className="font-bold mb-2">{data.name}</p>
         <p className="text-gray-600 mb-1">Số lượng: <span className="font-semibold text-gray-900">{data.value} đơn hàng</span></p>
         <p className="text-gray-600 mb-1">Tỷ lệ: <span className="font-semibold text-gray-900">{percent}%</span></p>
@@ -287,7 +287,7 @@ export function AdminDashboard() {
 
           setOrderStats([
             { name: 'Đã thanh toán', value: paid, color: '#22c55e', amount: totalRevenue },
-            { name: 'Hủy', value: cancelled, color: '#86efac', amount: 0 }
+            { name: 'Hủy', value: cancelled, color: '#ef4444', amount: 0 }
           ]);
 
           const sortedDays = Object.keys(dailyRevenue).sort((a,b) => {
@@ -488,7 +488,7 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
       {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-6 flex-1">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff3131] to-[#ff914d] bg-clip-text text-transparent">
@@ -629,7 +629,7 @@ export function AdminDashboard() {
                   <div className="h-56 relative flex items-center justify-center">
                     <div className="absolute flex flex-col items-center justify-center pointer-events-none z-0">
                       <span className="text-xs text-gray-500 font-medium">{hoveredOrderStat ? hoveredOrderStat.name : 'Tổng đơn hàng'}</span>
-                      <span className="text-2xl font-bold text-gray-900">{hoveredOrderStat ? hoveredOrderStat.value : dbStats.transactions}</span>
+                      <span className="text-2xl font-bold text-gray-900">{hoveredOrderStat ? hoveredOrderStat.value : orderStats.reduce((sum, item) => sum + item.value, 0)}</span>
                     </div>
                     <ResponsiveContainer width="100%" height="100%" className="z-10">
                       <PieChart>
@@ -650,7 +650,7 @@ export function AdminDashboard() {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip content={<CustomDonutTooltip total={dbStats.transactions} />} cursor={{fill: 'transparent'}} />
+                        <RechartsTooltip content={<CustomDonutTooltip total={orderStats.reduce((sum, item) => sum + item.value, 0)} />} cursor={{fill: 'transparent'}} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
