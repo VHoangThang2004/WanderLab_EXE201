@@ -115,12 +115,11 @@ export function WanderSidebar() {
     ? [
         { icon: Activity, label: "Tổng Quan", path: "/admin-dashboard", public: false },
         { icon: Users, label: "Người Dùng", path: "/admin-dashboard?tab=users", public: false },
-        { icon: FileText, label: "Kiểm Duyệt Nội Dung", path: "/admin-dashboard?tab=content", public: false },
         { icon: Sparkles, label: "AI & Dữ Liệu", path: "/admin-dashboard?tab=ai", public: false },
       ]
     : [
         { icon: Home, label: t("home"), path: "/", public: true },
-        { icon: Compass, label: "Landing Page", path: "/landing", public: true },
+        { icon: Compass, label: "Landing Page", path: "/landing", public: true, guestOnly: true },
         { icon: Users, label: t("friends"), path: "/friends", public: false },
         { icon: Globe2, label: language === 'vi' ? "Cách Sử Dụng" : "How to Use", path: "/guide", public: true },
         { icon: PlusSquare, label: t("createDiary"), path: "/create", public: false },
@@ -192,6 +191,7 @@ export function WanderSidebar() {
               const active = isActive(item.path);
               // Show public items always, private items only when authenticated
               if (!item.public && !isAuthenticated) return null;
+              if (item.guestOnly && isAuthenticated) return null;
               return (
                 <Link
                   key={item.path}
