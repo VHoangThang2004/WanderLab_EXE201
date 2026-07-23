@@ -143,7 +143,6 @@ export function CheckoutPage() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!email.includes("@")) e.email = "Email không hợp lệ";
     if (payMethod === "card") {
       if (cardNum.replace(/\s/g, "").length < 16) e.cardNum = "Số thẻ gồm 16 chữ số";
       if (!cardName.trim()) e.cardName = "Vui lòng nhập tên chủ thẻ";
@@ -204,8 +203,7 @@ export function CheckoutPage() {
     setTimeout(() => { setLoading(false); setDone(true); }, 2000);
   };
 
-  const tax = Math.round(plan.priceNum * 0.1);
-  const total = plan.priceNum + tax;
+  const total = plan.priceNum;
 
   const paymentMethods = [
     { id: "payos", label: "VietQR (PayOS)", Icon: Smartphone },
@@ -239,30 +237,9 @@ export function CheckoutPage() {
           {/* ─── Left: Payment Form ─────────────────────────── */}
           <div className="lg:col-span-3 space-y-5">
 
-            {/* Email */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full text-white text-xs flex items-center justify-center font-bold">1</span>
-                Thông tin liên hệ
-              </h2>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Địa chỉ email</label>
-                <input
-                  type="email"
-                  placeholder="ban@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] text-sm transition-all bg-white text-gray-900 placeholder-gray-400 ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200"}`}
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                <p className="text-xs text-gray-400 mt-1.5">Hóa đơn và thông tin tài khoản sẽ được gửi đến email này</p>
-              </div>
-            </div>
-
             {/* Payment method */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 bg-gradient-to-r from-[#ff3131] to-[#ff914d] rounded-full text-white text-xs flex items-center justify-center font-bold">2</span>
                 Phương thức thanh toán
               </h2>
 
@@ -448,14 +425,7 @@ export function CheckoutPage() {
                 <span>{plan.name} × 1 tháng</span>
                 <span className="font-semibold text-gray-900">{plan.price}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>VAT (10%)</span>
-                <span className="font-semibold text-gray-900">{tax.toLocaleString("vi-VN")}₫</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Ưu đãi</span>
-                <span className="font-semibold text-green-600">–0₫</span>
-              </div>
+
               <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between">
                 <span className="font-bold text-gray-900">Tổng cộng</span>
                 <span className="font-extrabold text-[#ff3131] text-lg">{total.toLocaleString("vi-VN")}₫</span>
