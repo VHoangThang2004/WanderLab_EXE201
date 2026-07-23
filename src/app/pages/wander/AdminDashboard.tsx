@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import * as XLSX from 'xlsx';
 import {
   Search,
   Bell,
@@ -280,12 +281,18 @@ export function AdminDashboard() {
           totalDiaries: dCount || 0,
         });
 
-        const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        if (profiles) {
-          const mappedUsers = profiles.map(p => ({
+        // Use edge function to fetch profiles with emails
+        const { data: edgeData } = await supabase.functions.invoke('admin-get-users');
+        const profiles = edgeData?.users || [];
+        
+        if (profiles.length > 0) {
+          // Sắp xếp theo ngày tạo mới nhất (vì edge function chưa sort)
+          profiles.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          
+          const mappedUsers = profiles.map((p: any) => ({
             id: p.id,
-            name: p.full_name,
-            email: `ID: ${p.id.substring(0,8)}`,
+            name: p.full_name || 'N/A',
+            email: p.email || `ID: ${p.id.substring(0,8)}`,
             avatar: p.avatar_url,
             role: p.role === 'explorer' ? 'Explorer' : p.role === 'planner' ? 'Planner' : p.role === 'local_provider' ? 'Local Provider' : 'Admin',
             status: p.status,
@@ -359,6 +366,80 @@ export function AdminDashboard() {
     fetchStats();
   }, []);
 
+  const handleExportExcel = async () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // 1. Fetch Transactions (Giao dịch & Doanh Thu)
+      const { data: transData } = await supabase.from('payment_transactions').select('id, order_code, amount, status, created_at');
+      
+      const wsDoanhThuData = [
+        ["ID Giao Dịch", "Mã Đơn Hàng", "Doanh Thu (VND)", "Ngày Thanh Toán"]
+      ];
+      const wsGiaoDichData = [
+        ["ID Giao Dịch", "Mã Đơn Hàng", "Số Tiền (VND)", "Trạng Thái", "Ngày Tạo"]
+      ];
+
+      if (transData) {
+        transData.forEach(t => {
+          const dateStr = new Date(t.created_at).toLocaleString('vi-VN');
+          wsGiaoDichData.push([t.id, t.order_code, t.amount, t.status, dateStr]);
+          // Chỉ lấy các giao dịch thành công đưa vào danh sách Doanh Thu
+          if (t.status === 'SUCCESS' || t.status === 'PAID') {
+            wsDoanhThuData.push([t.id, t.order_code, t.amount, dateStr]);
+          }
+        });
+      }
+
+      const wsDoanhThu = XLSX.utils.aoa_to_sheet(wsDoanhThuData);
+      wsDoanhThu['!cols'] = [{ wch: 36 }, { wch: 20 }, { wch: 20 }, { wch: 25 }];
+      XLSX.utils.book_append_sheet(wb, wsDoanhThu, "Doanh Thu");
+
+      // 2. Fetch Users from Edge Function to get Emails (Admins only)
+      const { data: edgeData, error: uErr } = await supabase.functions.invoke('admin-get-users');
+      if (uErr) {
+        console.error("Lỗi lấy dữ liệu Users từ Edge Function:", uErr);
+        alert("Không thể lấy dữ liệu Users. Đảm bảo bạn đã deploy Edge Function 'admin-get-users'.");
+      }
+      const usersData = edgeData?.users || [];
+      
+      const wsUsersData = [
+        ["ID Người Dùng", "Họ Tên", "Email", "Vai Trò", "Ngày Đăng Ký"]
+      ];
+      if (usersData && usersData.length > 0) {
+        usersData.forEach((u: any) => wsUsersData.push([u.id, u.full_name || 'N/A', u.email || 'N/A', u.role || 'user', new Date(u.created_at).toLocaleString('vi-VN')]));
+      }
+      const wsUsers = XLSX.utils.aoa_to_sheet(wsUsersData);
+      wsUsers['!cols'] = [{ wch: 36 }, { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 25 }];
+      XLSX.utils.book_append_sheet(wb, wsUsers, "Người Dùng");
+
+      // 3. Đưa danh sách Giao dịch vào Sheet
+      const wsGiaoDich = XLSX.utils.aoa_to_sheet(wsGiaoDichData);
+      wsGiaoDich['!cols'] = [{ wch: 36 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 25 }];
+      XLSX.utils.book_append_sheet(wb, wsGiaoDich, "Giao Dịch");
+
+      // 4. Fetch Reviews/Comments
+      // Sửa lại thành content thay vì text, và bỏ rating vì comments không có rating
+      const { data: reviewData, error: rErr } = await supabase.from('comments').select('id, content, created_at, profiles(full_name)');
+      if (rErr) console.error("Lỗi lấy dữ liệu Đánh Giá:", rErr);
+      
+      const wsReviewData = [
+        ["ID Đánh Giá", "Người Dùng", "Nội Dung", "Ngày Tạo"]
+      ];
+      if (reviewData) {
+        reviewData.forEach(r => wsReviewData.push([r.id, (r.profiles as any)?.full_name || 'Khách', r.content || 'N/A', new Date(r.created_at).toLocaleString('vi-VN')]));
+      }
+      const wsReviews = XLSX.utils.aoa_to_sheet(wsReviewData);
+      wsReviews['!cols'] = [{ wch: 36 }, { wch: 25 }, { wch: 50 }, { wch: 25 }];
+      XLSX.utils.book_append_sheet(wb, wsReviews, "Đánh Giá");
+
+      XLSX.writeFile(wb, "ThongKe_ChiTiet_AdminDashboard.xlsx");
+    } catch (err) {
+      console.error("Lỗi khi xuất Excel chi tiết:", err);
+      alert("Có lỗi xảy ra khi xuất file Excel. Vui lòng kiểm tra console.");
+    }
+  };
+
   const stats = [
     { title: "Doanh Thu", value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbStats.revenue), changeObj: dbChanges.revenue, icon: DollarSign },
     { title: "Số lượng User", value: dbStats.users.toString(), changeObj: dbChanges.users, icon: Users },
@@ -376,19 +457,18 @@ export function AdminDashboard() {
               Admin Dashboard
             </h1>
             
-            <div className="relative flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tìm kiếm người dùng, nhật ký, báo cáo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131] focus:border-transparent"
-              />
-            </div>
+
           </div>
 
           <div className="flex items-center gap-4">
+            <button 
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+              title="Xuất Excel Thống Kê"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Xuất Excel</span>
+            </button>
             <button onClick={handleLogout} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Đăng xuất">
               <LogOut size={20} className="text-gray-600" />
             </button>
@@ -620,31 +700,7 @@ export function AdminDashboard() {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              {/* Filters */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                    <Filter size={16} />
-                    Lọc
-                  </button>
-                  <select className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
-                    <option>Tất cả vai trò</option>
-                    <option>Explorer</option>
-                    <option>Planner</option>
-                    <option>Local Provider</option>
-                  </select>
-                  <select className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#ff3131]">
-                    <option>Tất cả trạng thái</option>
-                    <option>Đang hoạt động</option>
-                    <option>Chờ duyệt</option>
-                    <option>Đã đình chỉ</option>
-                  </select>
-                  <button className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#ff3131] to-[#ff914d] text-white rounded-lg text-sm font-medium hover:shadow-lg transition-shadow">
-                    <Download size={16} />
-                    Xuất dữ liệu
-                  </button>
-                </div>
-              </div>
+
 
               {/* Users Table */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -662,7 +718,7 @@ export function AdminDashboard() {
                           Trạng thái
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Uy tín
+                          Email
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Ngày tham gia
@@ -684,7 +740,7 @@ export function AdminDashboard() {
                               />
                               <div>
                                 <p className="font-semibold text-gray-900 text-sm">{user.name}</p>
-                                <p className="text-xs text-gray-500">{user.email}</p>
+                                <p className="text-xs text-gray-500">ID: {user.id.substring(0,8)}</p>
                               </div>
                             </div>
                           </td>
@@ -699,19 +755,7 @@ export function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            {user.reputation > 0 ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden w-20">
-                                  <div
-                                    className="h-full bg-gradient-to-r from-[#ff3131] to-[#ff914d]"
-                                    style={{ width: `${user.reputation}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-sm font-semibold text-gray-700">{user.reputation}</span>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">N/A</span>
-                            )}
+                            <span className="text-sm text-gray-700">{user.email}</span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
                             {new Date(user.joinDate).toLocaleDateString("vi-VN")}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CreditCard, MessageSquare, DollarSign, TrendingUp, TrendingDown, ArrowLeft } from 'lucide-react';
+import { Users, CreditCard, MessageSquare, DollarSign, TrendingUp, TrendingDown, ArrowLeft, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores';
 import { useNavigate } from 'react-router';
@@ -77,6 +78,27 @@ export function AdminDashboard() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
+  const handleExportExcel = () => {
+    const wsData = [
+      ["Thống Kê", "Giá Trị"],
+      ["Tổng Doanh Thu (VND)", stats.revenue],
+      ["Tổng Người Dùng", stats.users],
+      ["Tổng Giao Dịch", stats.transactions],
+      ["Lượt Đánh Giá", stats.reviews]
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Tùy chỉnh độ rộng cột
+    ws['!cols'] = [{ wch: 25 }, { wch: 15 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Thong Ke");
+    
+    XLSX.writeFile(wb, "ThongKe_AdminDashboard.xlsx");
+  };
+
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Đang tải dữ liệu...</div>;
   }
@@ -111,9 +133,18 @@ export function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900">Tổng quan hệ thống</h2>
-          <p className="text-gray-500 text-sm mt-1">Cập nhật số liệu mới nhất ngày hôm nay</p>
+        <div className="mb-8 flex justify-between items-end">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Tổng quan hệ thống</h2>
+            <p className="text-gray-500 text-sm mt-1">Cập nhật số liệu mới nhất ngày hôm nay</p>
+          </div>
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+          >
+            <Download size={16} />
+            Xuất Excel
+          </button>
         </div>
 
         {/* Stats Grid */}

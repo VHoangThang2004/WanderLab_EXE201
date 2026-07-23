@@ -115,7 +115,6 @@ export function WanderSidebar() {
     ? [
         { icon: Activity, label: "Tổng Quan", path: "/admin-dashboard", public: false },
         { icon: Users, label: "Người Dùng", path: "/admin-dashboard?tab=users", public: false },
-        { icon: Sparkles, label: "AI & Dữ Liệu", path: "/admin-dashboard?tab=ai", public: false },
       ]
     : [
         { icon: Home, label: t("home"), path: "/", public: true },
