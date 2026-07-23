@@ -139,7 +139,7 @@ export function AdminDashboard() {
         
         // Removed the DB update since RLS blocks it for Admin role without UPDATE policy
 
-        const { data: transactions } = await supabase.from('payment_transactions').select('amount, status, created_at');
+        const { data: transactions } = await supabase.from('payment_transactions').select('id, amount, status, created_at, order_code');
         let totalRevenue = 0;
         let totalTransactions = 0;
         let revThisMonth = 0;
@@ -147,8 +147,51 @@ export function AdminDashboard() {
         let transThisMonth = 0;
         let transLastMonth = 0;
 
+        // Đồng bộ trạng thái các đơn PENDING với PayOS
+        const syncPendingTransactions = async (pendingTrans: any[]) => {
+          const PAYOS_CLIENT_ID = import.meta.env.VITE_PAYOS_CLIENT_ID;
+          const PAYOS_API_KEY = import.meta.env.VITE_PAYOS_API_KEY;
+          
+          if (!PAYOS_CLIENT_ID || !PAYOS_API_KEY) return;
+
+          for (const t of pendingTrans) {
+            if (!t.order_code) continue;
+            try {
+              const res = await fetch(`https://api-merchant.payos.vn/v2/payment-requests/${t.order_code}`, {
+                headers: {
+                  'x-client-id': PAYOS_CLIENT_ID,
+                  'x-api-key': PAYOS_API_KEY
+                }
+              });
+              const payosData = await res.json();
+              if (payosData && payosData.data && payosData.data.status) {
+                const realStatus = payosData.data.status;
+                if (realStatus !== 'PENDING') {
+                  // Cập nhật Database (Có thể bị RLS chặn nếu Admin không có quyền, nhưng cứ thử)
+                  await supabase
+                    .from('payment_transactions')
+                    .update({ status: realStatus })
+                    .eq('id', t.id);
+                    
+                  // Cập nhật state local để thống kê hiển thị đúng ngay lập tức!
+                  t.status = realStatus;
+                }
+              }
+            } catch (e) {
+              console.error("Lỗi đồng bộ PayOS:", e);
+            }
+          }
+        };
+
         if (transactions) {
           totalTransactions = transactions.length;
+          
+          // Chạy đồng bộ những đơn đang PENDING
+          const pendingList = transactions.filter(t => t.status === 'PENDING');
+          if (pendingList.length > 0) {
+            await syncPendingTransactions(pendingList);
+          }
+
           let paid = 0;
           let pending = 0;
           let cancelled = 0;

@@ -1,22 +1,36 @@
 import { useSearchParams, Link } from "react-router";
 import { useEffect, useState } from "react";
 import { Check, XCircle, ChevronLeft, Sparkles } from "lucide-react";
+import { supabase } from "../../../lib/supabase";
 
 export function PaymentSuccessPage() {
   const [params] = useSearchParams();
   const code = params.get("code");
   const cancel = params.get("cancel");
+  const orderCode = params.get("orderCode");
   const [status, setStatus] = useState<"loading" | "success" | "error" | "cancelled">("loading");
 
   useEffect(() => {
+    const updateDB = async (statusToUpdate: string) => {
+      if (orderCode) {
+        await supabase
+          .from('payment_transactions')
+          .update({ status: statusToUpdate })
+          .eq('order_code', orderCode);
+      }
+    };
+
     if (cancel === "true") {
       setStatus("cancelled");
+      updateDB('CANCELLED');
     } else if (code === "00") {
       setStatus("success");
+      updateDB('PAID');
     } else {
       setStatus("error");
+      updateDB('CANCELLED');
     }
-  }, [code, cancel]);
+  }, [code, cancel, orderCode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF5F3] to-white flex flex-col items-center justify-center px-4 py-12">
