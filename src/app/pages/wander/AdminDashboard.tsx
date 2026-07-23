@@ -113,18 +113,26 @@ export function AdminDashboard() {
     const { type, user: targetUser } = actionModal;
     
     try {
+      let payload = null;
+      if (type === 'delete') payload = 'suspended';
+      else if (type === 'role') payload = modalInput;
+      else if (type === 'edit') payload = modalInput;
+
+      // Goi Edge Function de update an toan (tránh loi RLS)
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
+        body: { action: type, targetUserId: targetUser.id, payload }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Có lỗi xảy ra');
+      }
+
+      // Cap nhat UI cuc bo
       if (type === 'delete') {
-        // Soft delete bằng cách đổi status
-        const { error } = await supabase.from('profiles').update({ status: 'suspended' }).eq('id', targetUser.id);
-        if (error) throw error;
         setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, status: 'suspended' } : u));
       } else if (type === 'role') {
-        const { error } = await supabase.from('profiles').update({ role: modalInput }).eq('id', targetUser.id);
-        if (error) throw error;
         setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, role: modalInput } : u));
       } else if (type === 'edit') {
-        const { error } = await supabase.from('profiles').update({ full_name: modalInput }).eq('id', targetUser.id);
-        if (error) throw error;
         setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, name: modalInput } : u));
       }
       
