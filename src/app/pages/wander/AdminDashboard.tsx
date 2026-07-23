@@ -34,6 +34,7 @@ import {
   LogOut,
   Route,
   CreditCard,
+  Edit
 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { supabase } from "@/lib/supabase";
@@ -85,7 +86,7 @@ const CustomDonutTooltip = ({ active, payload, total }: any) => {
 export function AdminDashboard() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const selectedTab = (searchParams.get("tab") as "overview" | "users" | "content" | "ai") || "overview";
+  const selectedTab = (searchParams.get("tab") as "overview" | "users" | "content") || "overview";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [dbStats, setDbStats] = useState({ users: 0, reviews: 0, revenue: 0, transactions: 0 });
@@ -102,8 +103,37 @@ export function AdminDashboard() {
   const [orderStats, setOrderStats] = useState<any[]>([]);
   const [hoveredOrderStat, setHoveredOrderStat] = useState<any | null>(null);
   const [revenueStats, setRevenueStats] = useState<any[]>([]);
+  const [actionModal, setActionModal] = useState<{ type: 'edit' | 'role' | 'delete' | null, user: any }>({ type: null, user: null });
+  const [modalInput, setModalInput] = useState("");
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const handleActionSubmit = async () => {
+    if (!actionModal.user) return;
+    const { type, user: targetUser } = actionModal;
+    
+    try {
+      if (type === 'delete') {
+        // Soft delete bằng cách đổi status
+        const { error } = await supabase.from('profiles').update({ status: 'suspended' }).eq('id', targetUser.id);
+        if (error) throw error;
+        setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, status: 'suspended' } : u));
+      } else if (type === 'role') {
+        const { error } = await supabase.from('profiles').update({ role: modalInput }).eq('id', targetUser.id);
+        if (error) throw error;
+        setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, role: modalInput } : u));
+      } else if (type === 'edit') {
+        const { error } = await supabase.from('profiles').update({ full_name: modalInput }).eq('id', targetUser.id);
+        if (error) throw error;
+        setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, name: modalInput } : u));
+      }
+      
+      setActionModal({ type: null, user: null });
+    } catch (error) {
+      console.error("Action error:", error);
+      alert("Có lỗi xảy ra, vui lòng thử lại!");
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -772,11 +802,27 @@ export function AdminDashboard() {
                                   </button>
                                 </>
                               )}
-                              <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Xem chi tiết">
-                                <Eye size={16} />
+
+                              <button 
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" 
+                                title="Sửa"
+                                onClick={() => { setModalInput(user.name); setActionModal({ type: 'edit', user }); }}
+                              >
+                                <Edit size={16} />
                               </button>
-                              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                                <MoreVertical size={16} />
+                              <button 
+                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" 
+                                title="Cấp quyền"
+                                onClick={() => { setModalInput(user.role); setActionModal({ type: 'role', user }); }}
+                              >
+                                <Shield size={16} />
+                              </button>
+                              <button 
+                                className="p-2 text-[#ff3131] hover:bg-red-50 rounded-lg transition-colors" 
+                                title="Xóa"
+                                onClick={() => setActionModal({ type: 'delete', user })}
+                              >
+                                <Trash2 size={16} />
                               </button>
                             </div>
                           </td>
@@ -903,75 +949,76 @@ export function AdminDashboard() {
               </div>
             </motion.div>
           )}
-
-          {selectedTab === "ai" && (
-            <motion.div
-              key="ai"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              {/* AI System Status */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Hệ Thống AI</h3>
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  </div>
-                  <p className="text-3xl font-bold text-green-600 mb-2">Trực tuyến</p>
-                  <p className="text-sm text-gray-600">Sẵn sàng phục vụ</p>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Tỉ Lệ Dùng AI</h3>
-                    <BarChart3 size={20} className="text-[#ff3131]" />
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">
-                    {aiStats.totalItineraries > 0 
-                      ? ((aiStats.aiItineraries / aiStats.totalItineraries) * 100).toFixed(1) 
-                      : '0.0'}%
-                  </p>
-                  <p className="text-sm text-gray-600">Lịch trình có AI tạo</p>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">Lịch Trình AI</h3>
-                    <AlertTriangle size={20} className="text-[#ff3131]" />
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">{aiStats.aiItineraries}</p>
-                  <p className="text-sm text-gray-600">Đã được tạo tự động</p>
-                </div>
-              </div>
-
-              {/* Data Flow Visualization */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Tổng Quan Dữ Liệu Hệ Thống</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {[
-                    { label: "Nhật ký chia sẻ", value: aiStats.totalDiaries, icon: FileText, color: "blue" },
-                    { label: "Lịch trình chuyến đi", value: aiStats.totalItineraries, icon: MapPin, color: "purple" },
-                    { label: "Người dùng đăng ký", value: dbStats.users, icon: Users, color: "pink" },
-                    { label: "Bình luận & Tương tác", value: dbStats.reviews, icon: Heart, color: "green" },
-                  ].map((item, i) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <div key={i} className="bg-gray-50 rounded-xl p-4">
-                        <IconComponent size={24} className={`text-${item.color}-600 mb-3`} />
-                        <p className="text-2xl font-bold text-gray-900 mb-1">{item.value.toLocaleString('vi-VN')}</p>
-                        <p className="text-xs text-gray-600">{item.label}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          )}
         </AnimatePresence>
       </main>
+
+      {/* Action Modal */}
+      <AnimatePresence>
+        {actionModal.type && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {actionModal.type === 'delete' ? 'Xác nhận Đình chỉ' : actionModal.type === 'role' ? 'Cấp quyền Người Dùng' : 'Sửa thông tin'}
+              </h3>
+              
+              <div className="mb-6">
+                {actionModal.type === 'delete' ? (
+                  <p className="text-gray-600">Bạn có chắc chắn muốn đình chỉ (khóa) người dùng <strong>{actionModal.user?.name}</strong> không?</p>
+                ) : actionModal.type === 'role' ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Chọn vai trò mới</label>
+                    <select 
+                      value={modalInput}
+                      onChange={(e) => setModalInput(e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131]"
+                    >
+                      <option value="explorer">Explorer (Người dùng)</option>
+                      <option value="planner">Planner (Người lên lịch)</option>
+                      <option value="local_provider">Local Provider (Nhà cung cấp)</option>
+                      <option value="admin">Admin (Quản trị viên)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Tên người dùng</label>
+                    <input 
+                      type="text" 
+                      value={modalInput}
+                      onChange={(e) => setModalInput(e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff3131]"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 justify-end">
+                <button 
+                  onClick={() => setActionModal({ type: null, user: null })}
+                  className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={handleActionSubmit}
+                  className={`px-4 py-2 text-white font-medium rounded-lg transition-colors ${actionModal.type === 'delete' ? 'bg-[#ff3131] hover:bg-red-600' : 'bg-gradient-to-r from-[#ff3131] to-[#ff914d]'}`}
+                >
+                  {actionModal.type === 'delete' ? 'Đình chỉ' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
