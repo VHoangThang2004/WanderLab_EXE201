@@ -18,6 +18,8 @@ export class WebRTCService {
   private localIceCandidates: RTCIceCandidateInit[] = [];
   private isCaller: boolean = false;
   private hasReceivedAnswer: boolean = false;
+  private isSubscribed: boolean = false;
+  private pendingBroadcasts: any[] = [];
 
   constructor(userId: string, targetId: string) {
     this.userId = userId;
@@ -48,7 +50,23 @@ export class WebRTCService {
         if (payload.payload.targetId !== this.userId) return;
         this.endCall(false); // don't broadcast end again
       })
-      .subscribe();
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          this.isSubscribed = true;
+          for (const msg of this.pendingBroadcasts) {
+            this.channel.send(msg);
+          }
+          this.pendingBroadcasts = [];
+        }
+      });
+  }
+
+  private safeSend(msg: any) {
+    if (this.isSubscribed) {
+      this.channel.send(msg);
+    } else {
+      this.pendingBroadcasts.push(msg);
+    }
   }
 
   private initPeerConnection() {
@@ -64,7 +82,7 @@ export class WebRTCService {
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         if (this.hasReceivedAnswer || !this.isCaller) {
-          this.channel.send({
+          this.safeSend({
             type: 'broadcast',
             event: 'webrtc-ice',
             payload: { targetId: this.targetId, candidate: event.candidate }
@@ -126,7 +144,7 @@ export class WebRTCService {
       const offer = await this.peerConnection!.createOffer();
       await this.peerConnection!.setLocalDescription(offer);
       
-      this.channel.send({
+      this.safeSend({
         type: 'broadcast',
         event: 'webrtc-offer',
         payload: { targetId: this.targetId, offer }
@@ -147,7 +165,7 @@ export class WebRTCService {
                 offer
               }
             });
-            supabase.removeChannel(ringChannel);
+            setTimeout(() => supabase.removeChannel(ringChannel), 1000);
           }
         });
       }
@@ -187,7 +205,7 @@ export class WebRTCService {
       const answer = await this.peerConnection!.createAnswer();
       await this.peerConnection!.setLocalDescription(answer);
       
-      this.channel.send({
+      this.safeSend({
         type: 'broadcast',
         event: 'webrtc-answer',
         payload: { targetId: this.targetId, answer }
@@ -212,7 +230,7 @@ export class WebRTCService {
       
       // Flush buffered local candidates
       for (const candidate of this.localIceCandidates) {
-        this.channel.send({
+        this.safeSend({
           type: 'broadcast',
           event: 'webrtc-ice',
           payload: { targetId: this.targetId, candidate }
@@ -247,7 +265,7 @@ export class WebRTCService {
 
   public endCall(broadcast: boolean = true) {
     if (broadcast && this.channel) {
-      this.channel.send({
+      this.safeSend({
         type: 'broadcast',
         event: 'webrtc-end',
         payload: { targetId: this.targetId }
