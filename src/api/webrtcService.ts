@@ -1,85 +1,126 @@
 import { supabase } from '@/lib/supabase';
 
-// Helper class to manage WebRTC connections via Supabase Realtime Signaling
+export type WebRTCState = 'idle' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'failed';
+
+export interface CallerInfo {
+  name: string;
+  avatar: string;
+}
+
 export class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
-  private remoteStream: MediaStream | null = null;
   private channel: any = null;
   
   private userId: string;
   private targetId: string;
   
   public onRemoteStream?: (stream: MediaStream) => void;
-  public onCallEnded?: () => void;
-  public onCallStateChange?: (state: 'ringing' | 'connected' | 'ended' | 'failed') => void;
+  public onCallStateChange?: (state: WebRTCState) => void;
 
-  private pendingIceCandidates: RTCIceCandidateInit[] = [];
-  private localIceCandidates: RTCIceCandidateInit[] = [];
-  private isCaller: boolean = false;
-  private hasReceivedAnswer: boolean = false;
   private isSubscribed: boolean = false;
-  private pendingBroadcasts: any[] = [];
+  private msgQueue: any[] = [];
+  private pendingRemoteCandidates: RTCIceCandidateInit[] = [];
+  
+  private isCaller: boolean = false;
+  private state: WebRTCState = 'idle';
 
   constructor(userId: string, targetId: string) {
     this.userId = userId;
     this.targetId = targetId;
-    
-    // Create a unique channel for this pair (alphabetical order prevents duplication)
-    const channelName = `call_${[userId, targetId].sort().join('_')}`;
-    console.log(`[WebRTC] Initializing for ${userId} to ${targetId}. Channel: ${channelName}`);
-    this.channel = supabase.channel(channelName);
-    
-    this.setupSignaling();
   }
 
-  private setupSignaling() {
+  private setState(newState: WebRTCState) {
+    if (this.state === newState) return;
+    this.state = newState;
+    console.log(`[WebRTC] State changed to: ${newState}`);
+    if (this.onCallStateChange) {
+      this.onCallStateChange(newState);
+    }
+  }
+
+  public async initializeSignaling(): Promise<void> {
+    if (this.channel) return;
+
+    const channelName = `call_${[this.userId, this.targetId].sort().join('_')}`;
+    console.log(`[WebRTC] Connecting to signaling channel: ${channelName}`);
+    
+    this.channel = supabase.channel(channelName);
+    
     this.channel
-      .on('broadcast', { event: 'webrtc-offer' }, async (payload: any) => {
-        console.log('[WebRTC] Received offer', payload);
-        if (payload.payload.targetId !== this.userId) return;
-        await this.handleOffer(payload.payload.offer);
-      })
-      .on('broadcast', { event: 'webrtc-answer' }, async (payload: any) => {
-        console.log('[WebRTC] Received answer', payload);
-        if (payload.payload.targetId !== this.userId) return;
-        await this.handleAnswer(payload.payload.answer);
-      })
-      .on('broadcast', { event: 'webrtc-ice' }, async (payload: any) => {
-        console.log('[WebRTC] Received ICE candidate', payload);
-        if (payload.payload.targetId !== this.userId) return;
-        await this.handleIceCandidate(payload.payload.candidate);
-      })
-      .on('broadcast', { event: 'webrtc-end' }, (payload: any) => {
-        console.log('[WebRTC] Received end call');
-        if (payload.payload.targetId !== this.userId) return;
-        this.endCall(false); // don't broadcast end again
+      .on('broadcast', { event: 'webrtc-signal' }, async ({ payload }: any) => {
+        if (payload.targetId !== this.userId) return;
+        await this.handleSignal(payload.data);
       })
       .subscribe((status: string) => {
-        console.log(`[WebRTC] Channel status: ${status}`);
+        console.log(`[WebRTC] Signaling status: ${status}`);
         if (status === 'SUBSCRIBED') {
           this.isSubscribed = true;
-          console.log(`[WebRTC] Flushing ${this.pendingBroadcasts.length} pending broadcasts`);
-          for (const msg of this.pendingBroadcasts) {
-            this.channel.send(msg);
-          }
-          this.pendingBroadcasts = [];
+          this.flushMessageQueue();
         }
       });
   }
 
-  private safeSend(msg: any) {
+  private sendSignal(data: any) {
+    const msg = {
+      type: 'broadcast',
+      event: 'webrtc-signal',
+      payload: { targetId: this.targetId, data }
+    };
+
     if (this.isSubscribed) {
-      console.log('[WebRTC] Sending broadcast:', msg.event);
       this.channel.send(msg);
     } else {
-      console.log('[WebRTC] Buffering broadcast (not subscribed):', msg.event);
-      this.pendingBroadcasts.push(msg);
+      this.msgQueue.push(msg);
     }
   }
 
-  private initPeerConnection() {
-    const configuration = {
+  private flushMessageQueue() {
+    while (this.msgQueue.length > 0) {
+      const msg = this.msgQueue.shift();
+      this.channel.send(msg);
+    }
+  }
+
+  private async handleSignal(data: any) {
+    console.log(`[WebRTC] Received signal:`, data.type);
+    
+    try {
+      if (data.type === 'offer') {
+        // UI handles incoming call via global signal, so we ignore offer here
+        // as answerCall will be explicitly called by the user.
+      } else if (data.type === 'answer') {
+        if (this.peerConnection) {
+          await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          this.processPendingCandidates();
+        }
+      } else if (data.type === 'ice-candidate') {
+        if (this.peerConnection && this.peerConnection.remoteDescription) {
+          await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } else {
+          this.pendingRemoteCandidates.push(data.candidate);
+        }
+      } else if (data.type === 'end') {
+        this.setState('ended');
+        this.cleanup(false);
+      } else if (data.type === 'reject') {
+        this.setState('failed');
+        this.cleanup(false);
+      }
+    } catch (err) {
+      console.error('[WebRTC] Error handling signal:', err);
+    }
+  }
+
+  private processPendingCandidates() {
+    for (const candidate of this.pendingRemoteCandidates) {
+      this.peerConnection?.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
+    }
+    this.pendingRemoteCandidates = [];
+  }
+
+  private createPeerConnection() {
+    this.peerConnection = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
@@ -99,213 +140,128 @@ export class WebRTCService {
           credential: 'openrelayproject'
         }
       ]
-    };
-    
-    this.peerConnection = new RTCPeerConnection(configuration);
+    });
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        if (this.hasReceivedAnswer || !this.isCaller) {
-          this.safeSend({
-            type: 'broadcast',
-            event: 'webrtc-ice',
-            payload: { targetId: this.targetId, candidate: event.candidate }
-          });
-        } else {
-          // Caller buffers ICE candidates until answer is received
-          this.localIceCandidates.push(event.candidate);
-        }
+        this.sendSignal({ type: 'ice-candidate', candidate: event.candidate });
       }
     };
 
     this.peerConnection.ontrack = (event) => {
-      this.remoteStream = event.streams[0];
-      if (this.onRemoteStream) {
-        this.onRemoteStream(this.remoteStream);
+      if (event.streams && event.streams[0]) {
+        if (this.onRemoteStream) this.onRemoteStream(event.streams[0]);
       }
     };
-    
+
     this.peerConnection.onconnectionstatechange = () => {
-      console.log('[WebRTC] Connection state changed:', this.peerConnection?.connectionState);
-      if (this.peerConnection?.connectionState === 'connected') {
-        if (this.onCallStateChange) this.onCallStateChange('connected');
-      } else if (this.peerConnection?.connectionState === 'failed' || this.peerConnection?.connectionState === 'disconnected') {
-        if (this.onCallStateChange) this.onCallStateChange('failed');
-        this.endCall(false);
+      const state = this.peerConnection?.connectionState;
+      console.log(`[WebRTC] PC State: ${state}`);
+      if (state === 'connected') {
+        this.setState('connected');
+      } else if (state === 'failed' || state === 'disconnected') {
+        this.setState('failed');
+        this.cleanup(false);
       }
     };
   }
 
-  private async getMediaStream(isVideoCall: boolean): Promise<MediaStream> {
+  private async getMedia(isVideoCall: boolean): Promise<MediaStream> {
     try {
-      return await navigator.mediaDevices.getUserMedia({
-        video: isVideoCall,
-        audio: true
-      });
-    } catch (err) {
-      console.warn("Failed to get video+audio, trying audio only", err);
+      return await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+    } catch (e) {
+      console.warn("[WebRTC] Media access denied or missing, falling back to audio only");
       try {
         return await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-      } catch (err2) {
-        console.warn("Failed to get audio, proceeding without media", err2);
-        return new MediaStream(); // Return empty stream so call doesn't fail
+      } catch (e2) {
+        console.warn("[WebRTC] Audio access denied, returning empty stream");
+        return new MediaStream();
       }
     }
   }
 
-  public async startCall(isVideoCall: boolean, callerInfo?: {name: string, avatar: string}): Promise<MediaStream> {
+  public async startCall(isVideoCall: boolean, callerInfo: CallerInfo): Promise<MediaStream> {
     this.isCaller = true;
-    this.initPeerConnection();
+    this.setState('ringing');
     
-    try {
-      this.localStream = await this.getMediaStream(isVideoCall);
-      
-      this.localStream.getTracks().forEach(track => {
-        if (this.peerConnection) {
-          this.peerConnection.addTrack(track, this.localStream!);
-        }
-      });
-      
-      const offer = await this.peerConnection!.createOffer();
-      await this.peerConnection!.setLocalDescription(offer);
-      
-      console.log('[WebRTC] Created offer, sending...');
-      this.safeSend({
-        type: 'broadcast',
-        event: 'webrtc-offer',
-        payload: { targetId: this.targetId, offer }
-      });
-      
-      if (callerInfo) {
-        console.log(`[WebRTC] Ringing target on user_signals_${this.targetId}...`);
-        const ringChannel = supabase.channel(`user_signals_${this.targetId}`);
-        ringChannel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await ringChannel.send({
-              type: 'broadcast',
-              event: 'incoming_call',
-              payload: {
-                callerId: this.userId,
-                callerName: callerInfo.name,
-                callerAvatar: callerInfo.avatar,
-                isVideoCall,
-                offer
-              }
-            }).then((res) => {
-              console.log("[WebRTC] Ring signal sent:", res);
-            }).catch((err) => {
-              console.error("[WebRTC] Failed to send ring signal:", err);
-            });
-            setTimeout(() => supabase.removeChannel(ringChannel), 3000); // Wait longer before removing
+    await this.initializeSignaling();
+    this.createPeerConnection();
+
+    this.localStream = await this.getMedia(isVideoCall);
+    this.localStream.getTracks().forEach(track => this.peerConnection?.addTrack(track, this.localStream!));
+
+    const offer = await this.peerConnection!.createOffer();
+    await this.peerConnection!.setLocalDescription(offer);
+
+    // Broadcast globally to wake up the receiver's UI
+    const ringChannel = supabase.channel(`user_signals_${this.targetId}`);
+    ringChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await ringChannel.send({
+          type: 'broadcast',
+          event: 'incoming_call',
+          payload: {
+            callerId: this.userId,
+            callerName: callerInfo.name,
+            callerAvatar: callerInfo.avatar,
+            isVideoCall,
+            offer
           }
         });
+        setTimeout(() => supabase.removeChannel(ringChannel), 2000);
       }
-      
-      return this.localStream;
-    } catch (err) {
-      console.error("Error accessing media devices.", err);
-      throw err;
-    }
+    });
+
+    return this.localStream;
   }
 
   public async answerCall(offer: RTCSessionDescriptionInit, isVideoCall: boolean): Promise<MediaStream> {
     this.isCaller = false;
-    this.initPeerConnection();
+    this.setState('connecting');
     
-    try {
-      this.localStream = await this.getMediaStream(isVideoCall);
-      
-      this.localStream.getTracks().forEach(track => {
-        if (this.peerConnection) {
-          this.peerConnection.addTrack(track, this.localStream!);
-        }
-      });
-      
-      await this.peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
-      
-      // Process any pending ICE candidates
-      for (const candidate of this.pendingIceCandidates) {
-        try {
-          await this.peerConnection!.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (e) {
-          console.error("Failed to add pending ice candidate", e);
-        }
-      }
-      this.pendingIceCandidates = [];
+    await this.initializeSignaling();
+    this.createPeerConnection();
 
-      const answer = await this.peerConnection!.createAnswer();
-      await this.peerConnection!.setLocalDescription(answer);
-      
-      console.log('[WebRTC] Created answer, sending...');
-      this.safeSend({
-        type: 'broadcast',
-        event: 'webrtc-answer',
-        payload: { targetId: this.targetId, answer }
-      });
-      
-      return this.localStream;
-    } catch (err) {
-      console.error("Error answering call.", err);
-      throw err;
-    }
+    this.localStream = await this.getMedia(isVideoCall);
+    this.localStream.getTracks().forEach(track => this.peerConnection?.addTrack(track, this.localStream!));
+
+    await this.peerConnection!.setRemoteDescription(new RTCSessionDescription(offer));
+    this.processPendingCandidates();
+
+    const answer = await this.peerConnection!.createAnswer();
+    await this.peerConnection!.setLocalDescription(answer);
+
+    this.sendSignal({ type: 'answer', answer });
+
+    return this.localStream;
   }
 
-  private async handleOffer(offer: RTCSessionDescriptionInit) {
-    // This is handled by UI calling answerCall() when user accepts
-    // We can emit an event here to notify UI of incoming call
-  }
-
-  private async handleAnswer(answer: RTCSessionDescriptionInit) {
-    if (this.peerConnection) {
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-      this.hasReceivedAnswer = true;
-      
-      // Flush buffered local candidates
-      for (const candidate of this.localIceCandidates) {
-        this.safeSend({
-          type: 'broadcast',
-          event: 'webrtc-ice',
-          payload: { targetId: this.targetId, candidate }
-        });
-      }
-      this.localIceCandidates = [];
-      
-      // Process any pending remote ICE candidates
-      for (const candidate of this.pendingIceCandidates) {
-        try {
-          await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (e) {
-          console.error("Failed to add pending ice candidate", e);
-        }
-      }
-      this.pendingIceCandidates = [];
-    }
-  }
-
-  private async handleIceCandidate(candidate: RTCIceCandidateInit) {
-    if (this.peerConnection && this.peerConnection.remoteDescription) {
-      try {
-        await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.error('Error adding received ice candidate', e);
-      }
-    } else {
-      // Store candidate until remote description is set
-      this.pendingIceCandidates.push(candidate);
-    }
+  public rejectCall() {
+    this.setState('failed');
+    this.initializeSignaling().then(() => {
+      this.sendSignal({ type: 'reject' });
+      setTimeout(() => this.cleanup(false), 1000);
+    });
   }
 
   public endCall(broadcast: boolean = true) {
-    if (broadcast && this.channel) {
-      this.safeSend({
-        type: 'broadcast',
-        event: 'webrtc-end',
-        payload: { targetId: this.targetId }
-      });
+    this.setState('ended');
+    if (broadcast) {
+      this.sendSignal({ type: 'end' });
+    }
+    setTimeout(() => this.cleanup(false), 500);
+  }
+
+  private cleanup(broadcastEnd: boolean = true) {
+    if (broadcastEnd && this.channel) {
+      this.sendSignal({ type: 'end' });
     }
     
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream.getTracks().forEach(track => {
+        track.stop();
+      });
+      this.localStream = null;
     }
     
     if (this.peerConnection) {
@@ -313,15 +269,14 @@ export class WebRTCService {
       this.peerConnection = null;
     }
     
-    if (this.onCallEnded) {
-      this.onCallEnded();
-    }
-    
     if (this.channel) {
-      supabase.removeChannel(this.channel);
+      setTimeout(() => {
+        supabase.removeChannel(this.channel);
+        this.channel = null;
+      }, 1000);
     }
   }
-  
+
   public toggleMute(isMuted: boolean) {
     if (this.localStream) {
       this.localStream.getAudioTracks().forEach(track => {
