@@ -18,6 +18,9 @@ export class WebRTCService {
   private localIceCandidates: RTCIceCandidateInit[] = [];
   private isCaller: boolean = false;
   private hasReceivedAnswer: boolean = false;
+  
+  private channelReady: boolean = false;
+  private pendingBroadcasts: any[] = [];
 
   constructor(userId: string, targetId: string) {
     this.userId = userId;
@@ -33,22 +36,48 @@ export class WebRTCService {
   private setupSignaling() {
     this.channel
       .on('broadcast', { event: 'webrtc-offer' }, async (payload: any) => {
+        console.log('[WebRTC] Received webrtc-offer', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleOffer(payload.payload.offer);
       })
       .on('broadcast', { event: 'webrtc-answer' }, async (payload: any) => {
+        console.log('[WebRTC] Received webrtc-answer', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleAnswer(payload.payload.answer);
       })
       .on('broadcast', { event: 'webrtc-ice' }, async (payload: any) => {
+        console.log('[WebRTC] Received webrtc-ice', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleIceCandidate(payload.payload.candidate);
       })
       .on('broadcast', { event: 'webrtc-end' }, (payload: any) => {
+        console.log('[WebRTC] Received webrtc-end', payload);
         if (payload.payload.targetId !== this.userId) return;
         this.endCall(false); // don't broadcast end again
       })
-      .subscribe();
+      .subscribe((status: string) => {
+        console.log(`[WebRTC] Channel status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          this.channelReady = true;
+          this.pendingBroadcasts.forEach(msg => this.channel.send(msg));
+          this.pendingBroadcasts = [];
+        }
+      });
+  }
+
+  private broadcastMessage(event: string, payload: any) {
+    const msg = {
+      type: 'broadcast',
+      event,
+      payload
+    };
+    console.log(`[WebRTC] Sending broadcast ${event}`, payload);
+    if (this.channelReady) {
+      this.channel.send(msg);
+    } else {
+      console.log(`[WebRTC] Channel not ready, queuing broadcast ${event}`);
+      this.pendingBroadcasts.push(msg);
+    }
   }
 
   private initPeerConnection() {
@@ -64,11 +93,7 @@ export class WebRTCService {
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         if (this.hasReceivedAnswer || !this.isCaller) {
-          this.channel.send({
-            type: 'broadcast',
-            event: 'webrtc-ice',
-            payload: { targetId: this.targetId, candidate: event.candidate }
-          });
+          this.broadcastMessage('webrtc-ice', { targetId: this.targetId, candidate: event.candidate });
         } else {
           // Caller buffers ICE candidates until answer is received
           this.localIceCandidates.push(event.candidate);
@@ -126,11 +151,7 @@ export class WebRTCService {
       const offer = await this.peerConnection!.createOffer();
       await this.peerConnection!.setLocalDescription(offer);
       
-      this.channel.send({
-        type: 'broadcast',
-        event: 'webrtc-offer',
-        payload: { targetId: this.targetId, offer }
-      });
+      this.broadcastMessage('webrtc-offer', { targetId: this.targetId, offer });
       
       if (callerInfo) {
         const ringChannel = supabase.channel(`user_signals_${this.targetId}`);
@@ -187,11 +208,7 @@ export class WebRTCService {
       const answer = await this.peerConnection!.createAnswer();
       await this.peerConnection!.setLocalDescription(answer);
       
-      this.channel.send({
-        type: 'broadcast',
-        event: 'webrtc-answer',
-        payload: { targetId: this.targetId, answer }
-      });
+      this.broadcastMessage('webrtc-answer', { targetId: this.targetId, answer });
       
       return this.localStream;
     } catch (err) {
@@ -212,11 +229,7 @@ export class WebRTCService {
       
       // Flush buffered local candidates
       for (const candidate of this.localIceCandidates) {
-        this.channel.send({
-          type: 'broadcast',
-          event: 'webrtc-ice',
-          payload: { targetId: this.targetId, candidate }
-        });
+        this.broadcastMessage('webrtc-ice', { targetId: this.targetId, candidate });
       }
       this.localIceCandidates = [];
       
@@ -247,11 +260,7 @@ export class WebRTCService {
 
   public endCall(broadcast: boolean = true) {
     if (broadcast && this.channel) {
-      this.channel.send({
-        type: 'broadcast',
-        event: 'webrtc-end',
-        payload: { targetId: this.targetId }
-      });
+      this.broadcastMessage('webrtc-end', { targetId: this.targetId });
     }
     
     if (this.localStream) {
