@@ -270,9 +270,16 @@ export class WebRTCService {
     }
     
     if (this.channel) {
+      const ch = this.channel;
+      this.channel = null;
       setTimeout(() => {
-        supabase.removeChannel(this.channel);
-        this.channel = null;
+        if (ch) {
+          try {
+            supabase.removeChannel(ch);
+          } catch (e) {
+            console.warn('[WebRTC] Error removing channel:', e);
+          }
+        }
       }, 1000);
     }
   }
