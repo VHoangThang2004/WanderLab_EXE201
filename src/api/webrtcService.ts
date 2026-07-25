@@ -27,6 +27,7 @@ export class WebRTCService {
     
     // Create a unique channel for this pair (alphabetical order prevents duplication)
     const channelName = `call_${[userId, targetId].sort().join('_')}`;
+    console.log(`[WebRTC] Initializing for ${userId} to ${targetId}. Channel: ${channelName}`);
     this.channel = supabase.channel(channelName);
     
     this.setupSignaling();
@@ -35,24 +36,30 @@ export class WebRTCService {
   private setupSignaling() {
     this.channel
       .on('broadcast', { event: 'webrtc-offer' }, async (payload: any) => {
+        console.log('[WebRTC] Received offer', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleOffer(payload.payload.offer);
       })
       .on('broadcast', { event: 'webrtc-answer' }, async (payload: any) => {
+        console.log('[WebRTC] Received answer', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleAnswer(payload.payload.answer);
       })
       .on('broadcast', { event: 'webrtc-ice' }, async (payload: any) => {
+        console.log('[WebRTC] Received ICE candidate', payload);
         if (payload.payload.targetId !== this.userId) return;
         await this.handleIceCandidate(payload.payload.candidate);
       })
       .on('broadcast', { event: 'webrtc-end' }, (payload: any) => {
+        console.log('[WebRTC] Received end call');
         if (payload.payload.targetId !== this.userId) return;
         this.endCall(false); // don't broadcast end again
       })
       .subscribe((status: string) => {
+        console.log(`[WebRTC] Channel status: ${status}`);
         if (status === 'SUBSCRIBED') {
           this.isSubscribed = true;
+          console.log(`[WebRTC] Flushing ${this.pendingBroadcasts.length} pending broadcasts`);
           for (const msg of this.pendingBroadcasts) {
             this.channel.send(msg);
           }
@@ -63,8 +70,10 @@ export class WebRTCService {
 
   private safeSend(msg: any) {
     if (this.isSubscribed) {
+      console.log('[WebRTC] Sending broadcast:', msg.event);
       this.channel.send(msg);
     } else {
+      console.log('[WebRTC] Buffering broadcast (not subscribed):', msg.event);
       this.pendingBroadcasts.push(msg);
     }
   }
@@ -102,6 +111,7 @@ export class WebRTCService {
     };
     
     this.peerConnection.onconnectionstatechange = () => {
+      console.log('[WebRTC] Connection state changed:', this.peerConnection?.connectionState);
       if (this.peerConnection?.connectionState === 'connected') {
         if (this.onCallStateChange) this.onCallStateChange('connected');
       } else if (this.peerConnection?.connectionState === 'failed' || this.peerConnection?.connectionState === 'disconnected') {
@@ -144,6 +154,7 @@ export class WebRTCService {
       const offer = await this.peerConnection!.createOffer();
       await this.peerConnection!.setLocalDescription(offer);
       
+      console.log('[WebRTC] Created offer, sending...');
       this.safeSend({
         type: 'broadcast',
         event: 'webrtc-offer',
@@ -151,6 +162,7 @@ export class WebRTCService {
       });
       
       if (callerInfo) {
+        console.log(`[WebRTC] Ringing target on user_signals_${this.targetId}...`);
         const ringChannel = supabase.channel(`user_signals_${this.targetId}`);
         ringChannel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
@@ -164,8 +176,12 @@ export class WebRTCService {
                 isVideoCall,
                 offer
               }
+            }).then((res) => {
+              console.log("[WebRTC] Ring signal sent:", res);
+            }).catch((err) => {
+              console.error("[WebRTC] Failed to send ring signal:", err);
             });
-            setTimeout(() => supabase.removeChannel(ringChannel), 1000);
+            setTimeout(() => supabase.removeChannel(ringChannel), 3000); // Wait longer before removing
           }
         });
       }
@@ -205,6 +221,7 @@ export class WebRTCService {
       const answer = await this.peerConnection!.createAnswer();
       await this.peerConnection!.setLocalDescription(answer);
       
+      console.log('[WebRTC] Created answer, sending...');
       this.safeSend({
         type: 'broadcast',
         event: 'webrtc-answer',
