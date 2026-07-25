@@ -109,12 +109,25 @@ export class WebRTCService {
     };
     
     this.peerConnection.onconnectionstatechange = () => {
+      console.log(`[WebRTC] Connection state changed: ${this.peerConnection?.connectionState}`);
       if (this.peerConnection?.connectionState === 'connected') {
         if (this.onCallStateChange) this.onCallStateChange('connected');
       } else if (this.peerConnection?.connectionState === 'failed' || this.peerConnection?.connectionState === 'disconnected') {
         if (this.onCallStateChange) this.onCallStateChange('failed');
         this.endCall(false);
       }
+    };
+
+    this.peerConnection.oniceconnectionstatechange = () => {
+      console.log(`[WebRTC] ICE connection state: ${this.peerConnection?.iceConnectionState}`);
+    };
+
+    this.peerConnection.onsignalingstatechange = () => {
+      console.log(`[WebRTC] Signaling state: ${this.peerConnection?.signalingState}`);
+    };
+    
+    this.peerConnection.onicegatheringstatechange = () => {
+      console.log(`[WebRTC] ICE gathering state: ${this.peerConnection?.iceGatheringState}`);
     };
   }
 
